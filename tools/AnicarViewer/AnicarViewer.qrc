@@ -1,0 +1,25 @@
+<RCC>
+  <qresource prefix="AnicarViewer" >
+    <file>Images/previous.png</file>
+    <file>Images/next.png</file>
+    <file>Images/player_back.png</file>
+    <file>Images/player_fwd.png</file>
+    <file>Images/player_play.png</file>
+    <file>Images/player_rew.png</file>
+    <file>Images/player_stop.png</file>
+    <file>Images/connect_established.png</file>
+    <file>Images/fileopen.png</file>
+    <file>Images/player_end.png</file>
+    <file>Images/player_start.png</file>
+    <file>Images/rebuild.png</file>
+    <file>Images/configure.png</file>
+    <file>Images/exit.png</file>
+    <file>Images/goto.png</file>
+    <file>Images/image.png</file>
+    <file>Images/joystick.png</file>
+    <file>Images/rasterimage.png</file>
+    <file>Images/viewmag-.png</file>
+    <file>Images/viewmag+.png</file>
+    <file>Images/window_fullscreen.png</file>
+  </qresource>
+</RCC>

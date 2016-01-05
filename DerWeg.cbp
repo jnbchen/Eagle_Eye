@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="DerWeg" />
+		<Option platforms="Unix;" />
+		<Option makefile="makefile" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Option extended_obj_names="1" />
+		<Build>
+			<Target title="DerWeg">
+				<Option platforms="Unix;" />
+				<Option output="bin/DerWeg" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="./bin" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+			</Target>
+			<Target title="nostereo">
+				<Option platforms="Unix;" />
+				<Option output="bin/DerWeg" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="./bin" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+			</Target>
+			<Target title="nocamera">
+				<Option platforms="Unix;" />
+				<Option output="bin/DerWeg" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="./bin" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
+			</Target>
+		</Build>
+		<Unit filename="Application/CyclicForwardsBackwards.cpp" />
+		<Unit filename="Application/DriveWigglyLines.cpp" />
+		<Unit filename="Application/MaschinenbautagDemo.cpp" />
+		<Unit filename="Application/RemoteControl.cpp" />
+		<Unit filename="Application/SaveCameraImage.cpp" />
+		<Unit filename="Application/SaveTopImage.cpp" />
+		<Unit filename="Application/ShowBlackboard.cpp" />
+		<Unit filename="Application/ShowCameraImage.cpp" />
+		<Unit filename="Application/ShowLocalization.cpp" />
+		<Unit filename="Application/ShowStereoCameraImage.cpp" />
+		<Unit filename="Application/StopAtRed.cpp" />
+		<Unit filename="Application/TrackLogger.cpp" />
+		<Unit filename="Blackboard/Blackboard.cpp" />
+		<Unit filename="Blackboard/Blackboard.h" />
+		<Unit filename="Elementary/Angle.cpp" />
+		<Unit filename="Elementary/Angle.h" />
+		<Unit filename="Elementary/ConfigReader.cpp" />
+		<Unit filename="Elementary/ConfigReader.h" />
+		<Unit filename="Elementary/Configuration.cpp" />
+		<Unit filename="Elementary/Configuration.h" />
+		<Unit filename="Elementary/Gnuplot.cpp" />
+		<Unit filename="Elementary/Gnuplot.h" />
+		<Unit filename="Elementary/ImageBuffer.cpp" />
+		<Unit filename="Elementary/ImageBuffer.h" />
+		<Unit filename="Elementary/ImageReaderWriter.cpp" />
+		<Unit filename="Elementary/ImageReaderWriter.h" />
+		<Unit filename="Elementary/KogmoThread.cpp" />
+		<Unit filename="Elementary/KogmoThread.h" />
+		<Unit filename="Elementary/PluginFactory.h" />
+		<Unit filename="Elementary/RingBuffer.h" />
+		<Unit filename="Elementary/ThreadSafeLogging.h" />
+		<Unit filename="Elementary/Timestamp.cpp" />
+		<Unit filename="Elementary/Timestamp.h" />
+		<Unit filename="Elementary/UDP/KogmolaborCommunication.cpp" />
+		<Unit filename="Elementary/UDP/KogmolaborCommunication.h" />
+		<Unit filename="Elementary/UDP/MultiPacketUDPCommunication.cpp" />
+		<Unit filename="Elementary/UDP/MultiPacketUDPCommunication.h" />
+		<Unit filename="Elementary/UDP/NonspecificTaggedUDPCommunication.cpp" />
+		<Unit filename="Elementary/UDP/NonspecificTaggedUDPCommunication.h" />
+		<Unit filename="Elementary/UDP/PriorityUDPCommunication.cpp" />
+		<Unit filename="Elementary/UDP/PriorityUDPCommunication.h" />
+		<Unit filename="Elementary/UDP/TaggedUDPCommunication.cpp" />
+		<Unit filename="Elementary/UDP/TaggedUDPCommunication.h" />
+		<Unit filename="Elementary/UDP/UDPCommunicationStatistics.h" />
+		<Unit filename="Elementary/UDP/UDPSocket.cpp" />
+		<Unit filename="Elementary/UDP/UDPSocket.h" />
+		<Unit filename="Elementary/Vec.cpp" />
+		<Unit filename="Elementary/Vec.h" />
+		<Unit filename="ImageProcessing/TrafficSignDetector.cpp" />
+		<Unit filename="ImageProcessing/TrafficSignDetector.h" />
+		<Unit filename="ImageSource/GigE.cpp" />
+		<Unit filename="ImageSource/GigE.h" />
+		<Unit filename="ImageSource/GigECameraDriver.cpp" />
+		<Unit filename="ImageSource/GigECameraDriver.h" />
+		<Unit filename="ImageSource/GigEStereoCameraDriver.cpp" />
+		<Unit filename="ImageSource/GigEStereoCameraDriver.h" />
+		<Unit filename="ImageSource/ImageSourceFile.cpp" />
+		<Unit filename="ImageSource/ImageSourceGigE.cpp" />
+		<Unit filename="ImageSource/StereoImageSourceGigE.cpp" />
+		<Unit filename="Localization/CameraLocalization.cpp" />
+		<Unit filename="Localization/CameraLocalizationPatchCollection.cpp" />
+		<Unit filename="Localization/DeadReckoningLocalization.cpp" />
+		<Unit filename="Localization/LandmarkFinder.cpp" />
+		<Unit filename="Localization/LandmarkFinder.h" />
+		<Unit filename="Localization/Localizer.cpp" />
+		<Unit filename="Localization/Localizer.h" />
+		<Unit filename="Localization/PLModel.cpp" />
+		<Unit filename="Localization/PLModel.h" />
+		<Unit filename="Localization/Pos2.cpp" />
+		<Unit filename="Localization/Pos2.h" />
+		<Unit filename="Localization/SLVelocitySensor.cpp" />
+		<Unit filename="Localization/SLVelocitySensor.h" />
+		<Unit filename="Localization/Undistortion.cpp" />
+		<Unit filename="Localization/Undistortion.h" />
+		<Unit filename="Localization/serial_port.cpp" />
+		<Unit filename="Localization/serial_port.hpp" />
+		<Unit filename="Monitor/AnicarViewerModule.cpp" />
+		<Unit filename="Monitor/TUIMonitor.cpp" />
+		<Unit filename="MotorControl/AnicarSimulation.cpp" />
+		<Unit filename="MotorControl/MotorControlByInterface.cpp" />
+		<Unit filename="MotorControl/MotorControlDummy.cpp" />
+		<Unit filename="MotorControl/MotorControlOldCar.cpp" />
+		<Unit filename="Vehicle/VehicleKinematics.cpp" />
+		<Unit filename="Vehicle/VehicleKinematics.h" />
+		<Unit filename="Vehicle/vehicle.cpp" />
+		<Unit filename="Vehicle/vehicle.h" />
+		<Unit filename="main/main.cpp" />
+		<Unit filename="main/main.h" />
+		<Unit filename="tools/CameraLocalizationMapping/CameraLocalizationMapping.cpp" />
+		<Unit filename="tools/CameraLocalizationMapping/CameraLocalizationMapping.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<lib_finder disable_auto="1" />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -1,0 +1,70 @@
+How to configure Code::Blocks IDE for compilation with NVIDIA NVCC:
+
+
+Step 1 - Introducing the compiler:
+
+* 'Settings' -> 'Compiler and debugger ...'
+* Select and Copy the "GNU GCC Compiler" at 'Selected Compiler'
+* Select a fancy name for the new compiler, such as "NVIDIA NVCC"
+* Visit the 'Toolchain executables'-tab:
+	- Enter the compiler's installation root directory, e.g. /usr/local/cuda/
+	- Enter C compiler: nvcc
+	- Enter C++ compiler: nvcc
+	- Enter Linker for dynamic libs: nvcc
+	- Enter Linker for static libs: nvcc
+	- Enter Debugger: cuda-gdb
+* Visit the 'Search directories'-tab:
+	- Add your-cuda-sdk-root/common/inc to the 'Compiler' box
+	- Add your-cuda-sdk-root/lib to the 'Linker' box
+	- Add your-cuda-sdk-root/common/lib/linux (modify for target OS) to the 'Linker' box
+* Visit the 'Other settings'-tab:
+	- Click 'Advanced options...'
+	- In the 'Commands'-tab, select 'Compile single file to object file'
+	- Replace the 'Command line macro' with this: $compiler --compiler-options "$options" $includes -c $file -o $object
+	- Go to the 'Output parsing'-tab
+	- Select "'Instanciated from' info" and replace the regexp with: ([][{}() #%$~A-Za-z0-9_:+/\.-]+)[(:]([0-9]+)\)?:[ ]+([iI]nstantiated from .*)
+	- Select "Compiler warning" and replace the regexp with: ([][{}() #%$~A-Za-z0-9_:+/\.-]+)[(:]([0-9]+)\)?:[ ]([Ww]arning:[ ].*)
+	- Select "Compiler error" and replace the regexp with: ([][{}() #%$~A-Za-z0-9_:+/\.-]+)[(:]([0-9]+)\)?:[ ](.*)
+* Ok.
+* Ok.
+
+
+Step 2 - Create a CUDA source file category:
+
+* 'Project' -> 'Project tree' -> 'Edit file types & categories...'
+* Click 'Add'
+* Enter a group name like "CUDA sources"
+* In the 'file masks' box enter "*.cu;"
+* Ok.
+
+
+Step 3 - Installing CUDA-C syntax highlighting:
+
+* Copy the files "lexer_nvcc.xml" and "lexer_nvcc.sample" from 'doc/CodeBlocks CUDA Lexer' to Code::Block's lexer folder (usually '/usr/share/codeblocks/lexers')
+* Restart the IDE
+
+
+Step 4.1 - Create a CUDA project:
+
+* Create a new project and select "NVIDIA NVCC" in 'Compiler'
+* Go to 'Project' -> 'Build options...', select the 'Linker settings'-tab and add the cuda runtime libraries ( cudart, cutil)
+* If you are converting an existing project, go to 'Project' -> 'Build options...' and select "NVIDIA NVCC" as 'Selected compiler'
+
+
+Step 4.2 - Compile a CUDA source file:
+
+* Add a *.cu file to the project
+* Right-click the file and select 'Properties...'
+* In the 'Build'-tab, check 'Compile file' and 'Link file'
+* Remarks: Do that only for files which are supposed to be compiled seperately, not for file which are #included in other places
+
+
+Problems and Solutions:
+
+* nvcc fatal : Unkown option 's'
+
+	- Go to 'Settings' -> 'Compiler and debugger...' -> "NVIDIA NVCC", pick the 'Compiler settings'-tab and uncheck option "Strip all symbols from binary (minimizes size) [-s]"
+	- Go to 'Project' -> 'Build options...', for each (desired) entry on the left list, pick 
+	  the 'Compiler settings'-tab and uncheck option "Strip all symbols from binary (minimizes size) [-s]"
+
+  

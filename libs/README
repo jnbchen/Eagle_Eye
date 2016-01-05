@@ -1,0 +1,8 @@
+These non-standard libraries are required to address the cameras and the
+steering servo. The libraries can obtained from:
+
+libPvAPI:   Prosilica's download page
+libiowkit:  Code Mercenaries download page. The library is generated from
+            the file iowkit.c which you can find in the libiowkit subproject
+
+subdirectory lib/ contains the 32-bit versions, lib64/ the 64-bit versions

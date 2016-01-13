@@ -30,33 +30,9 @@ public:
     ~KSOPLab () {;}
 
     void detect_obstacle() {
+        // ToDo:  detect obstacle here
         obstacle = false;
-        int c=0, i, j;
-        // ToDo: detect obstacles here
-        //depth.cols;
-        //depth.rows;
-
-        for(i=depth.rows/3; i<2*depth.rows/3; i++)
-        {
-            for(j=depth.cols/3; j<=2*depth.cols/3; j++)
-            {
-                if(depth.at<float>(i, j) < 2)
-                {
-                    c++;
-                }
-
-            }
-
-        }
-
-        if(c > depth.rows*depth.cols/20){
-          LOUT(c << std::endl);
-          obstacle = true;
-        }//LOUT("Depth " << depth.at<float>(200, 300) << std::endl);
-        //depth.at<float>(i, j) // access to an element of distance image
-        // conf.at<unsigned char>(i,j) // access to an element of confidence image
-
-}
+    }
 
     void set_motion() {
         Velocity dv;
@@ -65,16 +41,10 @@ public:
 
 
         if(obstacle == true) {
-            dv.velocity = 0.4;
-             dv.steer = Angle::deg_angle(30);
-
-
-                    // ToDo: react on obstacle here
+            // ToDo: react on obstacle here
             LOUT("Detected obstacle!" << std::endl);
         } else {
-            dv.velocity = 0.6;  // ToDo: react on no obstacle here
-            dv.steer = Angle::deg_angle(0);
-
+            // ToDo: react on no obstacle here
         }
 
         BBOARD->setDesiredVelocity(dv);
@@ -92,26 +62,26 @@ public:
             if (ib.image.empty()) {
                 EOUT ("Empty-image!\n");
             } else {
-            // if there was an image
+                // if there was an image
 
-            // compute stereo images
-            stereoGPU.runStereoMatching (ib.image, ib.image_right); // starte die Tiefenberechnung
+                // compute stereo images
+                stereoGPU.runStereoMatching (ib.image, ib.image_right); // starte die Tiefenberechnung
 
-            // get the rectified image
-            stereoGPU.getRectifiedLeftImage (rect);
-//            LOUT(img1->Width);
-//            LOUT(img1->Height);
+                // get the rectified image
+                stereoGPU.getRectifiedLeftImage (rect);
+    //            LOUT(img1->Width);
+    //            LOUT(img1->Height);
 
-            // get the stereo image
-            stereoGPU.getStereoResults (depth,conf); // warte, bis die Tiefenberechnung abgeschlossen ist und hole die Ergebnisse ab (in depth, conf, disp, rect)
+                // get the stereo image
+                stereoGPU.getStereoResults (depth,conf); // warte, bis die Tiefenberechnung abgeschlossen ist und hole die Ergebnisse ab (in depth, conf, disp, rect)
 
 
-            // display
-            cv::imshow (windowname1.c_str(),rect);  // zeige das rektifizierte Bild an
-            cv::imshow (windownameVisu.c_str(),depth*0.1f);  // zeige Tiefenbild an
+                // display
+                cv::imshow (windowname1.c_str(),rect);  // zeige das rektifizierte Bild an
+                cv::imshow (windownameVisu.c_str(),depth*0.1f);  // zeige Tiefenbild an
 
-            // detect obstacles
-            detect_obstacle();
+                // detect obstacles
+                detect_obstacle();
             }
 
             // set motion of vehicle accordingly

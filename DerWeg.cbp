@@ -37,6 +37,7 @@
 		</Build>
 		<Unit filename="Application/CyclicForwardsBackwards.cpp" />
 		<Unit filename="Application/DriveWigglyLines.cpp" />
+		<Unit filename="Application/KSOPLab.cpp" />
 		<Unit filename="Application/MaschinenbautagDemo.cpp" />
 		<Unit filename="Application/RemoteControl.cpp" />
 		<Unit filename="Application/SaveCameraImage.cpp" />

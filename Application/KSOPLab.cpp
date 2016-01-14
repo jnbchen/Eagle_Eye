@@ -7,101 +7,111 @@
 #include <opencv/highgui.h>
 #include <iostream>
 
-
 namespace DerWeg {
-
-  /** eine sehr einfache Beispielanwendung, die das Fahrzeug zyklisch vorwaerts und rueckwaerts fahren laesst */
+  
   class KSOPLab : public KogmoThread {
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;
     std::string windowname1, windownameVisu;
     cv::Mat depth, conf, disp, rect, visu;
     bool obstacle;
-public:
-
+  public:
     KSOPLab () :
-      windowname1 ("Camera Image 1"),
-      stereoGPU ("/home/common/calib.txt"),
-      windownameVisu ("stereo"),
-      obstacle(false) {
+    windowname1 ("Camera Image 1"),
+    stereoGPU ("/home/common/calib.txt"),
+    windownameVisu ("stereo"),
+    obstacle(false) {
       cvNamedWindow (windowname1.c_str(),    CV_WINDOW_AUTOSIZE);
       cvNamedWindow (windownameVisu.c_str(), CV_WINDOW_AUTOSIZE);
     }
     ~KSOPLab () {;}
 
     void detect_obstacle() {
-        // ToDo:  detect obstacle here
-        obstacle = false;
+      /*
+      \todo: Detect obstacles here
+
+      You can use accessors like depth.cols or depth.rows to get the size
+      of the depth image. Also, you can create a region of interest using
+      depth(cv::Rect(x, y, width, height)). There are several statistical
+      functions that you can find online
+      (--> Google: "open cv operations on arrays")
+      */
+
+      obstacle = false;
     }
 
     void set_motion() {
-        Velocity dv;
-        dv.steer = Angle::deg_angle(0);
-        dv.velocity = 0;
+      /*
+      Set the vehicle motion according to the obstacle detection.
+      You can set the vehicle velocity using the "Velocity" structure:
 
+      v_desired.steer = Angle::deg_angle(0);
+      v_desired.velocity = 0;
+      */
 
-        if(obstacle == true) {
-            // ToDo: react on obstacle here
-            LOUT("Detected obstacle!" << std::endl);
-        } else {
-            // ToDo: react on no obstacle here
-        }
+      Velocity v_desired;
 
-        BBOARD->setDesiredVelocity(dv);
+      if(obstacle == true) {
+        // Obstacle detected
+        LOUT("Obstacle detected" << std::endl);
+
+        /*
+        \todo: React on detection
+        */
+      } else {
+        // No detection
+      }
+
+      // Set the desired velocity accordingly
+      BBOARD->setDesiredVelocity(v_desired);
     }
 
     void execute () {
       try{
 
         while (true) {
-            BBOARD->waitForImage();   // wait for next image
-            ib=BBOARD->getImage();    // get next image pair from blackboard
+          BBOARD->waitForImage();   // wait for next image
+          ib=BBOARD->getImage();    // get next image pair from blackboard
 
 
-            // if there is no image, display warning
-            if (ib.image.empty()) {
-                EOUT ("Empty-image!\n");
-            } else {
-                // if there was an image
+          if (ib.image.empty()) {
+            // Display warning if there is no image
+            EOUT ("Empty-image!\n");
+          } else {
+            // Compute stereo images
+            stereoGPU.runStereoMatching (ib.image, ib.image_right);
 
-                // compute stereo images
-                stereoGPU.runStereoMatching (ib.image, ib.image_right); // starte die Tiefenberechnung
+            // Get the rectified image
+            stereoGPU.getRectifiedLeftImage (rect);
 
-                // get the rectified image
-                stereoGPU.getRectifiedLeftImage (rect);
-    //            LOUT(img1->Width);
-    //            LOUT(img1->Height);
+            // Get the stereo image
+            stereoGPU.getStereoResults (depth, conf);
 
-                // get the stereo image
-                stereoGPU.getStereoResults (depth,conf); // warte, bis die Tiefenberechnung abgeschlossen ist und hole die Ergebnisse ab (in depth, conf, disp, rect)
+            // Display rectified and depth image
+            cv::imshow (windowname1.c_str(), rect);
+            cv::imshow (windownameVisu.c_str(), depth*0.1f);
 
+            // Detect obstacles
+            detect_obstacle();
+          }
 
-                // display
-                cv::imshow (windowname1.c_str(),rect);  // zeige das rektifizierte Bild an
-                cv::imshow (windownameVisu.c_str(),depth*0.1f);  // zeige Tiefenbild an
+          // Set motion of vehicle accordingly
+          set_motion();
 
-                // detect obstacles
-                detect_obstacle();
-            }
-
-            // set motion of vehicle accordingly
-            set_motion();
-
-
-            // DO NOT EDIT BELOW!
-            // this is for thread handling.
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-            boost::this_thread::interruption_point();
+          /*
+          DO NOT EDIT BELOW!
+          This is for thread handling.
+          */
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+          boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}
     }
   };
-
-} // namespace DerWeg
+}
 
 namespace {
 
-  // Plugin bei der Factory anmelden
+  // Register plugin
   static DerWeg::PluginBuilder<DerWeg::KogmoThread, DerWeg::KSOPLab> application ("KSOPLab");
-
 }

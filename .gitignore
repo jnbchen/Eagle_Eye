@@ -1,3 +1,11 @@
 *.d
 *.o
 
+*.moc.cpp
+*.rcc.cpp
+Ui_*.h
+
+*.promake
+
+/bin
+!/bin/*.cfg

@@ -7,5 +7,5 @@ Ui_*.h
 
 *.promake
 
-/bin
-!/bin/*.cfg
+/bin/*
+!bin/*.cfg

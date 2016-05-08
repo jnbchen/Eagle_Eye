@@ -42,6 +42,7 @@
 		<Unit filename="Application/RemoteControl.cpp" />
 		<Unit filename="Application/SaveBlackboard.cpp" />
 		<Unit filename="Application/SaveCameraImage.cpp" />
+		<Unit filename="Application/SaveCoordinates.cpp" />
 		<Unit filename="Application/SaveTopImage.cpp" />
 		<Unit filename="Application/ShowBlackboard.cpp" />
 		<Unit filename="Application/ShowCameraImage.cpp" />

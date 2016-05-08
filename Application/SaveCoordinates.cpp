@@ -26,10 +26,9 @@ namespace DerWeg {
         logfile.open ("./CoordinateLogs/coord_log_" + timeString);
         //LOUT("Logfile opened");
 
-        logfile << "x" << '\t'
-                << "y" << '\t'
-                << "phi" << '\t'
-                << endl;
+        logfile << "x" << ' '
+                << "y" << ' '
+                << "phi" << endl;
     }
 
     void deinit () {
@@ -41,12 +40,11 @@ namespace DerWeg {
       try{
         //unsigned int c=0;
         while (true) {
-          if (true) {
+          if (BBOARD->getActive()) {
             //LOUT(BBOARD->getActive() << '\t' << BBOARD->getDesiredVelocity().velocity << '\t' << BBOARD->getDesiredVelocity().steer.get_deg_180() << endl);
-            logfile << BBOARD->getVehiclePose().position.x << '\t'
-                    << BBOARD->getVehiclePose().position.y << '\t'
-                    << BBOARD->getVehiclePose().orientation.get_deg() << '\t'
-                    << endl;
+            logfile << BBOARD->getVehiclePose().position.x << ' '
+                    << BBOARD->getVehiclePose().position.y << ' '
+                    << BBOARD->getVehiclePose().orientation.get_deg() << endl;
           }
           //c++;
 
@@ -65,5 +63,4 @@ namespace {
   static DerWeg::PluginBuilder<DerWeg::KogmoThread, DerWeg::SaveCoordinates> application ("SaveCoordinates");
 
 }
-
 

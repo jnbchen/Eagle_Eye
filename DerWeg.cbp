@@ -49,6 +49,7 @@
 		<Unit filename="Application/ShowLocalization.cpp" />
 		<Unit filename="Application/ShowStereoCameraImage.cpp" />
 		<Unit filename="Application/StopAtRed.cpp" />
+		<Unit filename="Application/TestDrive.cpp" />
 		<Unit filename="Application/TrackLogger.cpp" />
 		<Unit filename="Blackboard/Blackboard.cpp" />
 		<Unit filename="Blackboard/Blackboard.h" />

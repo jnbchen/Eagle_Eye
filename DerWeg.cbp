@@ -40,6 +40,7 @@
 		<Unit filename="Application/KSOPLab.cpp" />
 		<Unit filename="Application/MaschinenbautagDemo.cpp" />
 		<Unit filename="Application/RemoteControl.cpp" />
+		<Unit filename="Application/SaveBlackboard.cpp" />
 		<Unit filename="Application/SaveCameraImage.cpp" />
 		<Unit filename="Application/SaveTopImage.cpp" />
 		<Unit filename="Application/ShowBlackboard.cpp" />

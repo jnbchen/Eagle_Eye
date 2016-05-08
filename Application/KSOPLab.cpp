@@ -8,7 +8,7 @@
 #include <iostream>
 
 namespace DerWeg {
-  
+
   class KSOPLab : public KogmoThread {
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;

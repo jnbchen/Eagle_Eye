@@ -53,6 +53,12 @@
 		<Unit filename="Application/TrackLogger.cpp" />
 		<Unit filename="Blackboard/Blackboard.cpp" />
 		<Unit filename="Blackboard/Blackboard.h" />
+		<Unit filename="EagleEye/DataObjects.cpp" />
+		<Unit filename="EagleEye/DataObjects.h" />
+		<Unit filename="EagleEye/LateralControl.cpp" />
+		<Unit filename="EagleEye/StateEstimator.cpp" />
+		<Unit filename="EagleEye/StateMachine.cpp" />
+		<Unit filename="EagleEye/TrajectoryGenerator.cpp" />
 		<Unit filename="Elementary/Angle.cpp" />
 		<Unit filename="Elementary/Angle.h" />
 		<Unit filename="Elementary/ConfigReader.cpp" />

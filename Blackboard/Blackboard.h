@@ -8,6 +8,8 @@
 #include "../Elementary/ImageBuffer.h"
 #include "../Elementary/Configuration.h"
 #include "../Elementary/ThreadSafeLogging.h"
+#include "../EagleEye/DataObjects.h"    // here all eagle eye specific data structures
+
 
 namespace DerWeg {
 
@@ -34,6 +36,10 @@ class Blackboard {
     boost::condition_variable condMessage;         ///< condition variable to signal change of message
     boost::condition_variable condPlotcmd;         ///< condition variable to signal change of plot commands
 
+    boost::condition_variable condState;           ///< condition variable to signal change of state
+    boost::condition_variable condReferenceCurve;  ///< condition variable to signal change of reference curve
+    boost::condition_variable condDrivingMode;     ///< condition variable to signal change of driving mode
+
     bool exitProgram;                          ///< attribute indicating when the program should be stopped (stopProgram=true)
 
     bool active;                               ///< true, if vehicle is allowed to move
@@ -42,6 +48,10 @@ class Blackboard {
     Velocity desiredVelocity;                  ///< the desired velocity of the car
     Pose vehiclePose;                          ///< the present pose and velocity of the car (from self localization)
     Odometry odometry;                         ///< the present odometry (velocity and steering angle)
+
+    State state;                               ///< the present estimated state from StateEstimator
+    ReferenceCurve reference_curve;            ///< the present bezier curve for Control
+    DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -64,7 +74,7 @@ class Blackboard {
     ImageBuffer getTopImage ();                   ///< return present camera image of topview camera. Return empty image if no image is available
     void setTopImage (const ImageBuffer& image);  ///< provide the present camera image of topview camera. The image remains in the ownership of the provider
     bool waitForTopImage (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                   ///< waits until a new topview image has been read from image source and return true (or until timeout and return false)
-    
+
     Velocity getDesiredVelocity ();            ///< get the desired velocity
     void setDesiredVelocity (const Velocity&); ///< set the desired velocity
     bool waitForDesiredVelocity (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));            ///< waits until a new desired velocity has been set and return true (or until timeout and return false)
@@ -84,6 +94,24 @@ class Blackboard {
     std::string getPlotCommand ();             ///< get plot command (and remove plot command buffer)
     void addPlotCommand (const std::string&);  ///< add plot command to plot command buffer
     bool waitForPlotCommand (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new plot command has been read and return true (or until timeout and return false)
+
+    ///////////////////////////////////////
+    // Eagle Eye Data
+
+    // State
+    State getState ();                    ///< get the state from StateEstimator
+    void setState (const State&);         ///< set the state from StateEstimator
+    bool waitForState (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new state has been read from StateEstimator and return true (or until timeout and return false)
+
+    // ReferenceCurve
+    ReferenceCurve getReferenceCurve ();                    ///< get the reference_curve from TrajectoryGenerator
+    void setReferenceCurve (const ReferenceCurve&);         ///< set the reference_curve from TrajectoryGenerator
+    bool waitForReferenceCurve (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new reference_curve has been read from TrajectoryGenerator and return true (or until timeout and return false)
+
+    // DrivingMode
+    DrivingMode getDrivingMode ();                    ///< get the driving_mode from StateMachine
+    void setDrivingMode (const DrivingMode&);         ///< set the driving_mode from StateMachine
+    bool waitForDrivingMode (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new driving_mode has been read from StateMachine and return true (or until timeout and return false)
 
   };
 

@@ -158,3 +158,54 @@ bool Blackboard::waitForPlotCommand (boost::posix_time::time_duration timeout) {
   boost::unique_lock<boost::mutex> lock (bbmutex);
   return condPlotcmd.timed_wait(lock, timeout);
 }
+
+
+//////////////////////////////////////////////////////
+// Eagle Eye Data
+
+// State
+State Blackboard::getState () {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return state;
+}
+void Blackboard::setState (const State& s) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  state=s;
+  condState.notify_all();
+}
+bool Blackboard::waitForState (boost::posix_time::time_duration timeout) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condState.timed_wait(lock, timeout);
+}
+
+
+// ReferenceCurve
+ReferenceCurve Blackboard::getReferenceCurve () {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return reference_curve;
+}
+void Blackboard::setReferenceCurve (const ReferenceCurve& rc) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  reference_curve=rc;
+  condReferenceCurve.notify_all();
+}
+bool Blackboard::waitForReferenceCurve (boost::posix_time::time_duration timeout) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condReferenceCurve.timed_wait(lock, timeout);
+}
+
+
+// DrivingMode
+DrivingMode Blackboard::getDrivingMode () {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return driving_mode;
+}
+void Blackboard::setDrivingMode (const DrivingMode& dm) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  driving_mode=dm;
+  condDrivingMode.notify_all();
+}
+bool Blackboard::waitForDrivingMode (boost::posix_time::time_duration timeout) {
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condDrivingMode.timed_wait(lock, timeout);
+}

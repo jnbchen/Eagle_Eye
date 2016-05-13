@@ -9,7 +9,7 @@ namespace DerWeg {
 
   /** eine sehr einfache Beispiel- und Testanwendung, die das Fahrzeug lediglich auf einer Schlangelinie fahren laesst */
   class TestDrive : public KogmoThread {
-    int counter=0;
+    //int counter=0;
   public:
     TestDrive () {;}
     ~TestDrive () {;}

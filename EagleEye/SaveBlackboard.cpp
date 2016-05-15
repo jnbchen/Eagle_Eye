@@ -4,6 +4,9 @@
 #include "../Blackboard/Blackboard.h"
 #include <fstream>
 #include <time.h>
+#include <sstream>
+#include <iomanip>
+#include <string.h>
 
 using namespace std;
 
@@ -21,9 +24,20 @@ namespace DerWeg {
         systemzeit = time(0);
         //char *asctime(const struct tm *t);
         string timeString;
-        timeString = ctime(&systemzeit);
+        //timeString = ctime(&systemzeit);
+        tm * localt = localtime(&systemzeit);
 
-        logfile.open ("./DataLogs/data_log_" + timeString);
+        ostringstream oss;
+        oss << setfill('0') << setw(4) << localt->tm_year + 1900 << '-' << setw(2) <<  localt->tm_mon +1 << '-' << setw(2) << localt->tm_mday << '_'
+            << setw(2) <<  localt->tm_hour << '-' << setw(2) << localt->tm_min << '-' << setw(2) << localt->tm_sec;
+        timeString = oss.str();
+
+        char buf[100];
+        strcpy(buf, "../data/CoordinateLogs/coord_log_");
+        strcat(buf, timeString.c_str());
+        logfile.open (buf);
+
+        //logfile.open ("../data/CoordinateLogs/coord_log_" + timeString);
         //LOUT("Logfile opened");
 
         logfile << "active" << '\t'

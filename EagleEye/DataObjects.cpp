@@ -21,10 +21,10 @@ const State& State::operator= (const State& s) throw () {
 }
 */
 bool State::operator== (const State& s) const throw () {
-  return position==p.position && stddev==p.stddev && orientation==p.orientation && velocity==p.velocity && yawrate==p.yawrate && timestamp==p.timestamp;
+  return position==s.position && stddev==s.stddev && orientation==s.orientation && velocity==s.velocity && yawrate==s.yawrate && timestamp==s.timestamp;
 }
 bool State::operator!= (const State& s) const throw () {
-  return position!=p.position || stddev!=p.stddev || orientation!=p.orientation || velocity!=p.velocity || yawrate!=p.yawrate || timestamp!=p.timestamp;
+  return position!=s.position || stddev!=s.stddev || orientation!=s.orientation || velocity!=s.velocity || yawrate!=s.yawrate || timestamp!=s.timestamp;
 }
 
 

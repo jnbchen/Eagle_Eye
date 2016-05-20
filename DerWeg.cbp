@@ -50,6 +50,8 @@
 		<Unit filename="Application/TrackLogger.cpp" />
 		<Unit filename="Blackboard/Blackboard.cpp" />
 		<Unit filename="Blackboard/Blackboard.h" />
+		<Unit filename="EagleEye/BezierCurve.cpp" />
+		<Unit filename="EagleEye/BezierCurve.h" />
 		<Unit filename="EagleEye/DataObjects.cpp" />
 		<Unit filename="EagleEye/DataObjects.h" />
 		<Unit filename="EagleEye/LateralControl.cpp" />

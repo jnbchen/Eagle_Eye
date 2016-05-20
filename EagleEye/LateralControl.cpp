@@ -15,6 +15,29 @@ namespace DerWeg {
 
           // to be implemented ...
 
+          /*
+
+          // Struct to contain the input parameter for lateral control
+            struct ControlInput {
+                double distance;        ///< Distance to reference curve
+                Angle diff_angle;        ///< Angle difference between ego and curve
+                double curvature;       ///< Curvature of reference curve
+            }
+
+
+          ControlInput control_input(const BezierCurve& bc, const State& state) const throw() {
+            // what eevaaaaaa ...
+            }
+
+          if (bc == BBOARD->getReferenceCurve().path) {
+            new_start = t;
+          }
+          else {
+            bc = BBOARD->getReferenceCurve().path;
+            new_start = 0;
+          }
+          */
+
           //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
           boost::this_thread::interruption_point();
         }

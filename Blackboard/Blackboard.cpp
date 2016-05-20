@@ -179,19 +179,19 @@ bool Blackboard::waitForState (boost::posix_time::time_duration timeout) {
 }
 
 
-// ReferenceCurve
-ReferenceCurve Blackboard::getReferenceCurve () {
+// ReferenceTrajectory
+ReferenceTrajectory Blackboard::getReferenceTrajectory () {
   boost::unique_lock<boost::mutex> lock (bbmutex);
-  return reference_curve;
+  return reference_trajectory;
 }
-void Blackboard::setReferenceCurve (const ReferenceCurve& rc) {
+void Blackboard::setReferenceTrajectory (const ReferenceTrajectory& rt) {
   boost::unique_lock<boost::mutex> lock (bbmutex);
-  reference_curve=rc;
-  condReferenceCurve.notify_all();
+  reference_trajectory=rt;
+  condReferenceTrajectory.notify_all();
 }
-bool Blackboard::waitForReferenceCurve (boost::posix_time::time_duration timeout) {
+bool Blackboard::waitForReferenceTrajectory (boost::posix_time::time_duration timeout) {
   boost::unique_lock<boost::mutex> lock (bbmutex);
-  return condReferenceCurve.timed_wait(lock, timeout);
+  return condReferenceTrajectory.timed_wait(lock, timeout);
 }
 
 

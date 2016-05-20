@@ -5,6 +5,7 @@
 #include "../Elementary/Angle.h"
 #include "../Elementary/Vec.h"
 #include "../Elementary/Timestamp.h"
+#include "BezierCurve.h"
 
 
 namespace DerWeg {
@@ -21,30 +22,17 @@ namespace DerWeg {
     float velocity_tire;  ///< the velocity in m/s at the tires
     Angle steer;     ///< the steering angle in degree
 
-    /*
-    State () throw ();
-    State (const State&) throw ();
-    ~State () throw ();
-    const State& operator= (const State&) throw ();
-    */
     bool operator== (const State&) const throw ();
     bool operator!= (const State&) const throw ();
   };
 
 
-  /** struct to describe the present bezier curve of the segment */
-  struct ReferenceCurve {
-    double x1, x2, x3, x4;  ///< x position of start(1), end(4) and control points (2, 3)
-    double y1, y2, y3, y4;  ///< y position of start(1), end(4) and control points (2, 3)
+  /** Struct to describe the reference path possibly with velocity information */
+  struct ReferenceTrajectory {
+    BezierCurve path;  ///< reference path, a bezier curve
 
-    /*
-    ReferenceCurve () throw ();
-    ReferenceCurve (const ReferenceCurve&) throw ();
-    ~ReferenceCurve () throw ();
-    const ReferenceCurve& operator= (const ReferenceCurve&) throw ();
-    */
-    bool operator== (const ReferenceCurve&) const throw ();
-    bool operator!= (const ReferenceCurve&) const throw ();
+    bool operator== (const ReferenceTrajectory&) const throw ();
+    bool operator!= (const ReferenceTrajectory&) const throw ();
   };
 
 
@@ -53,12 +41,6 @@ namespace DerWeg {
     char current_mode;  ///< current dirivng mode (strait, right, left, out)
     char next_mode;  ///< next dirivng mode in time (strait, right, left, out)
 
-    /*
-    DrivingMode () throw ();
-    DrivingMode (const DrivingMode&) throw ();
-    ~DrivingMode () throw ();
-    const DrivingMode& operator= (const DrivingMode&) throw ();
-    */
     bool operator== (const DrivingMode&) const throw ();
     bool operator!= (const DrivingMode&) const throw ();
   };

@@ -37,7 +37,7 @@ class Blackboard {
     boost::condition_variable condPlotcmd;         ///< condition variable to signal change of plot commands
 
     boost::condition_variable condState;           ///< condition variable to signal change of state
-    boost::condition_variable condReferenceCurve;  ///< condition variable to signal change of reference curve
+    boost::condition_variable condReferenceTrajectory;  ///< condition variable to signal change of reference trajectory
     boost::condition_variable condDrivingMode;     ///< condition variable to signal change of driving mode
 
     bool exitProgram;                          ///< attribute indicating when the program should be stopped (stopProgram=true)
@@ -50,7 +50,7 @@ class Blackboard {
     Odometry odometry;                         ///< the present odometry (velocity and steering angle)
 
     State state;                               ///< the present estimated state from StateEstimator
-    ReferenceCurve reference_curve;            ///< the present bezier curve for Control
+    ReferenceTrajectory reference_trajectory;  ///< the present bezier curve for Control
     DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
@@ -103,10 +103,10 @@ class Blackboard {
     void setState (const State&);         ///< set the state from StateEstimator
     bool waitForState (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new state has been read from StateEstimator and return true (or until timeout and return false)
 
-    // ReferenceCurve
-    ReferenceCurve getReferenceCurve ();                    ///< get the reference_curve from TrajectoryGenerator
-    void setReferenceCurve (const ReferenceCurve&);         ///< set the reference_curve from TrajectoryGenerator
-    bool waitForReferenceCurve (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new reference_curve has been read from TrajectoryGenerator and return true (or until timeout and return false)
+    // ReferenceTrajectory
+    ReferenceTrajectory getReferenceTrajectory ();                    ///< get the reference_trajectory from TrajectoryGenerator
+    void setReferenceTrajectory (const ReferenceTrajectory&);         ///< set the reference_trajectory from TrajectoryGenerator
+    bool waitForReferenceTrajectory (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new reference_curve has been read from TrajectoryGenerator and return true (or until timeout and return false)
 
     // DrivingMode
     DrivingMode getDrivingMode ();                    ///< get the driving_mode from StateMachine

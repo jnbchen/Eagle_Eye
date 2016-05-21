@@ -12,7 +12,7 @@ namespace DerWeg {
     void execute () {
       try{
         while (BBOARD->getActive()) {
-          logfiel<<BBOARD->getVehiclePose().position.x << '\t'
+          logfiel<< BBOARD->getVehiclePose().position.x << '\t'
                  << BBOARD->getVehiclePose().position.y << '\t'
                  << BBOARD->getVehiclePose().orientation.get_deg() << '\t'
                  << BBOARD->getOdometry().velocity << '\t'

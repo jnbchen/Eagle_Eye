@@ -12,16 +12,25 @@ namespace DerWeg {
     void execute () {
       try{
         while (BBOARD->getActive()) {
-          logfiel<< BBOARD->getVehiclePose().position.x << '\t'
-                 << BBOARD->getVehiclePose().position.y << '\t'
-                 << BBOARD->getVehiclePose().orientation.get_deg() << '\t'
-                 << BBOARD->getOdometry().velocity << '\t'
-                 << BBOARD->getOdometry().steer.get_deg_180() << '\t'
-                 << endl;
-          //wieso gibt hier keine init() oder deinit()? bitte prüfen Sie.
 
-          //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-          boost::this_thread::interruption_point();
+            State state;
+            Pose pose = BBOARD->getVehiclePose();
+            Odometry odometry = BBOARD->getOdometry();
+
+            state.position = pose.position;
+            state.stddev = pose.stddev;
+            state.orientation = pose.orientation;
+            state.velocity = pose.velocity;
+            state.yawrate = pose.yawrate;
+            state.timestamp = pose.timestamp;
+
+            state.velocity_tire = odometry.velocity;
+            state.steer = odometry.steer;
+
+            BBOARD->setState(state);
+
+            //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+            boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}
     }

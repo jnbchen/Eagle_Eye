@@ -11,9 +11,14 @@ namespace DerWeg {
     ~StateEstimator () {;}
     void execute () {
       try{
-        while (true) {
-
-          // to be implemented ...
+        while (BBOARD->getActive()) {
+          logfiel<<BBOARD->getVehiclePose().position.x << '\t'
+                 << BBOARD->getVehiclePose().position.y << '\t'
+                 << BBOARD->getVehiclePose().orientation.get_deg() << '\t'
+                 << BBOARD->getOdometry().velocity << '\t'
+                 << BBOARD->getOdometry().steer.get_deg_180() << '\t'
+                 << endl;
+          //wieso gibt hier keine init() oder deinit()? bitte prüfen Sie.
 
           //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
           boost::this_thread::interruption_point();

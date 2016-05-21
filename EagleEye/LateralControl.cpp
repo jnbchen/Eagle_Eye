@@ -21,11 +21,11 @@ namespace DerWeg {
   class LateralControl : public KogmoThread {
 
     private:
-        double lastProjectionParameter = 0;
+        double lastProjectionParameter;
         BezierCurve bc;
 
     public:
-        LateralControl () {;}
+        LateralControl () : lastProjectionParameter(0) {;}
         ~LateralControl () {;}
 
         //ControllerInput calculate_curve_data(const BezierCurve& bc, const State& state);
@@ -34,6 +34,7 @@ namespace DerWeg {
           try{
             while (true) {
 
+              //If path changed set estimate for newton algo to zero, else use the previous result
               if (bc != BBOARD->getReferenceTrajectory().path) {
                 bc = BBOARD->getReferenceTrajectory().path;
                 lastProjectionParameter = 0;

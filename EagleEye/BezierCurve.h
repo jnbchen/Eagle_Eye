@@ -17,6 +17,8 @@ namespace DerWeg {
             Vec e;      ///< Coordinates of end point
 
         public:
+            friend class Segment;
+
             /** Constructors */
             BezierCurve();
             BezierCurve(Vec&, Vec&, Vec&, Vec&);

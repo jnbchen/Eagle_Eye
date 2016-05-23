@@ -32,8 +32,38 @@ Vec BezierCurve::double_prime(const double t) const {
     return 6*(1-t) * (c2 - 2*c1 + s) + 6*t * (e - 2*c2 + c1);
 }
 
-double BezierCurve::project(const Vec& position, const double newton_start) const {
-    // asdf
-    // return t;
-    return 0;
+double BezierCurve::project(const Vec& position, const double newton_start, const double newton_tol) const {
+    const int max_iter = 30;
+    double t = newton_start, delta_t;
+
+    //evaluation of bezier curve at parameter t, and its derivatives
+    // and difference vector of current f(t) and position
+    Vec f, df, ddf, diff;
+
+    //first and second derivative of the squared distance from position to curve at parameter t (modulo factor of 2)
+    double sqdistance_prime = newton_tol + 1, sqdistance_2prime;
+
+    for (int n=0; n < max_iter and sqdistance_prime > newton_tol; n++){
+        f = this->operator()(t);
+        df = this->prime(t);
+        ddf = this->double_prime(t);
+        diff = f - position;
+
+        //Derive formulas for derivatives of squared distance by hand
+        sqdistance_prime = diff * df;
+        sqdistance_2prime = diff * ddf + df.squared_length();
+
+        if (sqdistance_2prime > 0) {
+            // newton-step only if second derivative is positive, otherwise the quadratic approximation
+            // is maximized
+            delta_t = - sqdistance_prime / sqdistance_2prime;
+        } else {
+            // if the second derivative is not positive, do a gradient step to get into convergence environment
+            delta_t = - sqdistance_prime;
+        }
+        //update t with stepsize = 1
+        t += delta_t;
+    }
+
+    return t;
 }

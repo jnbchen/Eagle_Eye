@@ -4,6 +4,9 @@
 #include "../Elementary/Angle.h"
 #include "BezierCurve.h"
 #include "math.h"
+#include "iostream"
+
+using namespace std;
 
 namespace DerWeg {
 
@@ -56,6 +59,7 @@ namespace DerWeg {
         and the curvature of the curve. Those values are needed for the controller. */
         ControllerInput calculate_curve_data(const State& state)  {
             lastProjectionParameter = bc.project(state.position, lastProjectionParameter);
+            LOUT("Projected Parameter: " << lastProjectionParameter);
 
             //evaluate bezier curve and derivatives at the projection parameter
             Vec f = bc(lastProjectionParameter);
@@ -63,8 +67,16 @@ namespace DerWeg {
             Vec ddf = bc.double_prime(lastProjectionParameter);
 
             //Calculate distance form current position to curve
-            Vec diff = f - state.position;
+            //The difference vector is normal to the tangent in the projection point
+            //We use this to assign a sign to the distance:
+            //The distance is positive, if the actual position is left of the curve
+            // and negative if it's right of the curve (regarding moving direction)
+            Vec diff = state.position - f;
             double distance = diff.length();
+            //If the point is right of df, let the distance have a negative sign
+            if (diff * df.rotate_quarter() < 0) {
+                distance *= -1;
+            }
 
             //Calculate difference angle between vehicle and curve
             double phi;

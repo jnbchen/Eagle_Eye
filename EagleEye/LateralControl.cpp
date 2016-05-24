@@ -27,9 +27,24 @@ namespace DerWeg {
         double lastProjectionParameter;
         BezierCurve bc;
 
+        double newton_tolerance;
+        int newton_max_iter;
+
+        double stanley_k0, stanley_k1;
+        double axis_distance;
+
     public:
         LateralControl () : lastProjectionParameter(0) {;}
         ~LateralControl () {;}
+
+
+	void init(const ConfigReader& cfg) {
+        cfg.get("LateralControl::newton_tolerance", newton_tolerance);
+        cfg.get("LateralControl::newton_max_iter", newton_max_iter);
+        cfg.get("LateralControl::stanley_k0", stanley_k0);
+        cfg.get("LateralControl::stanley_k1", stanley_k1);
+        cfg.get("LateralControl::axis_distance", axis_distance);
+	}
 
         //ControllerInput calculate_curve_data(const BezierCurve& bc, const State& state);
 
@@ -45,9 +60,15 @@ namespace DerWeg {
 
               ControllerInput input = calculate_curve_data(BBOARD->getState());
 
-              /*
-              Stanley-Controller here
-              */
+
+              //Stanley-Controller here
+              double u = input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
+              double delta = atan(axis_distance * u);
+
+              //Set steering angle, keep velocity
+              Velocity dv = BBOARD->getDesiredVelocity();
+              dv.steer = Angle::rad_angle(delta);
+              BBOARD->setDesiredVelocity(dv);
 
               //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
               boost::this_thread::interruption_point();
@@ -58,8 +79,9 @@ namespace DerWeg {
         /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
         and the curvature of the curve. Those values are needed for the controller. */
         ControllerInput calculate_curve_data(const State& state)  {
-            lastProjectionParameter = bc.project(state.position, lastProjectionParameter);
-            LOUT("Projected Parameter: " << lastProjectionParameter);
+            lastProjectionParameter = bc.project(state.position, lastProjectionParameter,
+                                                 newton_tolerance, newton_max_iter);
+            LOUT("Projected Parameter: " << lastProjectionParameter << endl);
 
             //evaluate bezier curve and derivatives at the projection parameter
             Vec f = bc(lastProjectionParameter);

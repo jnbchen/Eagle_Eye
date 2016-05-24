@@ -32,8 +32,8 @@ Vec BezierCurve::double_prime(const double t) const {
     return 6*(1-t) * (c2 - 2*c1 + s) + 6*t * (e - 2*c2 + c1);
 }
 
-double BezierCurve::project(const Vec& position, const double newton_start, const double newton_tol) const {
-    const int max_iter = 30;
+double BezierCurve::project(const Vec& position, const double newton_start,
+                            const double newton_tol, const int max_iter) const {
     double t = newton_start, delta_t;
 
     //evaluation of bezier curve at parameter t, and its derivatives

@@ -37,7 +37,8 @@ namespace DerWeg {
             Vec double_prime(const double t) const;
 
             /** Calculate nearest point on the Bezier Curve to a given position */
-            double project(const Vec& position, const double newton_start = 0, const double newton_tol = 0.01) const;
+            double project(const Vec& position, const double newton_start,
+                           const double newton_tol, const int max_iter) const;
 
     };
 

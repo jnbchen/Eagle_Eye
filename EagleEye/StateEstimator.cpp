@@ -11,7 +11,7 @@ namespace DerWeg {
     ~StateEstimator () {;}
     void execute () {
       try{
-        while (BBOARD->getActive()) {
+        while (true) {
 
             State state;
             Pose pose = BBOARD->getVehiclePose();

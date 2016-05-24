@@ -77,7 +77,7 @@ namespace DerWeg {
     ~TrajectoryGenerator () {;}
 
     void init(const ConfigReader& cfg) {
-        LOUT("Exec TrajectoryGenerator init()" << "\n");
+        LOUT("Exec TrajectoryGenerator init()" << std::endl);
 
         std::string file_path;
         cfg.get("TrajectoryGenerator::segments_file", file_path);
@@ -88,7 +88,7 @@ namespace DerWeg {
 
         // check if segments file could be opened
         if (!input_file.is_open()) {
-            LOUT("ERROR: Could not open segments file: " << file_path << "\n");
+            LOUT("ERROR: Could not open segments file: " << file_path << std::endl);
         }
 
         while (std::getline(input_file, line)) {
@@ -106,7 +106,7 @@ namespace DerWeg {
                 line_content.size() == 3) {
                 // header line, start new segment
                 segment_identifier = std::atoi(line_content[2].c_str());
-                LOUT("Read Segment " << segment_identifier << "\n");
+                LOUT("Read Segment " << segment_identifier << std::endl);
             }
             else if (line_content.size() == 1 && line_content[0] == "") {
                 // empty line, do nothing
@@ -124,15 +124,15 @@ namespace DerWeg {
                 segments[segment_identifier].add(bc);
             }
             else
-                std::cout <<"ERROR: something wrong with the segments file" << std::endl;
+                LOUT("ERROR: something wrong with the segments file" << std::endl);
         }
 
-        LOUT("Number of Segments: " << segments.size() << "\n");
+        LOUT("Number of Segments: " << segments.size() << std::endl);
 
     }
 
     void execute() {
-        LOUT("Current mode on BBOARD: " << (int)BBOARD->getDrivingMode().current_mode << "\n");
+        LOUT("Current mode on BBOARD: " << (int)BBOARD->getDrivingMode().current_mode << std::endl);
 
         try{
             while (true) {
@@ -141,15 +141,16 @@ namespace DerWeg {
                 int segment_index = (int)dm.current_mode;
                 int curve_index = 0;
                 if (segment_index > 10) {
-                    int curve_index = segments[(int)dm.current_mode].find(state);
+                    curve_index = segments[(int)dm.current_mode].find(state);
+                    LOUT("Curve index: " << curve_index << std::endl);
                     ReferenceTrajectory rt;
                     rt.path = segments[dm.current_mode].get(curve_index);
                     BBOARD->setReferenceTrajectory(rt);
                 }
                 else
-                    LOUT("WARNING: no such segment: " << segment_index << "\n");
+                    LOUT("WARNING: no such segment: " << segment_index << std::endl);
 
-                //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();
             }
         }catch(boost::thread_interrupted&){;}

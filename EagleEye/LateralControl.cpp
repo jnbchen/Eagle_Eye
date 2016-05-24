@@ -54,6 +54,7 @@ namespace DerWeg {
 
               //If path changed set estimate for newton algo to zero, else use the previous result
               if (bc != BBOARD->getReferenceTrajectory().path) {
+                  //LOUT("New curve detected, by LateralControl" << endl);
                 bc = BBOARD->getReferenceTrajectory().path;
                 lastProjectionParameter = 0;
               }
@@ -70,7 +71,7 @@ namespace DerWeg {
               dv.steer = Angle::rad_angle(delta);
               BBOARD->setDesiredVelocity(dv);
 
-              //boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+              boost::this_thread::sleep(boost::posix_time::milliseconds(20));
               boost::this_thread::interruption_point();
             }
           }catch(boost::thread_interrupted&){;}
@@ -81,7 +82,7 @@ namespace DerWeg {
         ControllerInput calculate_curve_data(const State& state)  {
             lastProjectionParameter = bc.project(state.position, lastProjectionParameter,
                                                  newton_tolerance, newton_max_iter);
-            LOUT("Projected Parameter: " << lastProjectionParameter << endl);
+            //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
 
             //evaluate bezier curve and derivatives at the projection parameter
             Vec f = bc(lastProjectionParameter);
@@ -115,6 +116,13 @@ namespace DerWeg {
             double curvature_numerator = ddf.y * df.x - ddf.x * df.y;
             double curvature_denominator = pow(df.squared_length(), 3.0/2);
             double curvature = curvature_numerator / curvature_denominator;
+
+            /*
+            LOUT("Distance: " << distance << endl);
+            LOUT("Diff_Angle: " << diff_angle.get_deg_180() << endl);
+            LOUT("Curvature: " << curvature << endl);
+            LOUT("Position: " << state.position.x << ", " << state.position.y << endl);
+            */
 
             return ControllerInput(distance, diff_angle, curvature);
         }

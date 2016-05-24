@@ -23,6 +23,7 @@
  * which is then saved.
  * Radius, color, file locations and other things can be changed in the 
  * parameter section.
+ * The units of the svg-file are mm.
  * 
  * example circle node in svg file:
  * <circle
@@ -57,9 +58,9 @@ int main(int argc, char** argv) {
     
     const std::string width = "12000mm";
     const std::string height = "7000mm";
-    //const std::string view_box = "0mm 0mm 500mm 500mm";
+    const std::string view_box = "0 0 12000 7000";
     
-    const std::string radius = "10mm";
+    const std::string radius = "10";
     const std::string color = "#000000";  // black
     
     const std::string id_tag = "path";
@@ -97,8 +98,8 @@ int main(int argc, char** argv) {
     doc.FirstChildElement("svg")->SetAttribute("width", width.c_str());
     doc.FirstChildElement("svg")->
         SetAttribute("height", height.c_str());
-    //doc.FirstChildElement("svg")->
-    //    SetAttribute("viewBox", view_box.c_str());
+    doc.FirstChildElement("svg")->
+        SetAttribute("viewBox", view_box.c_str());
     
     // find "Points" layer
     tinyxml2::XMLElement *node = 
@@ -139,12 +140,11 @@ int main(int argc, char** argv) {
                 split_string(line, log_delimiter);
 
             std::stringstream x_stream;
-            x_stream << line_content[0] << "mm";
+            x_stream << line_content[0];
             std::string x = x_stream.str();
             
             std::stringstream y_stream;
-            //y_stream << "-" << line_content[1] << "mm";
-            y_stream << line_content[1] << "mm";
+            y_stream << line_content[1];
             std::string y = y_stream.str();
             
             // build id attribute

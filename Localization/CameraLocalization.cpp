@@ -78,7 +78,7 @@ namespace DerWeg {
           //LOUT("Loc: looking for landmarks" << std::endl);
           std::vector<Landmark> oLandmarks;
           oFinder->FindLandmarks(oLandmarks);
-          LOUT("Found landmakrs: " << oLandmarks.size() << std::endl);
+          //LOUT("Found landmakrs: " << oLandmarks.size() << std::endl);
           cv::waitKey(1);
           //LOUT("Loc: updating kf" << std::endl);
           //oLocalizer->UpdateKFFromLandmarks(oLandmarks);

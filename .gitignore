@@ -9,3 +9,5 @@ Ui_*.h
 
 /bin/*
 !bin/*.cfg
+
+preprocessing/logtosvg/logtosvg

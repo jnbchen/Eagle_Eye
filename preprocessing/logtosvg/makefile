@@ -1,7 +1,7 @@
 # compiled with gcc version 5.2.1 on ubuntu
 
 CXX = g++
-CXXFLAGS = -Wall -std=c++11 -O3
+CXXFLAGS = -Wall -O3
 LDFLAGS = -Wall
 LDLIBS = -lboost_filesystem -lboost_system
 

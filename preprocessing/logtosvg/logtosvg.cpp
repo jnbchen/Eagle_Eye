@@ -74,7 +74,8 @@ int main(int argc, char** argv) {
     
     if (boost::filesystem::is_directory(p)) {
         // argument is directory
-        for (auto i = boost::filesystem::directory_iterator(p); 
+        for (boost::filesystem::directory_iterator i = 
+             boost::filesystem::directory_iterator(p); 
              i != boost::filesystem::directory_iterator(); ++i) {
             // eliminate sub-directories
             if (!boost::filesystem::is_directory(i->path()))
@@ -117,12 +118,13 @@ int main(int argc, char** argv) {
     // loop over all log-files
     std::cout << "Processing:" << std::endl;
     int counter = 0;
-    for (auto &log_file : file_list) {
+    for (size_t i = 0; i < file_list.size(); ++i) {
+        std::string log_file = file_list[i];
         std::cout << log_file << std::endl;
         
         // open log-file and discard first line
         std::string line;
-        std::ifstream log(log_file);
+        std::ifstream log(log_file.c_str());
         std::getline(log, line);
         
         // check if log file could be opened

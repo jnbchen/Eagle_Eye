@@ -40,6 +40,8 @@ namespace DerWeg {
             double project(const Vec& position, const double newton_start,
                            const double newton_tol, const int max_iter) const;
 
+            bool reached_end(const Vec& position) const;
+
     };
 
 

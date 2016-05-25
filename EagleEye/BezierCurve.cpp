@@ -67,3 +67,7 @@ double BezierCurve::project(const Vec& position, const double newton_start,
 
     return t;
 }
+
+bool BezierCurve::reached_end(const Vec& position) const {
+    return ((e - c2) * (position - e) >= 0);
+}

@@ -50,13 +50,17 @@ namespace DerWeg {
                 return curves.at(i);
             }
 
+            int size() const {
+                return curves.size();
+            }
+
             /** Find current bezier curve */
-            int find(const State& state) const {
+            int find(const State& state, const int start_index) const {
                 /*
                 Increase index as long as position lies "underneath" the line
                 rectangular to the curve at the endpoint of a bezier curve.
                 */
-                int index = 0;
+                int index = start_index;
                 while ((curves[index].e - curves[index].c2) *
                         (state.position - curves[index].e) >= 0) {
                     index++;
@@ -65,16 +69,43 @@ namespace DerWeg {
             }
     };
 
+  enum DrivingCommand {straight, right, left, out};
 
   /** TrajectoryGenerator */
   class TrajectoryGenerator : public KogmoThread {
 
   private:
     std::map<int, Segment> segments;
+    int segment_index;
+    int curve_index;
+    std::map<int, std::map<DrivingCommand, int> > seg_lookup;
+    std::list<DrivingCommand> commands;
 
   public:
-    TrajectoryGenerator () {;}
+    TrajectoryGenerator () : seg_lookup(createMap()) {}
     ~TrajectoryGenerator () {;}
+
+    std::map<int, std::map<DrivingCommand, int> > createMap() {
+        std::map<int, std::map<DrivingCommand, int> > seg_lookup;
+
+        seg_lookup[1][straight] = 13;
+        seg_lookup[2][straight] = 24;
+        seg_lookup[3][straight] = 31;
+        seg_lookup[4][straight] = 42;
+        seg_lookup[1][right] = 14;
+        seg_lookup[2][right] = 22;
+        seg_lookup[3][right] = 33;
+        seg_lookup[4][right] = 41;
+        seg_lookup[1][left] = 11;
+        seg_lookup[2][left] = 23;
+        seg_lookup[3][left] = 32;
+        seg_lookup[4][left] = 44;
+        seg_lookup[1][out] = 15;
+        seg_lookup[2][out] = 25;
+        seg_lookup[4][out] = 45;
+
+        return seg_lookup;
+    }
 
     void init(const ConfigReader& cfg) {
         LOUT("Exec TrajectoryGenerator init()" << std::endl);
@@ -129,32 +160,61 @@ namespace DerWeg {
 
         LOUT("Number of Segments: " << segments.size() << std::endl);
 
+        std::vector<char> cmds;
+        cfg.get("TrajectoryGenerator::driving_commands", cmds);
+        for (size_t i = 0; i < cmds.size(); i++){
+            switch (cmds[i]) {
+                case 's': commands.push_back(straight); break;
+                case 'l': commands.push_back(left); break;
+                case 'r': commands.push_back(right); break;
+                case 'o': commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+
+        //TODO: implement method for finding the starting segment and curve
+        segment_index = 13;
+        curve_index = 0;
     }
 
     void execute() {
-        LOUT("Current mode on BBOARD: " << (int)BBOARD->getDrivingMode().current_mode << std::endl);
+        //LOUT("Current mode on BBOARD: " << (int)BBOARD->getDrivingMode().current_mode << std::endl);
 
         try{
             while (true) {
                 State state = BBOARD->getState();
-                DrivingMode dm = BBOARD->getDrivingMode();
-                int segment_index = (int)dm.current_mode;
-                int curve_index = 0;
-                if (segment_index > 10) {
-                    curve_index = segments[(int)dm.current_mode].find(state);
-                    LOUT("Curve index: " << curve_index << std::endl);
+
+                if (segments[segment_index].get(curve_index).reached_end(state.position)) {
+                    if (curve_index < segments[segment_index].size() - 1) {
+                        curve_index++;
+                    }
+                    else {
+                        curve_index = 0;
+                        DrivingCommand next_command = commands.front();
+                        commands.pop_front();
+
+                        int end_node = segment_index % 10;
+                        segment_index = seg_lookup[end_node][next_command];
+
+                        LOUT("Start segment " << segment_index << std::endl);
+                    }
+
                     ReferenceTrajectory rt;
-                    rt.path = segments[dm.current_mode].get(curve_index);
+                    rt.path = segments[segment_index].get(curve_index);
                     BBOARD->setReferenceTrajectory(rt);
+
+                    LOUT("Curve index: " << curve_index << std::endl);
                 }
-                else
-                    LOUT("WARNING: no such segment: " << segment_index << std::endl);
+                else {
+                    // do nothing
+                }
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();
             }
         }catch(boost::thread_interrupted&){;}
     }
+
   };
 
 } // namespace DerWeg

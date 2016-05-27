@@ -11,3 +11,4 @@ Ui_*.h
 !bin/*.cfg
 
 preprocessing/logtosvg/logtosvg
+preprocessing/svgreader/svgreader

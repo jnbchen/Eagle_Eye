@@ -80,6 +80,7 @@ namespace DerWeg {
     int curve_index;
     std::map<int, std::map<DrivingCommand, int> > seg_lookup;
     std::list<DrivingCommand> commands;
+    DrivingCommand DEFAULT_COMMAND;
 
   public:
     TrajectoryGenerator () : seg_lookup(createMap()) {}
@@ -172,6 +173,16 @@ namespace DerWeg {
             }
         }
 
+        char default_cmd;
+        cfg.get("TrajectoryGenerator::default_command", default_cmd);
+        switch (default_cmd) {
+            case 's': DEFAULT_COMMAND = straight; break;
+            case 'l': DEFAULT_COMMAND = left; break;
+            case 'r': DEFAULT_COMMAND = right; break;
+            case 'o': DEFAULT_COMMAND = out; break;
+            default : EOUT("Unknown driving command");
+        }
+
         //TODO: implement method for finding the starting segment and curve
         segment_index = 13;
         curve_index = 0;
@@ -190,8 +201,13 @@ namespace DerWeg {
                     }
                     else {
                         curve_index = 0;
-                        DrivingCommand next_command = commands.front();
-                        commands.pop_front();
+                        DrivingCommand next_command;
+                        if (commands.size() > 0) {
+                            next_command = commands.front();
+                            commands.pop_front();
+                        } else {
+                            next_command = DEFAULT_COMMAND;
+                        }
 
                         int end_node = segment_index % 10;
                         segment_index = seg_lookup[end_node][next_command];

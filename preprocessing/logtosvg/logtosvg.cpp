@@ -9,26 +9,26 @@
 #include "tinyxml2.h"
 
 
-/* logtosvg reads log files and produces an svg file, which contains 
- * circles for every data point in the specified log files. Every log 
- * file is visualized by one polyline.
- * logtosvg takes a single log file, a list of log files or a directory 
- * of log files as command line argument. At least one argument must be 
- * passed to it.
+/* logtosvg reads log files and produces an svg file, which visualizes 
+ * the data point in the specified log files. logtosvg takes a single 
+ * log file, a list of log files or a directory of log files as command 
+ * line argument. At least one argument must be passed to it.
  * Examples:
  * ./logtosvg data/log.txt
  * ./logtosvg log1.txt log2.txt
  * ./logtosvg ../data/LogFiles/
  * 
- * The svg-file is constructed from scratch.
- * Dot size, color, file locations and other things can be changed in 
- * the parameter section.
+ * The svg-file is constructed from scratch and exisitng svg-files won't
+ * be overweritten.
+ * Every log file is visualized by one polyline, for which dot size, 
+ * color and stroke width can be changed in the parameter section, as 
+ * well as file locations and other things.
  * The units are mm in the svg coordinate system, but cm in the Inksacpe
  * coordinate system.
  * 
  * All points are on a locked sublayer called 'Points'.
- * Bezier Curves should be drawn on the layer called 'Curves' 
- * and should get their correct name as an identifier.
+ * Bezier Curves should be drawn on the sublayer called 'Curves' and 
+ * should get their correct name as an identifier!
  */
 
 
@@ -40,12 +40,12 @@ std::vector<std::string> split_string(const std::string&,
 
 int main(int argc, char** argv) {
     if (argc == 1) {
-        throw std::runtime_error("Main needs at least one log file "
+        throw std::runtime_error("logtosvg needs at least one log file "
                                  "as argument");
     }
     
     // parameters
-    const std::string output_svg = "../path.svg";
+    std::string output_svg = "../path.svg";
     
     const std::string log_delimiter = " ";
     
@@ -62,7 +62,19 @@ int main(int argc, char** argv) {
     const std::string line_color = "grey";
     const int line_width = 5;
     
-    
+    // check if output file already exist, if so add number
+    boost::filesystem::path out(output_svg);
+    std::string filepath = out.parent_path().string() + 
+                           "/" + out.stem().string();
+    std::string ext = out.extension().string();
+    for (int i = 2; boost::filesystem::exists(out); ++i) {
+        std::stringstream temp;
+        temp << filepath << "_" << i << ext;
+        output_svg = temp.str();
+        out = boost::filesystem::path(output_svg);
+        temp.clear();
+    }
+    std::cout << "Output filename: " << output_svg << std::endl;
     
     // convert arguments of main to list of files
     boost::filesystem::path p(argv[1]);

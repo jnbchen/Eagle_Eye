@@ -110,7 +110,7 @@ namespace DerWeg {
                 //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
                 phi = M_PI/2 + atan2(-df.x, df.y);
             }
-            Angle diff_angle = Angle::rad_angle(phi) - state.orientation;
+            Angle diff_angle = state.orientation - Angle::rad_angle(phi);
 
             //Calculate the curvature of the bezier curve
             double curvature_numerator = ddf.y * df.x - ddf.x * df.y;

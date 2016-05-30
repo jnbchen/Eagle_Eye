@@ -103,6 +103,7 @@ namespace DerWeg {
         seg_lookup[4][left] = 44;
         seg_lookup[1][out] = 15;
         seg_lookup[2][out] = 25;
+        seg_lookup[3][out] = 35;
         seg_lookup[4][out] = 45;
 
         return seg_lookup;

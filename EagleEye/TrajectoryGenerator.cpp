@@ -342,6 +342,12 @@ namespace DerWeg {
         return seg_lookup[starting_node][next_command];
     }
 
+    void set_reference_trajectory() {
+        ReferenceTrajectory rt;
+        rt.path = segments[segment_index].get(curve_index);
+        BBOARD->setReferenceTrajectory(rt);
+    }
+
     void execute() {
 
         // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
@@ -349,6 +355,8 @@ namespace DerWeg {
         SegmentPosition pos = find_start_position(BBOARD->getState());
         segment_index = pos.segment_id;
         curve_index = pos.curve_id;
+
+        set_reference_trajectory();
 
         try{
             while (true) {
@@ -377,9 +385,7 @@ namespace DerWeg {
                         LOUT("Start segment " << segment_index << std::endl);
                     }
 
-                    ReferenceTrajectory rt;
-                    rt.path = segments[segment_index].get(curve_index);
-                    BBOARD->setReferenceTrajectory(rt);
+                    set_reference_trajectory();
 
                     LOUT("Curve index: " << curve_index << std::endl);
                 }

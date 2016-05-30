@@ -134,6 +134,13 @@ namespace DerWeg {
             std::vector<std::string> line_content =
                 split_string(line, " ");
 
+            // Delete leading whitespace for individuel strings of points
+            for (unsigned int i = 0; i < line_content.size(); ++i) {
+                size_t startpos = line_content[i].find_first_not_of(" \n\r\t");
+                line_content[i] = (startpos == std::string::npos) ? "" :
+                                  line_content[i].substr(startpos);
+            }
+
             // distinguish lines: header, data and empty lines
             if (line_content[0] == "#" && line_content[1] == "segment" &&
                 line_content.size() == 3) {

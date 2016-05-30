@@ -4,8 +4,9 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include <boost/filesystem.hpp>
 
+#include "sys/stat.h"
+#include "dirent.h"
 #include "tinyxml2.h"
 
 
@@ -44,6 +45,7 @@ int main(int argc, char** argv) {
                                  "as argument");
     }
     
+    // ==============================================================
     // parameters
     std::string output_svg = "../path.svg";
     
@@ -62,34 +64,55 @@ int main(int argc, char** argv) {
     const std::string line_color = "grey";
     const int line_width = 5;
     
-    // check if output file already exist, if so add number
-    boost::filesystem::path out(output_svg);
-    std::string filepath = out.parent_path().string() + 
-                           "/" + out.stem().string();
-    std::string ext = out.extension().string();
-    for (int i = 2; boost::filesystem::exists(out); ++i) {
-        std::stringstream temp;
-        temp << filepath << "_" << i << ext;
-        output_svg = temp.str();
-        out = boost::filesystem::path(output_svg);
-        temp.clear();
+    // ==============================================================
+    // check if output file already exist, if so ask user
+    // http://stackoverflow.com/questions/12774207/
+    // fastest-way-to-check-if-a-file-exist-using-standard-c-c11-c
+    struct stat buffer;
+    while (stat(output_svg.c_str(), &buffer) == 0) {
+        std::string decision;
+        std::cout << output_svg << " already exists" << std::endl;
+        std::cout << "Overwrite? (y/n) ";
+        std::cin >> decision;
+        if (decision == "y") {
+            // keep filename
+            break;
+        }
+        else {
+            // new filename
+            std::cout << "New path and filename: ";
+            std::cin >> output_svg;
+        }
     }
     std::cout << "Output filename: " << output_svg << std::endl;
     
+    // ==============================================================
     // convert arguments of main to list of files
-    boost::filesystem::path p(argv[1]);
     std::vector<std::string> file_list;
     
-    if (boost::filesystem::is_directory(p)) {
-        // argument is directory
-        for (boost::filesystem::directory_iterator i = 
-             boost::filesystem::directory_iterator(p); 
-             i != boost::filesystem::directory_iterator(); ++i) {
-            // eliminate sub-directories
-            if (!boost::filesystem::is_directory(i->path()))
-                file_list.push_back(i->path().string());
-            else
-                continue;
+    // check if first argument is file or directory
+    // found here: http://stackoverflow.com/questions/3828192/
+    // checking-if-a-directory-exists-in-unix-system-call
+    struct stat sb;
+    if (stat(argv[1], &sb) == 0 && S_ISDIR(sb.st_mode)) {
+        // argument is directory, write paths to files in file_list
+        // http://stackoverflow.com/questions/612097/
+        // how-can-i-get-the-list-of-files-in-a-directory-using-c-or-c
+        DIR *dir;
+        struct dirent *ent;
+        if ((dir = opendir(argv[1])) != NULL) {
+            // print all the files and directories within directory
+            while ((ent = readdir(dir)) != NULL) {
+                if (ent->d_type == 0x8) {
+                    // http://www.cplusplus.com/forum/general/4648/
+                    file_list.push_back(std::string(argv[1]) + ent->d_name);
+                }
+            }
+            closedir(dir);
+        }
+        else {
+            // could not open directory
+            throw std::runtime_error("Could not open input directory");
         }
     }
     else {
@@ -99,6 +122,7 @@ int main(int argc, char** argv) {
         }
     }
     
+    // ==============================================================
     // open empty svg-file, write standard declaration
     tinyxml2::XMLDocument doc;
     doc.InsertEndChild(doc.NewDeclaration());
@@ -162,17 +186,7 @@ int main(int argc, char** argv) {
     point_layer->SetAttribute("sodipodi:insensitive", true);
     root_layer->InsertEndChild(point_layer);
     
-    
-    /*
-    // find "Points" layer
-    tinyxml2::XMLElement *node = 
-        doc.FirstChildElement("svg")->FirstChildElement("g");
-    while (!node->Attribute("inkscape:label", "Points")) {
-        node = node->NextSiblingElement("g");
-    }
-    */
-    
-    
+    // ==============================================================
     // loop over all log-files
     std::cout << "Processing:" << std::endl;
     for (size_t i = 0; i < file_list.size(); ++i) {
@@ -223,6 +237,7 @@ int main(int argc, char** argv) {
 
 
 
+// ==============================================================
 // split a string at the characters defined by delimiter
 std::vector<std::string> split_string(const std::string& str,
                                       const std::string& delimiter) {

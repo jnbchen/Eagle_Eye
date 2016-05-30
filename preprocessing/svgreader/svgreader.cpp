@@ -4,8 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include <boost/filesystem.hpp>
 
+#include "sys/stat.h"
 #include "tinyxml2.h"
 
 
@@ -47,20 +47,29 @@ int main(int argc, char** argv) {
     // default output path
     std::string output_path = "../test_segments.txt";
     
-    // check if output file already exist, if so add number
-    boost::filesystem::path p(output_path);
-    std::string filepath = p.parent_path().string() + 
-                           "/" + p.stem().string();
-    std::string ext = p.extension().string();
-    for (int i = 2; boost::filesystem::exists(p); ++i) {
-        std::stringstream temp;
-        temp << filepath << "_" << i << ext;
-        output_path = temp.str();
-        p = boost::filesystem::path(output_path);
-        temp.clear();
+    // ==============================================================
+    // check if output file already exist, if so ask user
+    // http://stackoverflow.com/questions/12774207/
+    // fastest-way-to-check-if-a-file-exist-using-standard-c-c11-c
+    struct stat buffer;
+    while (stat(output_path.c_str(), &buffer) == 0) {
+        std::string decision;
+        std::cout << output_path << " already exists" << std::endl;
+        std::cout << "Overwrite? (y/n) ";
+        std::cin >> decision;
+        if (decision == "y") {
+            // keep filename
+            break;
+        }
+        else {
+            // new filename
+            std::cout << "New path and filename: ";
+            std::cin >> output_path;
+        }
     }
     std::cout << "Output filename: " << output_path << std::endl;
     
+    // ==============================================================
     // open svg file
 	tinyxml2::XMLDocument doc;
 	doc.LoadFile(argv[1]);
@@ -73,6 +82,7 @@ int main(int argc, char** argv) {
         curve_layer = curve_layer->NextSiblingElement("g");
     }
     
+    // ==============================================================
     // open output file
     std::ofstream fout(output_path.c_str());
     if (fout.fail()) {
@@ -112,6 +122,7 @@ int main(int argc, char** argv) {
                                  "are smooth nodes, " << id << std::endl;
                 }
                 
+                // ==================================================
                 // process looooooong string ...
                 
                 // get starting point of segment
@@ -167,6 +178,7 @@ int main(int argc, char** argv) {
 
 
 
+// ==============================================================
 // split a string at the characters defined by delimiter
 std::vector<std::string> split_string(const std::string& str,
                                       const std::string& delimiter) {

@@ -3,7 +3,7 @@
 CXX = g++
 CXXFLAGS = -Wall -O3
 LDFLAGS = -Wall
-LDLIBS = -lboost_filesystem -lboost_system
+LDLIBS = 
 
 SOURCES = svgreader.cpp tinyxml2.cpp
 OBJECTS = $(SOURCES:.cpp=.o)

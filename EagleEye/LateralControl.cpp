@@ -87,7 +87,7 @@ namespace DerWeg {
             //evaluate bezier curve and derivatives at the projection parameter
             Vec f = bc(lastProjectionParameter);
             Vec df = bc.prime(lastProjectionParameter);
-            Vec ddf = bc.double_prime(lastProjectionParameter);
+            //Vec ddf = bc.double_prime(lastProjectionParameter);
 
             //Calculate distance form current position to curve
             //The difference vector is normal to the tangent in the projection point
@@ -102,20 +102,21 @@ namespace DerWeg {
             }
 
             //Calculate difference angle between vehicle and curve
-            double phi;
-            if (df.x != 0 && abs(df.y/df.x) < 1) {
-                //atan2 takes the direction into account
-                phi = atan2(df.y, df.x);
-            } else {
-                //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
-                phi = M_PI/2 + atan2(-df.x, df.y);
-            }
-            Angle diff_angle = state.orientation - Angle::rad_angle(phi);
+//            double phi;
+//            if (df.x != 0 && abs(df.y/df.x) < 1) {
+//                //atan2 takes the direction into account
+//                phi = atan2(df.y, df.x);
+//            } else {
+//                //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
+//                phi = M_PI/2 + atan2(-df.x, df.y);
+//            }
+            Angle diff_angle = state.orientation - bc.orientation(df);
 
             //Calculate the curvature of the bezier curve
-            double curvature_numerator = ddf.y * df.x - ddf.x * df.y;
-            double curvature_denominator = pow(df.squared_length(), 3.0/2);
-            double curvature = curvature_numerator / curvature_denominator;
+//            double curvature_numerator = ddf.y * df.x - ddf.x * df.y;
+//            double curvature_denominator = pow(df.squared_length(), 3.0/2);
+//            double curvature = curvature_numerator / curvature_denominator;
+            double curvature = bc.curvature(lastProjectionParameter, df);
 
             /*
             LOUT("Distance: " << distance << endl);

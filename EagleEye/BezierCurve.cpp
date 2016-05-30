@@ -1,14 +1,16 @@
 
-#include <cmath>
+#include <math.h>
+#include <limits>
+
 #include "BezierCurve.h"
 
 using namespace DerWeg;
 
 BezierCurve::BezierCurve() :
-    s(Vec(0,0)), c1(Vec(0,0)), c2(Vec(0,0)), e(Vec(0,0)) {;}
+    s(Vec(0,0)), c1(Vec(0,0)), c2(Vec(0,0)), e(Vec(0,0)), length(0), qf_used_N(0) {}
 
 BezierCurve::BezierCurve(Vec& start, Vec& control1, Vec& control2, Vec& end)
-    : s(start), c1(control1), c2(control2), e(end) {;}
+    : s(start), c1(control1), c2(control2), e(end), length(0), qf_used_N(0) {}
 
 bool BezierCurve::operator== (const BezierCurve& bc) const {
     return s==bc.s && c1==bc.c1 && c2==bc.c2 && e==bc.e;
@@ -64,8 +66,88 @@ double BezierCurve::project(const Vec& position, const double newton_start,
         //update t with stepsize = 1
         t += delta_t;
     }
-
     return t;
+}
+
+Angle BezierCurve::orientation(const double t) const {
+    return orientation(this->prime(t));
+}
+
+Angle BezierCurve::orientation(const Vec derivative) const {
+//    double phi;
+//    if (derivative.x != 0 && abs(derivative.y/derivative.x) < 1) {
+//        //atan2 takes the direction into account
+//        phi = atan2(derivative.y, derivative.x);
+//    } else {
+//        //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
+//        phi = M_PI/2 + atan2(-derivative.x, derivative.y);
+//    }
+//    return Angle::rad_angle(phi);
+    return derivative.angle();
+}
+
+double BezierCurve::curvature(const double t) const {
+    return curvature(t, this->prime(t));
+}
+
+double BezierCurve::curvature(const double t, const Vec derivative) const {
+    Vec ddf = double_prime(t);
+
+    double curvature_numerator = ddf.y * derivative.x - ddf.x * derivative.y;
+    double curvature_denominator = pow(derivative.squared_length(), 3.0/2);
+    return curvature_numerator / curvature_denominator;
+}
+
+double BezierCurve::arc_length(const double a, const double b, const int N) {
+    //Divide [a,b] into N subintervals of length h
+    double h = (b - a)/N;
+    double length = 0; //sum up length
+
+    // function evaluation at left, middle, and right integration point of subintervals
+    // For calculating the arc length, take the norm of the derivative vector
+    double left, middle, right = this->prime(a).length();
+
+    for (int i=0; i<N; i++) {
+        //Calculate function values for simpson rule
+        // Don't calculate the left value subinterval, because it is the same as the right value of
+        // the previous interval --> Save computation time
+        left = right;
+        middle = this->prime(a + (i + 0.5)*h ).length();
+        right = this->prime(a + (i + 1)*h ).length();
+
+        // Simpson rule
+        length += h * (left + 4*middle + right) / 6;
+    }
+    return length;
+}
+
+double BezierCurve::arc_length(const int min_N) {
+    // Only calculate arc length if it has not been calculated before, or if it has only been calculated
+    // with less subintervals than required
+    if (length == 0 || min_N > qf_used_N) {
+        length = arc_length(0,1,min_N);
+        qf_used_N = min_N;
+    }
+    return length;
+}
+
+DistanceParameters BezierCurve::seeded_projection(const Vec position, const int seeding_pts_per_meter, const int min_N) {
+    double min_t = 0;
+    double min_distance = std::numeric_limits<double>::max();
+
+    int seeding_pts = (int) ceil(seeding_pts_per_meter * arc_length(min_N) / 1000);
+    double seeded_length = 1/seeding_pts;
+
+    for (int i=0; i<seeding_pts; i++) {
+        double seed_t = i * seeded_length;
+        double distance = (position - this->operator()(seed_t)).length();
+        if (distance < min_distance) {
+            min_t = seed_t;
+            min_distance = distance;
+        }
+    }
+    DistanceParameters param(min_t, min_distance);
+    return param;
 }
 
 bool BezierCurve::reached_end(const Vec& position) const {

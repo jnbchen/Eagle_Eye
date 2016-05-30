@@ -33,6 +33,17 @@ namespace DerWeg {
         return strings;
     }
 
+    /** Struct to represent the position within a segment, and the minimum distance found to the segment */
+    struct SegmentPosition {
+        //SegmentPosition():segment_id(0), curve_id(0), curve_parameter(0) {}
+        //SegmentPosition(int seg_id, int bc_id, double t):
+        //                segment_id(seg_id), curve_id(bc_id), curve_parameter(t) {}
+        int segment_id;
+        int curve_id;
+        double curve_parameter;
+        //Vec projected_point;
+        double min_distance;
+    };
 
     /** Class to represent segments consisting of bezier curves */
     class Segment {
@@ -55,18 +66,39 @@ namespace DerWeg {
             }
 
             /** Find current bezier curve */
-            int find(const State& state, const int start_index) const {
-                /*
-                Increase index as long as position lies "underneath" the line
-                rectangular to the curve at the endpoint of a bezier curve.
-                */
-                int index = start_index;
-                while ((curves[index].e - curves[index].c2) *
-                        (state.position - curves[index].e) >= 0) {
-                    index++;
+//            int find(const State& state, const int start_index) const {
+//                /*
+//                Increase index as long as position lies "underneath" the line
+//                rectangular to the curve at the endpoint of a bezier curve.
+//                */
+//                int index = start_index;
+//                while ((curves[index].e - curves[index].c2) *
+//                        (state.position - curves[index].e) >= 0) {
+//                    index++;
+//                }
+//                return index;
+//            }
+
+            /** Given a position vector, find the closest point on the segment to this position.
+            This is done via seeding all curves on the segment and simply look out for the minimum distance.
+            The parameter seeding_pts_per_meter is used to calculate how many seeding point are used on each curve (via arc length).
+            max_distance is the maximum distance allowed from the position to the segment.
+            min_N is the minimum number of quadrature subintervals for calculation of arc length.*/
+            SegmentPosition find_segment_position(const Vec position, const int seeding_pts_per_meter, const int min_N) const {
+                SegmentPosition seg_pos;
+                seg_pos.min_distance = std::numeric_limits<double>::max();
+                for (int i=0; i<curves.size(); i++) {
+                    DistanceParameters p = this->get(i).seeded_projection(position, seeding_pts_per_meter, min_N);
+                    if (p.distance < seg_pos.min_distance) {
+                        seg_pos.curve_id = i;
+                        seg_pos.curve_parameter = p.t;
+                        seg_pos.min_distance = p.distance;
+                    }
                 }
-                return index;
+                return seg_pos;
             }
+
+
     };
 
   enum DrivingCommand {straight, right, left, out};
@@ -79,8 +111,14 @@ namespace DerWeg {
     int segment_index;
     int curve_index;
     std::map<int, std::map<DrivingCommand, int> > seg_lookup;
+
     std::list<DrivingCommand> commands;
     DrivingCommand DEFAULT_COMMAND;
+
+    double distance_threshold;
+    double seeding_pts_per_meter;
+    int qf_min_N;
+    Angle angle_threshold;
 
   public:
     TrajectoryGenerator () : seg_lookup(createMap()) {}
@@ -191,13 +229,126 @@ namespace DerWeg {
             default : EOUT("Unknown driving command");
         }
 
-        //TODO: implement method for finding the starting segment and curve
-        segment_index = 13;
-        curve_index = 0;
+        cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
+        cfg.get("TrajectoryGenerator::sppm", seeding_pts_per_meter);
+        cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
+
+        double degree_angle;
+        cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
+        angle_threshold = Angle::deg_angle(degree_angle);
+    }
+
+    SegmentPosition find_start_position(const State state) {
+
+        /* Find valid segment positions, close enough to position: */
+
+        std::vector<SegmentPosition> valid_segments;
+        for (std::map<int, Segment>::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
+            // get map value
+            Segment seg = iter->second;
+
+            // Find segment position
+            SegmentPosition seg_pos = seg.find_segment_position(state.position, seeding_pts_per_meter, qf_min_N);
+            // get map key
+            seg_pos.segment_id = iter->first;
+
+            // Check segment position for validity:
+            // Distance has to be close enough, and the car's angle & curve angle must not differ too much
+            BezierCurve curve = segments[seg_pos.segment_id].get(seg_pos.curve_id);
+            Angle diff_angle = state.orientation - curve.orientation(seg_pos.curve_parameter);
+
+            if (seg_pos.min_distance < distance_threshold && diff_angle.in_between(-angle_threshold, angle_threshold)) {
+                valid_segments.push_back(seg_pos);
+            }
+        }
+
+        if (valid_segments.size()==0) {
+            EOUT("Error, no valid segments found" << std::endl);
+        }
+        // After filtering segments, decide logically which segment to drive on by segment_IDs
+
+        /* Counting occurences: */
+
+        // In there histograms we count how often each node occurs in the valid segments
+        // as origin node (first digit) and destination node (second digit)
+        // The number of occurences are saved to the corresponding indices
+        // The index 0 holds the index out of {1,2,3,4} with the most occurences
+        int origin_histogram [6] = {};
+        int destination_histogram [6] = {};
+
+        for (size_t i=0; i<valid_segments.size(); i++) {
+            const int seg_id = valid_segments[i].segment_id;
+            const int origin = seg_id / 10;
+            const int destination = seg_id % 10;
+
+            origin_histogram[origin] += 1;
+            if (origin_histogram[origin] > origin_histogram[0]) {
+                origin_histogram[0] = origin;
+            }
+            destination_histogram[destination] += 1;
+            if (destination != 5 && destination_histogram[destination] > destination_histogram[0]) {
+                destination_histogram[0] = destination;
+            }
+        }
+
+        /* Decision logic: */
+
+        //node, which occurs most as origin node
+        int max_origin_node = origin_histogram[0];
+        //node, which occurs most as destination node
+        int max_destination_node = destination_histogram[0];
+
+        // true, if there are more occurences like 11,13,14 than 31,41,11
+        bool is_after_node = (origin_histogram[max_origin_node] >= destination_histogram[max_destination_node]);
+        // true if no node is occuring significantly often as origin or destination, but node 5 is occuring often as destination
+        bool on_exit = (origin_histogram[0] <= 1) && (destination_histogram[0] <= 1) && (destination_histogram[5] >= 2);
+
+        if (is_after_node && !on_exit) {
+        // position is shortly after a node -> take next move_commmand into account, since there are multiple paths available
+            int found_segment_id = get_next_segment(max_origin_node);
+            for (size_t i=0; i<valid_segments.size(); i++) {
+                if (valid_segments[i].segment_id == found_segment_id) {
+                    return valid_segments[i];
+                }
+            }
+            //The following case should not happen, just for robustness!
+            EOUT("Error! Correct segment not in valid_segments!" << std::endl);
+            return segments[found_segment_id].find_segment_position(state.position,seeding_pts_per_meter,qf_min_N);
+        } else {
+        // position is shortly before a node -> just take any valid path which ends at the max destination node
+        // if starting on the exit ramp, take any segment ending at node 5
+            if (on_exit) {
+                max_destination_node = 5;
+            }
+            for (size_t i=0; i<valid_segments.size(); i++) {
+                if (valid_segments[i].segment_id % 10 == max_destination_node) {
+                    return valid_segments[i];
+                }
+            }
+            //The following case should not happen, just for robustness!
+            EOUT("Error! Could not find any valid segment ending at the mostly occuring node!" << std::endl);
+            return valid_segments[0];
+        }
+    }
+
+    int get_next_segment(const int starting_node) {
+        DrivingCommand next_command;
+        if (commands.size() > 0) {
+            next_command = commands.front();
+            commands.pop_front();
+        } else {
+            next_command = DEFAULT_COMMAND;
+        }
+        return seg_lookup[starting_node][next_command];
     }
 
     void execute() {
-        //LOUT("Current mode on BBOARD: " << (int)BBOARD->getDrivingMode().current_mode << std::endl);
+
+        // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
+        BBOARD->waitForState();
+        SegmentPosition pos = find_start_position(BBOARD->getState());
+        segment_index = pos.segment_id;
+        curve_index = pos.curve_id;
 
         try{
             while (true) {
@@ -209,16 +360,19 @@ namespace DerWeg {
                     }
                     else {
                         curve_index = 0;
-                        DrivingCommand next_command;
-                        if (commands.size() > 0) {
-                            next_command = commands.front();
-                            commands.pop_front();
-                        } else {
-                            next_command = DEFAULT_COMMAND;
-                        }
-
                         int end_node = segment_index % 10;
-                        segment_index = seg_lookup[end_node][next_command];
+                        segment_index = get_next_segment(end_node);
+
+                        // This takes into account, that the exit is right after the intersection
+                        // in direction of node 4.
+                        // E.g. if the car is on node 1, and gets the next commands r o
+                        // Without the following block, the car would drive segment 14 and then 45,
+                        // even if it could have fulfilled the commands "right" and "out" faster
+                        // with the segment 15
+                        if (segment_index % 10 == 4 && commands.front() == out) {
+                            segment_index += 1;
+                            commands.pop_front();
+                        }
 
                         LOUT("Start segment " << segment_index << std::endl);
                     }

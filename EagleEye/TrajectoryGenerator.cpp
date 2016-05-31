@@ -239,7 +239,10 @@ namespace DerWeg {
     }
 
     SegmentPosition find_start_position(const State state) {
-
+/*
+        EOUT("Position: " << state.position.x << ", " << state.position.y << std::endl);
+        EOUT("Orientation: " << state.orientation.get_deg_180() << std::endl);
+*/
         /* Find valid segment positions, close enough to position: */
 
         std::vector<SegmentPosition> valid_segments;
@@ -256,7 +259,14 @@ namespace DerWeg {
             // Distance has to be close enough, and the car's angle & curve angle must not differ too much
             BezierCurve curve = segments[seg_pos.segment_id].get(seg_pos.curve_id);
             Angle diff_angle = state.orientation - curve.orientation(seg_pos.curve_parameter);
-
+/*
+            EOUT("--- Segment " << seg_pos.segment_id << " ---------------------------------------------------" << std::endl);
+            EOUT("Distance: " << seg_pos.min_distance << std::endl);
+            EOUT("to point: " << curve(seg_pos.curve_parameter) << std::endl);
+            EOUT("Diff-Angle: " << diff_angle.get_deg_180() << std::endl);
+            EOUT("Angle_threshold: " << angle_threshold.get_deg_180() << std::endl);
+            EOUT("in_range: " << diff_angle.in_between(-angle_threshold, angle_threshold) << std::endl);
+*/
             if (seg_pos.min_distance < distance_threshold && diff_angle.in_between(-angle_threshold, angle_threshold)) {
                 valid_segments.push_back(seg_pos);
             }
@@ -291,6 +301,8 @@ namespace DerWeg {
             }
         }
 
+        //LOUT("Histogramm finished" << std::endl);
+
         /* Decision logic: */
 
         //node, which occurs most as origin node
@@ -302,6 +314,9 @@ namespace DerWeg {
         bool is_after_node = (origin_histogram[max_origin_node] >= destination_histogram[max_destination_node]);
         // true if no node is occuring significantly often as origin or destination, but node 5 is occuring often as destination
         bool on_exit = (origin_histogram[0] <= 1) && (destination_histogram[0] <= 1) && (destination_histogram[5] >= 2);
+
+        //LOUT("After node" << is_after_node << std::endl);
+        //LOUT("Of exit" << on_exit << std::endl);
 
         if (is_after_node && !on_exit) {
         // position is shortly after a node -> take next move_commmand into account, since there are multiple paths available
@@ -351,10 +366,13 @@ namespace DerWeg {
     void execute() {
 
         // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
+        boost::this_thread::sleep(boost::posix_time::milliseconds(300));
         BBOARD->waitForState();
         SegmentPosition pos = find_start_position(BBOARD->getState());
         segment_index = pos.segment_id;
         curve_index = pos.curve_id;
+
+        LOUT("Start execute with segment " << segment_index << std::endl);
 
         set_reference_trajectory();
 

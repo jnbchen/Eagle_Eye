@@ -1,14 +1,22 @@
 #include "../Elementary/KogmoThread.h"
 #include "../Elementary/PluginFactory.h"
 #include "../Blackboard/Blackboard.h"
+#include "../Elementary/Vec.h"
 
 namespace DerWeg {
 
   /** StateEstimator */
   class StateEstimator : public KogmoThread {
+  private:
+    double center_offset;
   public:
     StateEstimator () {;}
     ~StateEstimator () {;}
+
+    void init(const ConfigReader& cfg) {
+      cfg.get ("StateEstimator::center_offset", center_offset);
+    }
+
     void execute () {
       try{
         while (true) {
@@ -17,6 +25,8 @@ namespace DerWeg {
             Pose pose = BBOARD->getVehiclePose();
             Odometry odometry = BBOARD->getOdometry();
 
+            //Transform position from stargazer to center of mass
+            //state.position = pose.position - center_offset * Vec(1,0).rotate(pose.orientation);
             state.position = pose.position;
             state.stddev = pose.stddev;
             state.orientation = pose.orientation;

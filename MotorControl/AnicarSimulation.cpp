@@ -45,6 +45,12 @@ namespace DerWeg {
           heading = Angle::deg_angle (x[2]);
         }
       }
+
+      // Write simulated starting pose to blackboard
+      Pose pose;
+      pose.position = position;
+      pose.orientation = heading;
+      BBOARD->setVehiclePose(pose);
     }
     void execute () {
       boost::mt19937 generator;

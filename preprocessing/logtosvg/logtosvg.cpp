@@ -27,9 +27,7 @@
  * The units are mm in the svg coordinate system, but cm in the Inksacpe
  * coordinate system.
  * 
- * All points are on a locked sublayer called 'Points'.
- * Bezier Curves should be drawn on the sublayer called 'Curves' and 
- * should get their correct name as an identifier!
+ * All points are located on a layer called 'log data'.
  */
 
 
@@ -47,7 +45,7 @@ int main(int argc, char** argv) {
     
     // ==============================================================
     // parameters
-    std::string output_svg = "../path.svg";
+    std::string output_svg = "../log.svg";
     
     const std::string log_delimiter = " ";
     
@@ -163,28 +161,13 @@ int main(int argc, char** argv) {
                  << (double)-1/downscale << ")";
     std::string coord_trafo = trafo_stream.str();
     
-    // root layer, with coordinate transformation
-    tinyxml2::XMLElement* root_layer = doc.NewElement("g");
-    root_layer->SetAttribute("transform", coord_trafo.c_str());
-    root_layer->SetAttribute("inkscape:label", "Root");
-    root_layer->SetAttribute("inkscape:groupmode", "layer");
-    root_layer->SetAttribute("id", "layer1");
-    root->InsertEndChild(root_layer);
-    
-    // curve layer
-    tinyxml2::XMLElement* curve_layer = doc.NewElement("g");
-    curve_layer->SetAttribute("inkscape:label", "Curves");
-    curve_layer->SetAttribute("inkscape:groupmode", "layer");
-    curve_layer->SetAttribute("id", "layer2");
-    root_layer->InsertEndChild(curve_layer);
-    
-    // point layer
-    tinyxml2::XMLElement* point_layer = doc.NewElement("g");
-    point_layer->SetAttribute("inkscape:label", "Points");
-    point_layer->SetAttribute("inkscape:groupmode", "layer");
-    point_layer->SetAttribute("id", "layer3");
-    point_layer->SetAttribute("sodipodi:insensitive", true);
-    root_layer->InsertEndChild(point_layer);
+    // point layer, with coordinate transformation
+    tinyxml2::XMLElement* data_layer = doc.NewElement("g");
+    data_layer->SetAttribute("transform", coord_trafo.c_str());
+    data_layer->SetAttribute("inkscape:label", "log data");
+    data_layer->SetAttribute("inkscape:groupmode", "layer");
+    data_layer->SetAttribute("id", "log data");
+    root->InsertEndChild(data_layer);
     
     // ==============================================================
     // loop over all log-files
@@ -227,7 +210,7 @@ int main(int argc, char** argv) {
         polyline->SetAttribute("marker-mid", marker_link.c_str());
         polyline->SetAttribute("marker-end", marker_link.c_str());
         polyline->SetAttribute("points", points.c_str());
-        point_layer->InsertEndChild(polyline);
+        data_layer->InsertEndChild(polyline);
         
     }
     

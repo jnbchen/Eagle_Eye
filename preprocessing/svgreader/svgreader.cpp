@@ -27,8 +27,8 @@
  * ...
  * 
  * The robustness and error checking capabilities are limited!
- * svgreader assumes a well defined svg-file, such is produced by 
- * logtosvg with curves drawn the right way!
+ * svgreader assumes a well defined svg-file with curves drawn the 
+ * right way!
  */
 
 
@@ -38,14 +38,10 @@ std::vector<std::string> split_string(const std::string&,
                                       const std::string&);
 
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        throw std::runtime_error("Input svg is missing or to many "
-                                 "arguments");
-    }    
-    
-    // default output path
-    std::string output_path = "../test_segments.txt";
+int main() {
+    // default paths
+    std::string input_path = "../seg.svg";
+    std::string output_path = "../seg.txt";
     
     // ==============================================================
     // check if output file already exist, if so ask user
@@ -72,107 +68,168 @@ int main(int argc, char** argv) {
     // ==============================================================
     // open svg file
 	tinyxml2::XMLDocument doc;
-	doc.LoadFile(argv[1]);
+	doc.LoadFile(input_path.c_str());
     
-    // find curve layer in svg
-    tinyxml2::XMLElement *curve_layer = 
-        doc.FirstChildElement("svg")->FirstChildElement("g")
-                                    ->FirstChildElement("g");
-    while (!curve_layer->Attribute("inkscape:label", "Curves")) {
-        curve_layer = curve_layer->NextSiblingElement("g");
-    }
+    // find segments layer in svg
+    tinyxml2::XMLElement *seg_layer = 
+        doc.FirstChildElement("svg")->FirstChildElement("g");
+    while (!seg_layer->Attribute("id", "segments") &&
+           seg_layer->Attribute("transform") == NULL) {
+        seg_layer = seg_layer->NextSiblingElement("g");
+    }    
     
-    // ==============================================================
     // open output file
     std::ofstream fout(output_path.c_str());
     if (fout.fail()) {
         throw std::runtime_error("Could not open output file");
     }
-    else {
-        // loop over all curves, check if they are segments
-        const std::string seg = "segment";
-        for (tinyxml2::XMLElement* path = 
-                 curve_layer->FirstChildElement("path"); 
-             path; path = path->NextSiblingElement("path")) 
+    
+    // lists for storing segment ids and pointer to segment nodes
+    std::vector<std::string> segment_ids;
+    std::vector<tinyxml2::XMLElement*> segment_nodes;
+    
+    // ==============================================================
+    // loop over all sublayer of segments layer, 
+    // containing all segments for one starting point
+    for (tinyxml2::XMLElement* superseg = 
+             seg_layer->FirstChildElement("g"); 
+         superseg; superseg = superseg->NextSiblingElement("g")) 
+    {
+        std::string superseg_id = superseg->Attribute("id");
+        if (superseg_id.substr(0, 7) == "segment" &&
+            superseg_id.at(8) == 'X' &&
+            superseg_id.size() == 9)
         {
-            std::string id = path->Attribute("id");
-            if (id.substr(0, 7) == "segment" && id.size() == 9) {
-                // found bezier curve
-                fout << "# segment " << id.substr(7, 9) << std::endl;
-                
-                std::string complete_str = path->Attribute("d");
-                std::vector<std::string> s = 
-                    split_string(complete_str, " ");
-                
-                // check for absolute coordinates
-                if (s[0] == "m" || 
-                    s[2] == "c" || s[3] == "c" || 
-                    s[s.size() - 2] == "l") {
-                    throw std::runtime_error("svgreader needs svg files" 
-                                        " with absolute coordinates");
-                }
-                
-                // check for smooth nodes, ignore end nodes
-                std::string nodes = path->Attribute("sodipodi:nodetypes");
-                nodes = nodes.substr(1, nodes.size() - 2);
-                
-                if (nodes.empty() || 
-                    nodes.find_first_not_of("s") != std::string::npos) {
-                    std::cout << "WARNING! Not all of the path nodes "
-                                 "are smooth nodes, " << id << std::endl;
-                }
-                
-                // ==================================================
-                // process looooooong string ...
-                
-                // get starting point of segment
-                std::string start;
-                int start_index;
-                if (s[0] == "M" && s[2] == "C") {
-                    start = s[1];
-                    start_index = 3;
-                }
-                else if (s[0] == "M" && s[3] == "C") {
-                    start = s[2];
-                    start_index = 4;
-                }
-                else {
-                    throw std::runtime_error("somehting wrong with "
-                                             "beginning of path");
-                }
-                
-                // end point of segment
-                int end_index;
-                if (s[s.size() - 2] == "L")
-                    end_index = s.size() - 3;
-                else
-                    end_index = s.size() - 1;
-                
-                if ((end_index - start_index + 1) % 3 != 0) {
-                    throw std::runtime_error("path has not correct "
-                                             "number of points");
-                }
-                
-                // print points to output
-                for (int i = start_index; i <= end_index; i+=3) {
-                    fout << start << " ";
-                    fout << s[i] << " " << s[i+1] << " " << s[i+2];
-                    fout << std::endl;
-                    start = s[i+2];
-                }
-                
-                // new line for next segment
-                fout << std::endl;
-                
+            
+            // no additional scaling and translation of coordinates
+            if (superseg->Attribute("transform") != NULL) {
+                std::cout << "Error in layer " 
+                          << superseg_id << std::endl;
+                throw std::runtime_error("One layer with segments "
+                                         "contains transformed "
+                                         "coordinates");
             }
-            else {
-                // this is no bezier curve
-                continue;
+            
+            
+            // loop over all segments of one starting point
+            for (tinyxml2::XMLElement* seg = 
+                    superseg->FirstChildElement("g"); 
+                 seg; seg = seg->NextSiblingElement("g")) 
+            {
+                std::string seg_id = seg->Attribute("id");
+                if (seg_id.substr(0, 7) == "segment" &&
+                    seg_id.size() == 9)
+                {
+                    // layer contains a segment
+                    tinyxml2::XMLElement* path = 
+                        seg->FirstChildElement("path");
+                    
+                    // store pointer to node and segment id
+                    segment_ids.push_back(seg_id.substr(7, 9));
+                    segment_nodes.push_back(path);                        
+                }
             }
         }
-        
-        fout.close();
+        else
+            continue;
     }
+    
+    // sanity check, as many sgement ids as paths
+    if (segment_ids.size() != segment_nodes.size()) {
+        throw std::runtime_error("Could not read segment/s or id/s");
+    }
+    
+    // ==============================================================
+    // go through list of paths,
+    // check every path for validity and write them to the output
+    for (size_t i = 0; i < segment_ids.size(); ++i) {
+        fout << "# segment " << segment_ids[i] << std::endl;
+        
+        tinyxml2::XMLElement *path = segment_nodes[i];
+        
+        std::string complete_str = path->Attribute("d");
+        std::vector<std::string> s = 
+            split_string(complete_str, " ");
+        
+        // no additional scaling and translation of coordinates
+        if (path->Attribute("transform") != NULL) {
+            std::cout << "Error in segment " 
+                      << segment_ids[i] << std::endl;
+            throw std::runtime_error("One segment contains "
+                                     "transformed coordinates");
+        }
+        
+        // check for absolute coordinates
+        if (s[0] == "m" || 
+            s[2] == "c" || s[3] == "c" || 
+            s[s.size() - 2] == "l") {
+            std::cout << "Error in segment " 
+                      << segment_ids[i] << std::endl;
+            throw std::runtime_error("svgreader needs svg files" 
+                                " with absolute coordinates");
+        }
+        
+        // check for smooth nodes, ignore end nodes
+        std::string nodes = path->Attribute("sodipodi:nodetypes");
+        nodes = nodes.substr(1, nodes.size() - 2);
+        
+        if (nodes.empty() || 
+            nodes.find_first_not_of("s") != std::string::npos) {
+            std::cout << "Error in segment " 
+                      << segment_ids[i] << std::endl;
+            throw std::runtime_error("WARNING! Not all of the path "
+                                     "nodes are smooth nodes");
+        }
+        
+        // ==================================================
+        // process looooooong string ...
+        
+        // get starting point of segment
+        std::string start;
+        int start_index;
+        if (s[0] == "M" && s[2] == "C") {
+            start = s[1];
+            start_index = 3;
+        }
+        else if (s[0] == "M" && s[3] == "C") {
+            start = s[2];
+            start_index = 4;
+        }
+        else {
+            std::cout << "Error in segment " 
+                      << segment_ids[i] << std::endl;
+            throw std::runtime_error("Somehting wrong with "
+                                     "beginning of path");
+        }
+        
+        // end point of segment
+        int end_index;
+        if (s[s.size() - 2] == "L")
+            end_index = s.size() - 3;
+        else
+            end_index = s.size() - 1;
+        
+        if ((end_index - start_index + 1) % 3 != 0) {
+            std::cout << "Error in segment " 
+                      << segment_ids[i] << std::endl;
+            throw std::runtime_error("Path has not the correct "
+                                     "number of points");
+        }
+        
+        // print points to output
+        for (int i = start_index; i <= end_index; i+=3) {
+            fout << start << " ";
+            fout << s[i] << " " << s[i+1] << " " << s[i+2];
+            fout << std::endl;
+            start = s[i+2];
+        }
+        
+        // new line for next segment
+        fout << std::endl;
+        
+        }
+    
+    fout.close();
     
 }
 

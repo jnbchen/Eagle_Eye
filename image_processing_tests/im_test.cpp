@@ -58,13 +58,25 @@ extractChannel(image, extract_v,0);
 imshow( "Original", image );
 
 Mat high_value;
+// Detect red with high intensity and good saturation:
 inRange(im_hsv,Scalar(100,150,200),Scalar(120,255,255),high_value);
 imshow( "High Intensity", high_value );
 
 Mat median;
-medianBlur(high_value,median,31);
+medianBlur(high_value,median,11);
 imshow( "Median blur", median );
 
+
+// This prints out the CV-HSV values for the BGR-color given
+/*
+Scalar color(0,0,255);
+Mat color_Mat(1,1,CV_8UC3, color);
+Mat hsv;
+cvtColor(color_Mat,hsv,CV_RGB2HSV);
+cout << (int)hsv.at<Vec3b>(0,0)[0]<<endl
+    << (int)hsv.at<Vec3b>(0,0)[1]<<endl
+    << (int)hsv.at<Vec3b>(0,0)[2]<<endl;
+*/
 
 /*
     for(int i = 0; i < image.rows; i++) {

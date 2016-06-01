@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" >
+
+	<defs>  
+		<inkscape:path-effect effect="spiro" id="path-effect1" is_visible="true" />
+		<marker id="M_dot" viewBox="0 0 10 10" refX="5" refY="5"> <circle cx="5" cy="5" r="5" fill="white" /></marker>
+		<marker id="M_circ" viewBox="0 0 10 10" refX="5" refY="5"> <circle cx="5" cy="5" r="5" fill="rgb(50,50,50)" /></marker>
+	</defs>
+
+	<g id="l_bg" inkscape:groupmode="layer" inkscape:label="background">
+		    <image xlink:href="./bg.png"/>
+	</g>
+
+	<g id="l_logs_T" inkscape:groupmode="layer" inkscape:label="transformed logs">
+		<g id="l_log1" inkscape:groupmode="layer" inkscape:label="log1"><image xlink:href="./log1.svg"/></g>
+		<g id="position" inkscape:groupmode="layer" inkscape:label="position"><image xlink:href="../data/PositionSVG/Position.svg"/></g>
+	</g>
+
+	<g id="segments" inkscape:groupmode="layer" inkscape:label="segments" transform="translate(0,650) scale(0.1,-0.1)">
+
+
+
+
+		<g id="l_pts_info"  inkscape:groupmode="layer" inkscape:label="pts_info"> 
+			 <polyline points=" 2750,3900 1450,2200 3800,200 5500,700 5300,1200 3800,750 2300,1100 2000,2100 2300,3100 3800,3400 5300,1200 3800,750 2300,1100 2000,2100 2300,3100 3800,3400 7400,5000 9000,5550 11000,4000 10200,2500 7400,5000 9000,5550 11000,4000 10200,2500 9500,1800 11450,3300 8500,6050 7000,5500 9500,1800 11450,3300 8500,6050 7000,5500 10100,1300 11800,1000 0,0 " style="fill:none" stroke-opacity="0" stroke="black" stroke-width="50" marker-mid="url(#M_circ)" marker-start="url(#M_circ)" marker-end="url(#M_circ)" /> 
+ 		 
+ </g>
+
+		<g id="segment1X" inkscape:groupmode="layer" inkscape:label="segment1X">
+			<g id="segment11" inkscape:groupmode="layer" inkscape:label="segment11"> 
+				 <path style="fill:none" stroke="rgb(255,0,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg11" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  2800,200    3800,200  C  4800,200     4500,700    5500,700     6500,700     1750,3900    2750,3900     3750,3900     450,2200    1450,2200     2450,2200     2800,200    3800,200  L  4800,200 " 
+					  sodipodi:nodetypes="csssssc" /> 
+			</g>
+			<g id="segment13" inkscape:groupmode="layer" inkscape:label="segment13"> 
+				 <path style="fill:none" stroke="rgb(255,0,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg13" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  2800,200    3800,200  C  4800,200     4500,700    5500,700     6500,700     6400,5000    7400,5000     8400,5000     8000,5550    9000,5550  L  10000,5550 " 
+					  sodipodi:nodetypes="cssssc" /> 
+			</g>
+			<g id="segment14" inkscape:groupmode="layer" inkscape:label="segment14"> 
+				 <path style="fill:none" stroke="rgb(255,0,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg14" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  2800,200    3800,200  C  4800,200     4500,700    5500,700     6500,700     6000,2300    7000,2300     8000,2300     8500,1800    9500,1800     10500,1800     10450,3300    11450,3300     12450,3300     9500,6050    8500,6050  L  7500,6050 " 
+					  sodipodi:nodetypes="cssssssc" /> 
+			</g>
+			<g id="segment15" inkscape:groupmode="layer" inkscape:label="segment15"> 
+				 <path style="fill:none" stroke="rgb(255,0,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg15" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  2800,200    3800,200  C  4800,200     4500,700    5500,700     6500,700     6000,2300    7000,2300     8000,2300     9100,1300    10100,1300     11100,1300     10800,1000    11800,1000  L  12800,1000 " 
+					  sodipodi:nodetypes="csssssc" /> 
+			</g>
+		</g>
+		<g id="segment2X" inkscape:groupmode="layer" inkscape:label="segment2X">
+			<g id="segment22" inkscape:groupmode="layer" inkscape:label="segment22"> 
+				 <path style="fill:none" stroke="rgb(255,255,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg22" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  4800,750    3800,750  C  2800,750     1300,1100    2300,1100     3300,1100     1000,2100    2000,2100     3000,2100     1300,3100    2300,3100     3300,3100     2800,3400    3800,3400     4800,3400     4300,1200    5300,1200     6300,1200     4800,750    3800,750  L  2800,750 " 
+					  sodipodi:nodetypes="csssssssc" /> 
+			</g>
+			<g id="segment23" inkscape:groupmode="layer" inkscape:label="segment23"> 
+				 <path style="fill:none" stroke="rgb(255,255,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg23" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  4800,750    3800,750  C  2800,750     1300,1100    2300,1100     3300,1100     1000,2100    2000,2100     3000,2100     1300,3100    2300,3100     3300,3100     2800,3400    3800,3400     4800,3400     5200,4200    6200,4200     7200,4200     6400,5000    7400,5000     8400,5000     8000,5550    9000,5550  L  10000,5550 " 
+					  sodipodi:nodetypes="cssssssssc" /> 
+			</g>
+			<g id="segment24" inkscape:groupmode="layer" inkscape:label="segment24"> 
+				 <path style="fill:none" stroke="rgb(255,255,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg24" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  4800,750    3800,750  C  2800,750     1300,1100    2300,1100     3300,1100     1000,2100    2000,2100     3000,2100     1300,3100    2300,3100     3300,3100     2800,3400    3800,3400     4800,3400     8500,1800    9500,1800     10500,1800     10450,3300    11450,3300     12450,3300     9500,6050    8500,6050  L  7500,6050 " 
+					  sodipodi:nodetypes="cssssssssc" /> 
+			</g>
+			<g id="segment25" inkscape:groupmode="layer" inkscape:label="segment25"> 
+				 <path style="fill:none" stroke="rgb(255,255,0)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg25" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  4800,750    3800,750  C  2800,750     1300,1100    2300,1100     3300,1100     1000,2100    2000,2100     3000,2100     1300,3100    2300,3100     3300,3100     2800,3400    3800,3400     4800,3400     9100,1300    10100,1300     11100,1300     10800,1000    11800,1000  L  12800,1000 " 
+					  sodipodi:nodetypes="csssssssc" /> 
+			</g>
+		</g>
+		<g id="segment3X" inkscape:groupmode="layer" inkscape:label="segment3X">
+			<g id="segment31" inkscape:groupmode="layer" inkscape:label="segment31"> 
+				 <path style="fill:none" stroke="rgb(100,255,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg31" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  8000,5550    9000,5550  C  10000,5550     10000,4000    11000,4000     12000,4000     9200,2500    10200,2500     11200,2500     1750,3900    2750,3900     3750,3900     450,2200    1450,2200     2450,2200     2800,200    3800,200  L  4800,200 " 
+					  sodipodi:nodetypes="cssssssc" /> 
+			</g>
+			<g id="segment32" inkscape:groupmode="layer" inkscape:label="segment32"> 
+				 <path style="fill:none" stroke="rgb(100,255,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg32" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  8000,5550    9000,5550  C  10000,5550     10000,4000    11000,4000     12000,4000     9200,2500    10200,2500     11200,2500     6000,2300    7000,2300     8000,2300     4300,1200    5300,1200     6300,1200     4800,750    3800,750  L  2800,750 " 
+					  sodipodi:nodetypes="cssssssc" /> 
+			</g>
+			<g id="segment33" inkscape:groupmode="layer" inkscape:label="segment33"> 
+				 <path style="fill:none" stroke="rgb(100,255,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg33" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  8000,5550    9000,5550  C  10000,5550     10000,4000    11000,4000     12000,4000     9200,2500    10200,2500     11200,2500     6400,5000    7400,5000     8400,5000     8000,5550    9000,5550  L  10000,5550 " 
+					  sodipodi:nodetypes="csssssc" /> 
+			</g>
+			<g id="segment35" inkscape:groupmode="layer" inkscape:label="segment35"> 
+				 <path style="fill:none" stroke="rgb(100,255,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg35" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  8000,5550    9000,5550  C  10000,5550     10000,3650    11000,3650     12000,3650     9100,1300    10100,1300     11100,1300     10800,1000    11800,1000  L  12800,1000 " 
+					  sodipodi:nodetypes="cssssc" /> 
+			</g>
+		</g>
+		<g id="segment4X" inkscape:groupmode="layer" inkscape:label="segment4X">
+			<g id="segment41" inkscape:groupmode="layer" inkscape:label="segment41"> 
+				 <path style="fill:none" stroke="rgb(0,0,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg41" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  9500,6050    8500,6050  C  7500,6050     6000,5500    7000,5500     8000,5500     5200,4200    6200,4200     7200,4200     1750,3900    2750,3900     3750,3900     450,2200    1450,2200     2450,2200     2800,200    3800,200  L  4800,200 " 
+					  sodipodi:nodetypes="cssssssc" /> 
+			</g>
+			<g id="segment42" inkscape:groupmode="layer" inkscape:label="segment42"> 
+				 <path style="fill:none" stroke="rgb(0,0,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg42" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  9500,6050    8500,6050  C  7500,6050     6000,5500    7000,5500     8000,5500     4300,1200    5300,1200     6300,1200     4800,750    3800,750  L  2800,750 " 
+					  sodipodi:nodetypes="cssssc" /> 
+			</g>
+			<g id="segment44" inkscape:groupmode="layer" inkscape:label="segment44"> 
+				 <path style="fill:none" stroke="rgb(0,0,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg44" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  9500,6050    8500,6050  C  7500,6050     6000,5500    7000,5500     8000,5500     8500,1800    9500,1800     10500,1800     10450,3300    11450,3300     12450,3300     9500,6050    8500,6050  L  7500,6050 " 
+					  sodipodi:nodetypes="csssssc" /> 
+			</g>
+			<g id="segment45" inkscape:groupmode="layer" inkscape:label="segment45"> 
+				 <path style="fill:none" stroke="rgb(0,0,255)" stroke-opacity="1" stroke-width="10" marker-mid="url(#M_dot)"  
+					 d="" id="seg45" inkscape:path-effect="#path-effect1" 
+					 inkscape:original-d="    M  9500,6050    8500,6050  C  7500,6050     6000,5500    7000,5500     8000,5500     9100,1300    10100,1300     11100,1300     10800,1000    11800,1000  L  12800,1000 " 
+					  sodipodi:nodetypes="cssssc" /> 
+			</g>
+		</g>
+	</g> </svg>

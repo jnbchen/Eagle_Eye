@@ -49,6 +49,24 @@ int main( int argc, char** argv ) {
 
 // Colored picture operations -----------------------------------------------------------------------
 if (use_color==1) {
+Mat im_hsv, extract_v;
+cvtColor(image,im_hsv,CV_RGB2HSV);
+extractChannel(image, extract_v,0);
+
+//imshow( "w1", im_hsv );
+//imshow( "w2", extract_v );
+imshow( "Original", image );
+
+Mat high_value;
+inRange(im_hsv,Scalar(100,150,200),Scalar(120,255,255),high_value);
+imshow( "High Intensity", high_value );
+
+Mat median;
+medianBlur(high_value,median,31);
+imshow( "Median blur", median );
+
+
+/*
     for(int i = 0; i < image.rows; i++) {
         for(int j = 0; j < image.cols; j++) {
             Vec3b values = image.at<Vec3b>(i, j);
@@ -68,6 +86,9 @@ if (use_color==1) {
             }
         }
     }
+*/
+
+
 }
 
 // Greyscale picture operations -----------------------------------------------------------------------
@@ -103,8 +124,9 @@ if (use_color == 0) {
         }
     }
 */
-    namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
-    imshow( "Display window", image );                   // Show our image inside it.
+
+//    namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
+//    imshow( "Display window", image );                   // Show our image inside it.
 
     waitKey(0);                                          // Wait for a keystroke in the window
     return 0;

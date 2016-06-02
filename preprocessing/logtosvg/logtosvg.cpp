@@ -164,9 +164,9 @@ int main(int argc, char** argv) {
     // point layer, with coordinate transformation
     tinyxml2::XMLElement* data_layer = doc.NewElement("g");
     data_layer->SetAttribute("transform", coord_trafo.c_str());
-    data_layer->SetAttribute("inkscape:label", "log data");
+    data_layer->SetAttribute("inkscape:label", "log-data");
     data_layer->SetAttribute("inkscape:groupmode", "layer");
-    data_layer->SetAttribute("id", "log data");
+    data_layer->SetAttribute("id", "log-data");
     root->InsertEndChild(data_layer);
     
     // ==============================================================

@@ -26,8 +26,8 @@ namespace DerWeg {
             Odometry odometry = BBOARD->getOdometry();
 
             //Transform position from stargazer to center of mass
-            //state.position = pose.position - center_offset * Vec(1,0).rotate(pose.orientation);
-            state.position = pose.position;
+            state.position = pose.position - 500 * Vec(1,0).rotate(pose.orientation);
+            //state.position = pose.position;
             state.stddev = pose.stddev;
             state.orientation = pose.orientation;
             state.velocity = pose.velocity;

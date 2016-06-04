@@ -3,8 +3,9 @@
 #include "../Blackboard/Blackboard.h"
 #include "../Elementary/Angle.h"
 #include "BezierCurve.h"
-#include "math.h"
-#include "iostream"
+#include <cmath>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -80,12 +81,23 @@ namespace DerWeg {
         /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
         and the curvature of the curve. Those values are needed for the controller. */
         ControllerInput calculate_curve_data(const State& state)  {
-            lastProjectionParameter = bc.project(state.position, lastProjectionParameter,
+            Vec pos = state.position; // - 500 * Vec(1,0).rotate(state.orientation);
+
+            stringstream pos_point;
+            pos_point << "thick black dot " << pos.x << " " << pos.y;
+            BBOARD->addPlotCommand(pos_point.str());
+
+            lastProjectionParameter = bc.project(pos, lastProjectionParameter,
                                                  newton_tolerance, newton_max_iter);
             //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
 
             //evaluate bezier curve and derivatives at the projection parameter
             Vec f = bc(lastProjectionParameter);
+
+            stringstream project_point;
+            project_point << "thick green dot " << f.x << " " << f.y;
+            BBOARD->addPlotCommand(project_point.str());
+
             Vec df = bc.prime(lastProjectionParameter);
             //Vec ddf = bc.double_prime(lastProjectionParameter);
 
@@ -94,7 +106,7 @@ namespace DerWeg {
             //We use this to assign a sign to the distance:
             //The distance is positive, if the actual position is left of the curve
             // and negative if it's right of the curve (regarding moving direction)
-            Vec diff = state.position - f;
+            Vec diff = pos - f;
             double distance = diff.length();
             //If the point is right of df, let the distance have a negative sign
             if (diff * df.rotate_quarter() < 0) {

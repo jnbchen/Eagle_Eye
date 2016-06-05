@@ -113,7 +113,7 @@ namespace DerWeg {
     std::map<int, std::map<DrivingCommand, int> > seg_lookup;
 
     std::list<DrivingCommand> commands;
-    DrivingCommand DEFAULT_COMMAND;
+    std::list<DrivingCommand> default_commands;
 
     double distance_threshold;
     double seeding_pts_per_meter;
@@ -219,14 +219,20 @@ namespace DerWeg {
             }
         }
 
-        char default_cmd;
-        cfg.get("TrajectoryGenerator::default_command", default_cmd);
-        switch (default_cmd) {
-            case 's': DEFAULT_COMMAND = straight; break;
-            case 'l': DEFAULT_COMMAND = left; break;
-            case 'r': DEFAULT_COMMAND = right; break;
-            case 'o': DEFAULT_COMMAND = out; break;
-            default : EOUT("Unknown driving command");
+        std::vector<char> default_cmds;
+        cfg.get("TrajectoryGenerator::default_commands", default_cmds);
+        for (size_t i = 0; i < default_cmds.size(); i++){
+            switch (default_cmds[i]) {
+                case 's': default_commands.push_back(straight); break;
+                case 'l': default_commands.push_back(left); break;
+                case 'r': default_commands.push_back(right); break;
+                case 'o': default_commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+        if (default_commands.size() == 0) {
+            EOUT("No default command specified. Assume straight." << std::endl);
+            default_commands.push_back(straight);
         }
 
         cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
@@ -251,7 +257,7 @@ namespace DerWeg {
             Segment seg = iter->second;
 
             // Find segment position
-            SegmentPosition seg_pos = seg.find_segment_position(state.position, seeding_pts_per_meter, qf_min_N);
+            SegmentPosition seg_pos = seg.find_segment_position(state.rear_position, seeding_pts_per_meter, qf_min_N);
             // get map key
             seg_pos.segment_id = iter->first;
 
@@ -270,6 +276,11 @@ namespace DerWeg {
             if (seg_pos.min_distance < distance_threshold && diff_angle.in_between(-angle_threshold, angle_threshold)) {
                 valid_segments.push_back(seg_pos);
             }
+            /*
+            else if (diff_angle.in_between(-angle_threshold, angle_threshold)) {
+                LOUT("min dist: " << seg_pos.min_distance << std::endl);
+            }
+            */
         }
 
         if (valid_segments.size()==0) {
@@ -328,7 +339,7 @@ namespace DerWeg {
             }
             //The following case should not happen, just for robustness!
             EOUT("Error! Correct segment not in valid_segments!" << std::endl);
-            return segments[found_segment_id].find_segment_position(state.position,seeding_pts_per_meter,qf_min_N);
+            return segments[found_segment_id].find_segment_position(state.rear_position,seeding_pts_per_meter,qf_min_N);
         } else {
         // position is shortly before a node -> just take any valid path which ends at the max destination node
         // if starting on the exit ramp, take any segment ending at node 5
@@ -347,13 +358,14 @@ namespace DerWeg {
     }
 
     int get_next_segment(const int starting_node) {
-        DrivingCommand next_command;
-        if (commands.size() > 0) {
-            next_command = commands.front();
-            commands.pop_front();
-        } else {
-            next_command = DEFAULT_COMMAND;
+        // If command list is empty (or only one command left), refill it with the default command sequence
+        while (commands.size() <= 1) {
+            commands.insert(commands.end(), default_commands.begin(), default_commands.end());
         }
+
+        DrivingCommand next_command = commands.front();
+        commands.pop_front();
+
         return seg_lookup[starting_node][next_command];
     }
 
@@ -380,7 +392,7 @@ namespace DerWeg {
             while (true) {
                 State state = BBOARD->getState();
 
-                if (segments[segment_index].get(curve_index).reached_end(state.position)) {
+                if (segments[segment_index].get(curve_index).reached_end(state.rear_position)) {
                     if (curve_index < segments[segment_index].size() - 1) {
                         curve_index++;
                     }
@@ -395,7 +407,8 @@ namespace DerWeg {
                         // Without the following block, the car would drive segment 14 and then 45,
                         // even if it could have fulfilled the commands "right" and "out" faster
                         // with the segment 15
-                        if (segment_index % 10 == 4 && commands.front() == out) {
+                        if (segment_index % 10 == 4 && commands.size() > 0 && commands.front() == out) {
+                            // Lets segment end at node 5 instead of node 4
                             segment_index += 1;
                             commands.pop_front();
                         }

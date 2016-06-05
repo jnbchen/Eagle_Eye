@@ -8,13 +8,14 @@ namespace DerWeg {
   /** StateEstimator */
   class StateEstimator : public KogmoThread {
   private:
-    double center_offset;
+    //difference between front and rear axis
+    double rear_offset;
   public:
     StateEstimator () {;}
     ~StateEstimator () {;}
 
     void init(const ConfigReader& cfg) {
-      cfg.get ("StateEstimator::center_offset", center_offset);
+      cfg.get ("StateEstimator::rear_offset", rear_offset);
     }
 
     void execute () {
@@ -25,9 +26,9 @@ namespace DerWeg {
             Pose pose = BBOARD->getVehiclePose();
             Odometry odometry = BBOARD->getOdometry();
 
-            //Transform position from stargazer to center of mass
-            state.position = pose.position - 500 * Vec(1,0).rotate(pose.orientation);
-            //state.position = pose.position;
+            state.position = pose.position;
+            //Calculate position of rear axis center
+            state.rear_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
             state.stddev = pose.stddev;
             state.orientation = pose.orientation;
             state.velocity = pose.velocity;

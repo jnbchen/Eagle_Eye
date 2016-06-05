@@ -194,7 +194,7 @@ bool Blackboard::waitForReferenceTrajectory (boost::posix_time::time_duration ti
   return condReferenceTrajectory.timed_wait(lock, timeout);
 }
 
-
+/*
 // DrivingMode
 DrivingMode Blackboard::getDrivingMode () {
   boost::unique_lock<boost::mutex> lock (bbmutex);
@@ -209,3 +209,4 @@ bool Blackboard::waitForDrivingMode (boost::posix_time::time_duration timeout) {
   boost::unique_lock<boost::mutex> lock (bbmutex);
   return condDrivingMode.timed_wait(lock, timeout);
 }
+*/

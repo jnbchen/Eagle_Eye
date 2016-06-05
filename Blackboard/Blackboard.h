@@ -51,7 +51,7 @@ class Blackboard {
 
     State state;                               ///< the present estimated state from StateEstimator
     ReferenceTrajectory reference_trajectory;  ///< the present bezier curve for Control
-    DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
+    //DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -107,12 +107,12 @@ class Blackboard {
     ReferenceTrajectory getReferenceTrajectory ();                    ///< get the reference_trajectory from TrajectoryGenerator
     void setReferenceTrajectory (const ReferenceTrajectory&);         ///< set the reference_trajectory from TrajectoryGenerator
     bool waitForReferenceTrajectory (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new reference_curve has been read from TrajectoryGenerator and return true (or until timeout and return false)
-
+/*
     // DrivingMode
     DrivingMode getDrivingMode ();                    ///< get the driving_mode from StateMachine
     void setDrivingMode (const DrivingMode&);         ///< set the driving_mode from StateMachine
     bool waitForDrivingMode (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new driving_mode has been read from StateMachine and return true (or until timeout and return false)
-
+*/
   };
 
 #define BBOARD DerWeg::Blackboard::getInstance()    // macro to simplify accessing the blackboard

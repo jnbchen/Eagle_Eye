@@ -13,6 +13,7 @@ namespace DerWeg {
   /** struct to describe present dynamic state of Anicar from localization with StateEstimator*/
   struct State {
     Vec position;       ///< the position (x,y) in mm
+    Vec rear_position;  ///< the position (x,y) of the rear axis center in mm
     double stddev;      ///< an approximation to the standard deviation of position in mm
     Angle orientation;  ///< the orientation
     double velocity;    ///< the longitudinal velocity (in m/s)
@@ -37,6 +38,7 @@ namespace DerWeg {
 
 
   /** struct to describe the driving mode */
+  /*
   struct DrivingMode {
     char current_mode;  ///< current dirivng mode (strait, right, left, out)
     char next_mode;  ///< next dirivng mode in time (strait, right, left, out)
@@ -44,6 +46,7 @@ namespace DerWeg {
     bool operator== (const DrivingMode&) const throw ();
     bool operator!= (const DrivingMode&) const throw ();
   };
+*/
 
 
 } // namespace DerWeg

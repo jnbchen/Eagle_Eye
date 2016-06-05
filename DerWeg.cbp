@@ -59,7 +59,6 @@
 		<Unit filename="EagleEye/SaveCoordinates.cpp" />
 		<Unit filename="EagleEye/SaveStereoCameraImage.cpp" />
 		<Unit filename="EagleEye/StateEstimator.cpp" />
-		<Unit filename="EagleEye/StateMachine.cpp" />
 		<Unit filename="EagleEye/TestDrive.cpp" />
 		<Unit filename="EagleEye/TrajectoryGenerator.cpp" />
 		<Unit filename="EagleEye/WriteSVG.cpp" />

@@ -47,8 +47,6 @@ namespace DerWeg {
         cfg.get("LateralControl::axis_distance", axis_distance);
 	}
 
-        //ControllerInput calculate_curve_data(const BezierCurve& bc, const State& state);
-
         void execute () {
           try{
             while (true) {
@@ -72,7 +70,7 @@ namespace DerWeg {
               dv.steer = Angle::rad_angle(delta);
               BBOARD->setDesiredVelocity(dv);
 
-              boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+              boost::this_thread::sleep(boost::posix_time::milliseconds(10));
               boost::this_thread::interruption_point();
             }
           }catch(boost::thread_interrupted&){;}
@@ -81,7 +79,7 @@ namespace DerWeg {
         /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
         and the curvature of the curve. Those values are needed for the controller. */
         ControllerInput calculate_curve_data(const State& state)  {
-            Vec pos = state.position; // - 500 * Vec(1,0).rotate(state.orientation);
+            Vec pos = state.rear_position;
 
             stringstream pos_point;
             pos_point << "thick black dot " << pos.x << " " << pos.y;

@@ -7,9 +7,11 @@
 #include <opencv/highgui.h>
 #include <iostream>
 
+using namespace std;
+
 namespace DerWeg {
 
-  /** Eine sehr einfache Beispiel- und Testanwendung, die lediglich die 
+  /** Eine sehr einfache Beispiel- und Testanwendung, die lediglich die
    *  Stereo-Kamera- und Tiefenbilder bilder im 500ms-Rythmus anzeigt */
   class ShowStereoCameraImage : public KogmoThread {
     std::string windowname1, windowname2;
@@ -58,7 +60,37 @@ namespace DerWeg {
           cv::imshow (windownameRect.c_str(),rect);  // zeige das rektifizierte Bild an
           cv::imshow (windownameConf.c_str(),conf);  // zeige die Sicherheit des Tiefenschaetzers fuer jedes Pixel an
           cv::imshow (windownameVisu.c_str(),depth*0.1f);  // zeige Tiefenbild an
-          boost::this_thread::sleep(boost::posix_time::milliseconds(400));
+
+
+
+          // TESTING!!!
+          /*
+int c=0;
+            LOUT( "Type CV_8UC1: "<<bool(depth.type() == CV_8UC1) <<endl);
+            LOUT( "Type CV_8UC3: "<<bool(depth.type() == CV_8UC3) <<endl);
+            LOUT( "Type CV_32F: "<<bool(depth.type() == CV_32F) <<endl);
+            LOUT( "Type CV_64F: "<<bool(depth.type() == CV_64F) <<endl);
+            LOUT("Type "<<depth.type()<<endl);
+            LOUT("Channels "<<depth.channels()<<endl);
+            for(int i = 0; i < depth.rows; i++) {
+                for(int j = 0; j < depth.cols; j++) {
+                    float intensity = depth.at<float>(i,j);
+
+                    if (c%700==0 and conf.at<int>(i,j) > 170) {
+                        //LOUT( "i,j = "<< i << ", " <<j<<endl);
+                        LOUT( intensity << "   ");
+
+
+                        //image.at<uchar>(i, j)=255;
+                    }
+                    c +=1;
+                }
+            }
+            LOUT(endl);
+            */
+
+
+          boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

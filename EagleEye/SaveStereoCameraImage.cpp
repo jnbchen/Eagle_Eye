@@ -98,7 +98,7 @@ namespace DerWeg {
         strcpy(depthFileName, "../data/StereoImages/Stereo_");
         strcat(depthFileName, timeString.c_str());
 
-          cv::imwrite(string(depthFileName) + "_depth.png", depth);
+          cv::imwrite(string(depthFileName) + "_depth.png", depth*100);
 
         char confFileName[100];
         strcpy(confFileName, "../data/StereoImages/Stereo_");

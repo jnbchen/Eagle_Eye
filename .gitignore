@@ -14,7 +14,7 @@ Ui_*.h
 /preprocessing/logtosvg/logtosvg
 /preprocessing/svgreader/svgreader
 
-/data/PositionSVG/Position.svg
+/data/PositionSVG/*
 
 /image_processing_tests/im_test
 /image_precessing_tests/*.png

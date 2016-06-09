@@ -11,5 +11,10 @@ Ui_*.h
 /bin/*
 !bin/*.cfg
 
-preprocessing/logtosvg/logtosvg
-preprocessing/svgreader/svgreader
+/preprocessing/logtosvg/logtosvg
+/preprocessing/svgreader/svgreader
+
+/data/PositionSVG/Position.svg
+
+/image_processing_tests/im_test
+/image_precessing_tests/*.png

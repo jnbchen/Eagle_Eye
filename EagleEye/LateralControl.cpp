@@ -31,6 +31,7 @@ namespace DerWeg {
         double newton_tolerance;
         int newton_max_iter;
 
+        double precontrol_k;
         double stanley_k0, stanley_k1;
         double axis_distance;
 
@@ -42,6 +43,7 @@ namespace DerWeg {
 	void init(const ConfigReader& cfg) {
         cfg.get("LateralControl::newton_tolerance", newton_tolerance);
         cfg.get("LateralControl::newton_max_iter", newton_max_iter);
+        cfg.get("LateralControl::precontrol_k", precontrol_k);
         cfg.get("LateralControl::stanley_k0", stanley_k0);
         cfg.get("LateralControl::stanley_k1", stanley_k1);
         cfg.get("LateralControl::axis_distance", axis_distance);
@@ -62,7 +64,7 @@ namespace DerWeg {
 
 
               //Stanley-Controller here
-              double u = input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
+              double u = precontrol_k*input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
               double delta = atan(axis_distance * u);
 
               //Set steering angle, keep velocity

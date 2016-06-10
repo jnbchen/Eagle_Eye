@@ -9,6 +9,7 @@
 #include "../Elementary/Configuration.h"
 #include "../Elementary/ThreadSafeLogging.h"
 #include "../EagleEye/DataObjects.h"    // here all eagle eye specific data structures
+#include "../EagleEye/TrafficLight.h"
 
 
 namespace DerWeg {
@@ -39,6 +40,7 @@ class Blackboard {
     boost::condition_variable condState;           ///< condition variable to signal change of state
     boost::condition_variable condReferenceTrajectory;  ///< condition variable to signal change of reference trajectory
     boost::condition_variable condDrivingMode;     ///< condition variable to signal change of driving mode
+    boost::condition_variable condTrafficLights;
 
     bool exitProgram;                          ///< attribute indicating when the program should be stopped (stopProgram=true)
 
@@ -52,6 +54,8 @@ class Blackboard {
     State state;                               ///< the present estimated state from StateEstimator
     ReferenceTrajectory reference_trajectory;  ///< the present bezier curve for Control
     //DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
+    std::map<int, TrafficLight> traffic_lights;    ///< dictionary containing all traffic lights.
+                                              ///the key is the node right before the traffic light
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -107,6 +111,11 @@ class Blackboard {
     ReferenceTrajectory getReferenceTrajectory ();                    ///< get the reference_trajectory from TrajectoryGenerator
     void setReferenceTrajectory (const ReferenceTrajectory&);         ///< set the reference_trajectory from TrajectoryGenerator
     bool waitForReferenceTrajectory (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new reference_curve has been read from TrajectoryGenerator and return true (or until timeout and return false)
+
+    std::map<int, TrafficLight> getTrafficLights();
+    void setTrafficLights(const std::map<int, TrafficLight> &);
+    bool waitForTrafficLights(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
+
 /*
     // DrivingMode
     DrivingMode getDrivingMode ();                    ///< get the driving_mode from StateMachine

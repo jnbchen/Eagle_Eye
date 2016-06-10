@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include "../Elementary/Vec.h"
+#include "CovMat.h"
+#include "Segment.h"
 
 
 namespace DerWeg {
@@ -38,7 +40,7 @@ private:
 public:
     TrafficLightState state;
     Vec position;
-    double distance;
+    CovMat covar;
 
     TrafficLight(int transition_votes);
 

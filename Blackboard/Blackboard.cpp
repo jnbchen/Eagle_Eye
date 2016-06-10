@@ -194,6 +194,22 @@ bool Blackboard::waitForReferenceTrajectory (boost::posix_time::time_duration ti
   return condReferenceTrajectory.timed_wait(lock, timeout);
 }
 
+std::map<int, TrafficLight> Blackboard::getTrafficLights() {
+    boost::unique_lock<boost::mutex> lock (bbmutex);
+    return traffic_lights;
+}
+void Blackboard::setTrafficLights(const std::map<int, TrafficLight> & tl){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  traffic_lights=tl;
+  condTrafficLights.notify_all();
+}
+
+bool Blackboard::waitForTrafficLights(boost::posix_time::time_duration timeout){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condTrafficLights.timed_wait(lock, timeout);
+}
+
+
 /*
 // DrivingMode
 DrivingMode Blackboard::getDrivingMode () {

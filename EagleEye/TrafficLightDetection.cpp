@@ -18,67 +18,15 @@ using namespace cv;
 
 namespace DerWeg {
 
-    /** Simple implemenation of a 2x2 Matrix */
-    class CovMat {
-        private:
-            double a, b, c, d;
-            /* C = (a, b;
-                    c, d)
-            */
-
-        public:
-            CovMat() {}
-            CovMat(const double a0, const double b0,
-                   const double c0, const double d0) :
-                a(a0), b(b0), c(c0), d(d0) {}
-            CovMat(std::vector<double> v) :
-                a(v[0]), b(v[1]), c(v[2]), d(v[3]) {}
-            ~CovMat() {}
-
-            CovMat operator+ (const CovMat& C) const {
-                // Matrix-Matrix-Sum
-                return CovMat(a+C.a, b+C.b, c+C.c, d+C.d);
-            }
-
-            CovMat operator* (const CovMat& C) {
-                // Matrix-Matrix-Product
-                return CovMat(a*C.a + b*C.c, a*C.b + b*C.d,
-                               c*C.a + d*C.c, c*C.b + d*C.d);
-            }
-
-            Vec operator* (const Vec& v) const {
-                // Matrix-Vector-Product
-                return Vec(a*v.x + b*v.y, c*v.x + d*v.y);
-            }
-
-            double det() const {
-                // Determinant
-                return a*d - b*c;
-            }
-
-            CovMat inv() const {
-                // Inverse
-                double det = this->det();
-                return CovMat(d/det, -b/det, -c/det, a/det);
-                }
-
-            CovMat t() const {
-                // Transpose
-                return CovMat(a, c, b, d);
-            }
-
-        };
-
-
 
   /** TrafficLightDetection */
   class TrafficLightDetection : public KogmoThread {
   private:
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;
-    cv::Mat depth, conf, rect;
+    Mat depth, conf, rect;
 
-    int sliderPos; int erode_size; int stopdis;
+    int erode_size;
     int lower_red_h1; int lower_red_h2; int lower_red_v1; int lower_red_v2;
     int upper_red_h1; int upper_red_h2; int upper_red_v1; int upper_red_v2;
     int yellow_h1; int yellow_h2; int yellow_v1; int yellow_v2;
@@ -100,25 +48,23 @@ namespace DerWeg {
     ~TrafficLightDetection () {}
 
     void init(const ConfigReader& cfg) {
-        cfg.get("Ampelerkennung::sliderPos", sliderPos);
-        cfg.get("Ampelerkennung::erode_size", erode_size);
-        cfg.get("Ampelerkennung::lower_red_h1", lower_red_h1);
-        cfg.get("Ampelerkennung::lower_red_h2", lower_red_h2);
-        cfg.get("Ampelerkennung::lower_red_v1", lower_red_v1);
-        cfg.get("Ampelerkennung::lower_red_v2", lower_red_v2);
-        cfg.get("Ampelerkennung::upper_red_h1", upper_red_h1);
-        cfg.get("Ampelerkennung::upper_red_h2", upper_red_h2);
-        cfg.get("Ampelerkennung::upper_red_v1", upper_red_v1);
-        cfg.get("Ampelerkennung::upper_red_v2", upper_red_v2);
-        cfg.get("Ampelerkennung::green_h1", green_h1);
-        cfg.get("Ampelerkennung::green_h2", green_h2);
-        cfg.get("Ampelerkennung::green_v1", green_v1);
-        cfg.get("Ampelerkennung::green_v2", green_v2);
-        cfg.get("Ampelerkennung::yellow_h1", yellow_h1);
-        cfg.get("Ampelerkennung::yellow_h2", yellow_h2);
-        cfg.get("Ampelerkennung::yellow_v1", yellow_v1);
-        cfg.get("Ampelerkennung::yellow_v2", yellow_v2);
-        cfg.get("Ampelerkennung::stopdistance", stopdis);
+        cfg.get("TrafficLigthDetection::erode_size", erode_size);
+        cfg.get("TrafficLigthDetection::lower_red_h1", lower_red_h1);
+        cfg.get("TrafficLigthDetection::lower_red_h2", lower_red_h2);
+        cfg.get("TrafficLigthDetection::lower_red_v1", lower_red_v1);
+        cfg.get("TrafficLigthDetection::lower_red_v2", lower_red_v2);
+        cfg.get("TrafficLigthDetection::upper_red_h1", upper_red_h1);
+        cfg.get("TrafficLigthDetection::upper_red_h2", upper_red_h2);
+        cfg.get("TrafficLigthDetection::upper_red_v1", upper_red_v1);
+        cfg.get("TrafficLigthDetection::upper_red_v2", upper_red_v2);
+        cfg.get("TrafficLigthDetection::green_h1", green_h1);
+        cfg.get("TrafficLigthDetection::green_h2", green_h2);
+        cfg.get("TrafficLigthDetection::green_v1", green_v1);
+        cfg.get("TrafficLigthDetection::green_v2", green_v2);
+//        cfg.get("TrafficLigthDetection::yellow_h1", yellow_h1);
+//        cfg.get("TrafficLigthDetection::yellow_h2", yellow_h2);
+//        cfg.get("TrafficLigthDetection::yellow_v1", yellow_v1);
+//        cfg.get("TrafficLigthDetection::yellow_v2", yellow_v2);
 
         // Localization init
         std::vector<double> init_mean;
@@ -169,102 +115,113 @@ namespace DerWeg {
           Mat lower_red_hue_range;
           Mat upper_red_hue_range;
           Mat red_hue_range;
-          Mat yellow_hue_range;
+//          Mat yellow_hue_range;
           Mat green_hue_range;
           //red
           inRange(im_hsv, cv::Scalar(lower_red_h1,100,lower_red_v1), cv::Scalar(lower_red_h2,255,lower_red_v2), lower_red_hue_range);
           inRange(im_hsv, cv::Scalar(upper_red_h1,100,upper_red_v1), cv::Scalar(upper_red_h2,255,upper_red_v2), upper_red_hue_range);
           addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_range,-1);
           //yellow
-          inRange(im_hsv, cv::Scalar(yellow_h1,100,yellow_v1), cv::Scalar(yellow_h2,255,yellow_v2), yellow_hue_range);
+//          inRange(im_hsv, cv::Scalar(yellow_h1,100,yellow_v1), cv::Scalar(yellow_h2,255,yellow_v2), yellow_hue_range);
           //green
           inRange(im_hsv, cv::Scalar(green_h1,100,green_v1), cv::Scalar(green_h2,255,green_v2), green_hue_range);
 
           //erode
-          Mat element = getStructuringElement( MORPH_ELLIPSE,Size( 2*erode_size + 1, 2*erode_size+1 ),Point( erode_size, erode_size ) );
-          erode(red_hue_range, red_hue_range, element);
-          erode(yellow_hue_range, yellow_hue_range, element);
-          erode(green_hue_range, green_hue_range, element);
+          Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( erode_size, erode_size ) );
+//          erode(red_hue_range, red_hue_range, element);
+//          erode(yellow_hue_range, yellow_hue_range, element);
+//          erode(green_hue_range, green_hue_range, element);
+          morphologyEx(red_hue_range, red_hue_range, MORPH_OPEN, element);
+          morphologyEx(green_hue_range, green_hue_range, MORPH_OPEN, element);
 
-          //edge detection
-          red_hue_range = red_hue_range >= sliderPos;
-          yellow_hue_range = yellow_hue_range >= sliderPos;
-          green_hue_range = green_hue_range >= sliderPos;
 
           vector<vector<Point> > contours_red;
-          vector<vector<Point> > contours_yellow;
+//          vector<vector<Point> > contours_yellow;
           vector<vector<Point> > contours_green;
           findContours(red_hue_range, contours_red, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
-          findContours(yellow_hue_range, contours_yellow, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
+//          findContours(yellow_hue_range, contours_yellow, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
           findContours(green_hue_range, contours_green, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
           //find ellipse
           //red
-          vector<Point> center;
-          int x[3] = {0,0,0}; //{if_red, if_yellow, if_green}
+          vector<RotatedRect> red_ellipses;
+          vector<RotatedRect> green_ellipses;
+
           for(size_t i = 0; i < contours_red.size(); i++){
-          size_t count = contours_red[i].size();
-          if( count < 10 || count > 100)
-          continue;
+              size_t count = contours_red[i].size();
+              if( count < 10 || count > 100)
+                continue;
 
-          Mat pointsf;
-          Mat(contours_red[i]).convertTo(pointsf, CV_32F);
-          RotatedRect box = fitEllipse(pointsf);
+              Mat pointsf;
+              Mat(contours_red[i]).convertTo(pointsf, CV_32F);
+              RotatedRect box = fitEllipse(pointsf);
 
-          if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
-          continue;
-          //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-          center.push_back(Point(box.center.x,box.center.y+140));
-          x[0] = 1;
+              if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
+                continue;
+              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+              box.center.y += rec.y;
+              red_ellipses.push_back(box);
           }
 
-          //yellow
-          for(size_t i = 0; i < contours_yellow.size(); i++){
-          size_t count = contours_yellow[i].size();
-          if( count < 10 || count > 100)
-          continue;
-
-          Mat pointsf;
-          Mat(contours_yellow[i]).convertTo(pointsf, CV_32F);
-          RotatedRect box = fitEllipse(pointsf);
-
-          if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
-          continue;
-          //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-          center.push_back(Point(box.center.x,box.center.y+140));
-          x[1] = 1;
-          }
+//          //yellow
+//          for(size_t i = 0; i < contours_yellow.size(); i++){
+//              size_t count = contours_yellow[i].size();
+//              if( count < 10 || count > 100)
+//                continue;
+//
+//              Mat pointsf;
+//              Mat(contours_yellow[i]).convertTo(pointsf, CV_32F);
+//              RotatedRect box = fitEllipse(pointsf);
+//
+//              if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
+//                continue;
+//              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+//              center.push_back(Point(box.center.x,box.center.y+rec.y));
+//              x[1] = 1;
+//          }
 
           //green
           for(size_t i = 0; i < contours_green.size(); i++){
-          size_t count = contours_green[i].size();
-          if( count < 10 || count > 100)
-          continue;
+              size_t count = contours_green[i].size();
+              if( count < 10 || count > 100)
+                continue;
 
-          Mat pointsf;
-          Mat(contours_green[i]).convertTo(pointsf, CV_32F);
-          RotatedRect box = fitEllipse(pointsf);
+              Mat pointsf;
+              Mat(contours_green[i]).convertTo(pointsf, CV_32F);
+              RotatedRect box = fitEllipse(pointsf);
 
-          if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
-          continue;
-          //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-          center.push_back(Point(box.center.x, box.center.y+140));
-          x[2] = 1;
+              if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
+                continue;
+              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+              box.center.y += rec.y;
+              green_ellipses.push_back(box);
           }
+
+
+          //=====================================================================
+          /*
+          TODO:
+          Tiefeninformation für jede Ellipse speichern
+          Validitätscheck für jede Ellipse (passt der Durchmesser und die Höhe im bild zur berechneten Tiefe?)
+          Entscheidung für einen Ampelzustand  und update auf dem blackboard
+          Positionsberechnung
+          */
+
+
 
           //distance calculate
-          float distance = 0.0;
-          for(unsigned int i = 0; i <= center.size(); i++){
-              distance += depth.at<float>(center[i].x, center[i].y);
-          }
-          distance = distance/center.size();
+//          float distance = 0.0;
+//          for(unsigned int i = 0; i <= red_ellipses.size(); i++){
+//              distance += depth.at<float>(red_ellipses[i].x, red_ellipses[i].y);
+//          }
+//          distance = distance/red_ellipses.size();
 
-          //Velocity control
-          Velocity dv = BBOARD->getDesiredVelocity();
-          if((x[0]+x[1]) >= 1 && distance <= stopdis){
-              dv.velocity = 0;
-          }
-          BBOARD->setDesiredVelocity(dv);
+          /** get rectified projection matrix e.g. for reconstructing 3D points
+         * @param projection_matrix
+         *   3x4 projection matrix of the (virtual) rectified camera */
+          Mat projection_matrix;
+          stereoGPU.getProjectionMatrix(projection_matrix);
+
 
 
           //==================================================================

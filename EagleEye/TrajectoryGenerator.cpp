@@ -275,6 +275,7 @@ namespace DerWeg {
 */
             if (seg_pos.min_distance < distance_threshold && diff_angle.in_between(-angle_threshold, angle_threshold)) {
                 valid_segments.push_back(seg_pos);
+                //EOUT("--- Segment " << seg_pos.segment_id << " ---------------------------------------------------" << std::endl);
             }
             /*
             else if (diff_angle.in_between(-angle_threshold, angle_threshold)) {
@@ -301,13 +302,20 @@ namespace DerWeg {
             const int seg_id = valid_segments[i].segment_id;
             const int origin = seg_id / 10;
             const int destination = seg_id % 10;
+            /*
+            LOUT("seg_id" << seg_id << std::endl);
+            LOUT("origin" << origin << std::endl);
+            LOUT("destination" << destination << std::endl);
+            */
 
             origin_histogram[origin] += 1;
-            if (origin_histogram[origin] > origin_histogram[0]) {
+            int max_origin_node = origin_histogram[0];
+            if (origin_histogram[origin] > origin_histogram[max_origin_node]) {
                 origin_histogram[0] = origin;
             }
             destination_histogram[destination] += 1;
-            if (destination != 5 && destination_histogram[destination] > destination_histogram[0]) {
+            int max_destination_node = destination_histogram[0];
+            if (destination != 5 && destination_histogram[destination] > destination_histogram[max_destination_node]) {
                 destination_histogram[0] = destination;
             }
         }
@@ -321,13 +329,24 @@ namespace DerWeg {
         //node, which occurs most as destination node
         int max_destination_node = destination_histogram[0];
 
+
+/*
+        for (int i=0; i<=5; i++) {
+            LOUT("origin histogram [" << i << "] = " <<origin_histogram[i] << std::endl);
+        }
+
+        LOUT("max_origin_node" << max_origin_node << std::endl);
+        LOUT("origin_histogram" << origin_histogram[max_origin_node] << std::endl);
+        LOUT("max_destination_node" << max_origin_node << std::endl);
+        LOUT("destination_histogram" << destination_histogram[max_destination_node] << std::endl);
+*/
         // true, if there are more occurences like 11,13,14 than 31,41,11
         bool is_after_node = (origin_histogram[max_origin_node] >= destination_histogram[max_destination_node]);
         // true if no node is occuring significantly often as origin or destination, but node 5 is occuring often as destination
-        bool on_exit = (origin_histogram[0] <= 1) && (destination_histogram[0] <= 1) && (destination_histogram[5] >= 2);
+        bool on_exit = (origin_histogram[max_origin_node] <= 1) && (destination_histogram[max_destination_node] <= 1) && (destination_histogram[5] >= 3);
 
-        //LOUT("After node" << is_after_node << std::endl);
-        //LOUT("Of exit" << on_exit << std::endl);
+        //LOUT("After node " << is_after_node << std::endl);
+        //LOUT("On exit " << on_exit << std::endl);
 
         if (is_after_node && !on_exit) {
         // position is shortly after a node -> take next move_commmand into account, since there are multiple paths available

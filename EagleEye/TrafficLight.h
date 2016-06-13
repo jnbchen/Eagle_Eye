@@ -1,10 +1,11 @@
 #ifndef _DerWeg_TRAFFICLIGHT_H__
 #define _DerWeg_TRAFFICLIGHT_H__
 
-#include <cmath>
 #include "../Elementary/Vec.h"
-#include "CovMat.h"
+#include "DataObjects.h"
 #include "Segment.h"
+#include <Eigen/Dense>
+#include <string>
 
 
 namespace DerWeg {
@@ -24,6 +25,10 @@ struct TL_StateTransition {
 };
 */
 
+typedef Eigen::Matrix<double, 2, 2> Matrix2d;
+typedef Eigen::Matrix<double, 2, 1> Vector2d;
+
+
 class TrafficLight {
 
 private:
@@ -37,16 +42,22 @@ private:
     // Hence, for a transition from green to none it requires e.g. 3 images in a row where
     int min_observations;
 
+    // Localization variables
+    Vector2d mean_est;
+    Matrix2d C_est;
+
 public:
     TrafficLightState state;
-    Vec position;
-    CovMat covar;
 
     TrafficLight(int transition_votes);
 
     void observe_state(TrafficLightState signal);
 
-    void observe_position(Vec pos, double distance, double confidence = 1);
+    void update_position(Vec& measurement, State& state, double distance, double confidence = 1);
+    void set_position(double x, double y);
+    void set_covar(double var_x, double var_y, double covar);
+    Vec get_position() const;
+    void plot_estimate(const std::string& color) const;
 
 };
 
@@ -77,7 +88,7 @@ private:
 
 public:
     TrafficLightBehaviour(double a, double yellow_t) :
-        default_acceleration(a), default_deceleration(a), last_known_state(none), yellow_phase(yellow_t),
+        default_acceleration(a), default_deceleration(a), yellow_phase(yellow_t), last_known_state(none),
         mode(drive_on) {}
 
     void calculate_curve_distances(TrafficLight& tlight, Segment seg);

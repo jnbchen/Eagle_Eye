@@ -1,6 +1,11 @@
 #include "TrafficLight.h"
+#include "../Blackboard/Blackboard.h"
+#include <string>
+#include <sstream>
+#include <cmath>
 
-using namespace DerWeg;
+
+namespace DerWeg {
 
 // -------------------------------------------------------------------------------
 // TrafficLight implementation
@@ -38,9 +43,98 @@ void TrafficLight::observe_state(TrafficLightState signal) {
     }
 }
 
-void TrafficLight::observe_position(Vec pos, double distance, double confidence) {
-    position = pos;
-    this->distance = distance;
+void TrafficLight::update_position(Vec& measurement, State& state, double distance, double confidence) {
+
+    // Set up measurement covariance
+    Matrix2d C_measure;
+
+    // Rotate measurement covariance matrix
+    double alpha = state.orientation.get_rad_pi() +
+                  std::atan2(measurement.y, measurement.x);
+    double alpha_sin = std::sin(alpha);
+    double alpha_cos = std::cos(alpha);
+    Matrix2d R;
+    R(0, 0) = alpha_cos;
+    R(0, 1) = alpha_sin;
+    R(1, 0) = -alpha_sin;
+    R(1, 1) = alpha_cos;
+    C_measure = R.transpose() * (C_measure * R);
+
+    // Convert measured position to global coordinates
+    measurement += state.position;
+    Vector2d mean_measure(measurement.x, measurement.y);
+
+    // Update estimate, simple average weighted by the covariances
+    Matrix2d C_inv = (C_measure + C_est).inverse();
+    mean_est = C_measure * (C_inv * mean_est) +
+                      C_est * (C_inv * mean_measure);
+    C_est = C_measure * (C_inv * C_est);
+}
+
+void TrafficLight::set_position(double x, double y) {
+    mean_est(0) = x;
+    mean_est(1) = y;
+}
+
+void TrafficLight::set_covar(double var_x, double var_y, double covar) {
+    C_est(0, 0) = var_x;
+    C_est(1, 1) = var_y;
+    C_est(0, 1) = covar;
+    C_est(1, 0) = covar;
+}
+
+Vec TrafficLight::get_position() const {
+    return Vec(mean_est(0), mean_est(1));
+}
+
+void TrafficLight::plot_estimate(const std::string& color) const {
+    // compare:
+    // http://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/
+
+    // Plot estimated position in AnicarViewer
+    std::stringstream plt;
+    /*
+    plt << "thick " << color << " plus "
+        << mean_est(0) << " " << mean_est(1) << "\n";
+    */
+
+    // Plot axes of covariance ellipse
+    Eigen::EigenSolver<Matrix2d> eigsolve(C_est, true);
+    Vector2d eigvals = eigsolve.eigenvalues().real();
+    Matrix2d eigvecs = eigsolve.eigenvectors().real();
+    int ind_max_eigval;
+    double max_eigval = eigvals.maxCoeff(&ind_max_eigval);
+    int ind_min_eigval;
+    double min_eigval = eigvals.minCoeff(&ind_min_eigval);
+
+    // Get the 95% confidence interval error ellipse
+    double chisquare_val = 2.4477;
+    double a = chisquare_val * std::sqrt(max_eigval);
+    double b = chisquare_val * std::sqrt(min_eigval);
+
+    /*
+    double phi = std::atan2(eigvecs(1, ind_max_eigval), eigvecs(0, ind_max_eigval));
+    double phi_sin = std::sin(phi);
+    double phi_cos = std::cos(phi);
+    Matrix2d R;
+    R(0, 0) = phi_cos;
+    R(0, 1) = phi_sin;
+    R(1, 0) = -phi_sin;
+    R(1, 1) = phi_cos;
+    */
+
+    Vector2d p1 = mean_est + eigvecs.col(0);
+    Vector2d p2 = mean_est - eigvecs.col(0);
+    Vector2d p3 = mean_est + eigvecs.col(0);
+    Vector2d p4 = mean_est - eigvecs.col(0);
+
+    plt << "thick solid darkBlue line "
+    << p1(0) << " " << p1(1) << " "
+    << p2(0) << " " << p2(1) << " "
+    << p3(0) << " " << p3(1) << " "
+    << p4(0) << " " << p4(1) << "\n";
+
+    BBOARD->addPlotCommand(plt.str());
 }
 
 
@@ -98,6 +192,8 @@ double TrafficLightBehaviour::calculate_velocity(TrafficLight& tlight, double cu
         double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
         return std::pow(2 * max_deceleration * halt_point_distance, 0.5);
     }
+
+}
 
 }
 

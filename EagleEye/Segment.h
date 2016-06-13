@@ -59,7 +59,7 @@ namespace DerWeg{
             SegmentPosition find_segment_position(const Vec position, const int seeding_pts_per_meter, const int min_N) const {
                 SegmentPosition seg_pos;
                 seg_pos.min_distance = std::numeric_limits<double>::max();
-                for (int i=0; i<curves.size(); i++) {
+                for (unsigned int i=0; i<curves.size(); i++) {
                     DistanceParameters p = this->get(i).seeded_projection(position, seeding_pts_per_meter, min_N);
                     if (p.distance < seg_pos.min_distance) {
                         seg_pos.curve_id = i;

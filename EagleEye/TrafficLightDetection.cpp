@@ -60,7 +60,17 @@ namespace DerWeg {
 //        cfg.get("TrafficLigthDetection::yellow_v1", yellow_v1);
 //        cfg.get("TrafficLigthDetection::yellow_v2", yellow_v2);
 
-    }
+//      Mat image;
+//      stereoGPU.getProjectionMatrix(image);
+//
+//        for(int i = 0; i < image.rows; i++) {
+//            for(int j = 0; j < image.cols; j++) {
+//                float intensity = image.at<float>(i,j);
+//                LOUT(intensity << "   ");
+//            }
+//            LOUT(std::endl);
+//        }
+//    }
 
 
     void execute () {

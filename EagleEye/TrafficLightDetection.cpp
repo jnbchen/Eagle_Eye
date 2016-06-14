@@ -42,6 +42,8 @@ namespace DerWeg {
     ~TrafficLightDetection () {}
 
     void init(const ConfigReader& cfg) {
+        LOUT("Exec TrafficLightDetection init()" << std::endl);
+
         cfg.get("TrafficLigthDetection::erode_size", erode_size);
         cfg.get("TrafficLigthDetection::lower_red_h1", lower_red_h1);
         cfg.get("TrafficLigthDetection::lower_red_h2", lower_red_h2);
@@ -70,7 +72,7 @@ namespace DerWeg {
 //            }
 //            LOUT(std::endl);
 //        }
-//    }
+    }
 
 
     void execute () {
@@ -94,33 +96,40 @@ namespace DerWeg {
           CvRect rec;
           rec.x=0,rec.y=140,rec.width=659,rec.height=200;
           image = image(rec);
+
           //blur and hsv
           medianBlur(image, image, 3);
           Mat im_hsv;
           cvtColor(image, im_hsv, cv::COLOR_BGR2HSV);
+
           //thresholing
           Mat lower_red_hue_range;
           Mat upper_red_hue_range;
           Mat red_hue_range;
 //          Mat yellow_hue_range;
           Mat green_hue_range;
+
           //red
           inRange(im_hsv, cv::Scalar(lower_red_h1,100,lower_red_v1), cv::Scalar(lower_red_h2,255,lower_red_v2), lower_red_hue_range);
           inRange(im_hsv, cv::Scalar(upper_red_h1,100,upper_red_v1), cv::Scalar(upper_red_h2,255,upper_red_v2), upper_red_hue_range);
           addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_range,-1);
+
           //yellow
 //          inRange(im_hsv, cv::Scalar(yellow_h1,100,yellow_v1), cv::Scalar(yellow_h2,255,yellow_v2), yellow_hue_range);
+
           //green
           inRange(im_hsv, cv::Scalar(green_h1,100,green_v1), cv::Scalar(green_h2,255,green_v2), green_hue_range);
 
           //erode
-          Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( erode_size, erode_size ) );
-//          erode(red_hue_range, red_hue_range, element);
+          erode_size = 2;
+          // TODO:  init wont read erode_size parameter correctly
+          Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( -1, -1 ) );
+          erode(red_hue_range, red_hue_range, element);
 //          erode(yellow_hue_range, yellow_hue_range, element);
-//          erode(green_hue_range, green_hue_range, element);
-          morphologyEx(red_hue_range, red_hue_range, MORPH_OPEN, element);
-          morphologyEx(green_hue_range, green_hue_range, MORPH_OPEN, element);
+          erode(green_hue_range, green_hue_range, element);
+          //morphologyEx(red_hue_range, red_hue_range, MORPH_OPEN, element);
 
+          //morphologyEx(green_hue_range, green_hue_range, MORPH_OPEN, element);
 
           vector<vector<Point> > contours_red;
 //          vector<vector<Point> > contours_yellow;

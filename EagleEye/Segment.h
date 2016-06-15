@@ -37,19 +37,31 @@ namespace DerWeg{
                 return curves.size();
             }
 
-            /** Find current bezier curve */
-//            int find(const State& state, const int start_index) const {
-//                /*
-//                Increase index as long as position lies "underneath" the line
-//                rectangular to the curve at the endpoint of a bezier curve.
-//                */
-//                int index = start_index;
-//                while ((curves[index].e - curves[index].c2) *
-//                        (state.position - curves[index].e) >= 0) {
-//                    index++;
-//                }
-//                return index;
-//            }
+            // Calculate arc length distance from curve1, paramter value t1 to
+            // curve2, paramter value t2
+            // for the necessary quadrature are qf_N subintervals used per curve
+            //
+            // Returns -1 if invalid arguments
+            double arc_length(int curve1, double t1, int curve2, double t2, int qf_N) {
+                if (curve1 > curve2) {
+                    return -1;
+                }
+                if (curve1 == curve2) {
+                    if (t1 < t2) {
+                        return get(curve1).arc_length(t1,t2,qf_N);
+                    } else {
+                        return -1;
+                    }
+                }
+
+                double sum = 0;
+                sum += get(curve1).arc_length(t1,1,qf_N);
+                sum += get(curve2).arc_length(0,t2,qf_N);
+                for (int i = curve1 + 1; i < curve2; i++) {
+                    sum += get(i).arc_length(qf_N);
+                }
+                return sum;
+            }
 
             /** Given a position vector, find the closest point on the segment to this position.
             This is done via seeding all curves on the segment and simply look out for the minimum distance.

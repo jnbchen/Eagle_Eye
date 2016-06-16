@@ -53,6 +53,8 @@ namespace DerWeg {
     int qf_min_N;
     Angle angle_threshold;
 
+    TrafficLightBehaviour tl_behaviour;
+
   public:
     TrajectoryGenerator () : seg_lookup(createMap()) {}
     ~TrajectoryGenerator () {;}
@@ -198,6 +200,8 @@ namespace DerWeg {
         double degree_angle;
         cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
         angle_threshold = Angle::deg_angle(degree_angle);
+
+        tl_behaviour = TrafficLightBehaviour(cfg);
     }
 
     SegmentPosition find_start_position(const State state) {

@@ -148,7 +148,25 @@ void TrafficLight::plot_estimate(const std::string& color) const {
 // TrafficLightBehaviour implementation
 // -------------------------------------------------------------------------------
 
-void TrafficLightBehaviour::calculate_curve_distances(TrafficLight& tlight, Segment tl_seg,
+TrafficLightBehaviour::TrafficLightBehaviour(const ConfigReader& cfg) {
+    cfg.get("TrafficLightBehaviour::yellow_phase", yellow_phase);
+    cfg.get("TrafficLightBehaviour::newton_tolerance", newton_tol);
+    cfg.get("TrafficLightBehaviour::newton_max_iter", newton_steps);
+    cfg.get("TrafficLightBehaviour::sppm", sppm);
+    cfg.get("TrafficLightBehaviour::qf_N", qf_N);
+    cfg.get("TrafficLightBehaviour::tl_max_distance_to_curve", tl_max_distance_to_curve);
+    cfg.get("TrafficLightBehaviour::stopping_distance", stopping_distance);
+    cfg.get("TrafficLightBehaviour::halt_point_radius", halt_point_radius);
+    cfg.get("TrafficLightBehaviour::default_deceleration", default_deceleration);
+    default_acceleration = default_deceleration;
+
+    last_known_state = none;
+    mode = drive_on;
+    halt_point_distance = 100000;
+    tl_projected_distance = 100000;
+}
+
+void TrafficLightBehaviour::calculate_curve_distances(const TrafficLight& tlight, Segment tl_seg,
                                                         SegmentPosition current_pos) {
     if (tlight.state == none) {
     // if no traffic light detected, set values very high to not stop anywhere
@@ -182,7 +200,7 @@ void TrafficLightBehaviour::calculate_curve_distances(TrafficLight& tlight, Segm
 
 }
 
-void TrafficLightBehaviour::process_state(TrafficLight& tlight, double current_velocity) {
+void TrafficLightBehaviour::process_state(const TrafficLight& tlight, double current_velocity) {
     if (last_known_state == tlight.state) {
         return;
     }
@@ -215,7 +233,7 @@ void TrafficLightBehaviour::process_state(TrafficLight& tlight, double current_v
 
 }
 
-double TrafficLightBehaviour::calculate_max_velocity(TrafficLight& tlight, double current_velocity,
+double TrafficLightBehaviour::calculate_max_velocity(const TrafficLight& tlight, double current_velocity,
                                                         Segment tl_seg, SegmentPosition current_pos) {
     calculate_curve_distances(tlight, tl_seg, current_pos);
     process_state(tlight, current_velocity);

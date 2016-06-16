@@ -74,23 +74,30 @@ enum DrivingMode {stop, drive_on, accelerate};
 class TrafficLightBehaviour {
 
 private:
-    double default_acceleration;
-    double default_deceleration;
-    //duration of yellow signal
-    double yellow_phase;
-    // distance from halt point in which velocity is set to zero because it's close enough
-    double halt_point_radius;
     // distance to the point where the car has to stop before traffic light
     // (calculated via arclength or eucildean distance, should both work similarly)
+    // in METRES
     double halt_point_distance;
     // distance to the projection point of the traffic light onto the curve
+    // in METRES
     double tl_projected_distance;
-
 
     TrafficLightState last_known_state;
 
     //determines whether stopping, accelerating or driving on with same speed
     DrivingMode mode;
+
+    //================================
+    //Config variables
+    // in METRES PER SECOND SQUARED
+    double default_acceleration;
+    double default_deceleration;
+
+    //duration of yellow signal in seconds
+    double yellow_phase;
+    // distance from halt point in which velocity is set to zero because it's close enough
+    // in METRES
+    double halt_point_radius;
 
     // Variables used for finding the position of the traffic light and its projection
     // onto the curve plus the point where the car has to stop
@@ -110,17 +117,19 @@ private:
     // and the point where the car has to stop on the reference curve.
     // tl_seg has to be the segment on which the traffic light is located
     // !! CALCULATE THE DISTANCES IN METRES !!
-    void calculate_curve_distances(TrafficLight& tlight, Segment tl_seg, SegmentPosition current_pos);
+    void calculate_curve_distances(const TrafficLight& tlight, Segment tl_seg, SegmentPosition current_pos);
 
     // Processes the current traffic light
     // Depending on its state and distance the implemented
     // logic decides whether to drive on or stop
-    void process_state(TrafficLight& tlight, double current_velocity);
+    void process_state(const TrafficLight& tlight, double current_velocity);
 
 public:
-    TrafficLightBehaviour(double a, double yellow_t) :
-        default_acceleration(a), default_deceleration(a), yellow_phase(yellow_t), last_known_state(none),
-        mode(drive_on) {}
+//    TrafficLightBehaviour(double a, double yellow_t) :
+//        default_acceleration(a), default_deceleration(a), yellow_phase(yellow_t), last_known_state(none),
+//        mode(drive_on) {}
+
+    TrafficLightBehaviour(const ConfigReader& cfg);
 
     // Returns the velocity the car should drive at most to stop at the traffic light
     // tl_seg has to be the segment on which the traffic light is located
@@ -131,7 +140,7 @@ public:
     // if the current segment is the segment prior to the tl_seg, current_pos.min_distance is set to
     // the distance remaining til the end of the current segment and the other values contain
     // the start of tl_seg
-    double calculate_max_velocity(TrafficLight& tlight, double current_velocity,
+    double calculate_max_velocity(const TrafficLight& tlight, double current_velocity,
                                     Segment tl_seg, SegmentPosition current_pos);
 };
 

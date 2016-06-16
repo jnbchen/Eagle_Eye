@@ -31,6 +31,7 @@ namespace DerWeg {
   /** Struct to describe the reference path possibly with velocity information */
   struct ReferenceTrajectory {
     BezierCurve path;  ///< reference path, a bezier curve
+    int segment_id; ///< ID of the segment the current BezierCurve belongs to
 
     bool operator== (const ReferenceTrajectory&) const throw ();
     bool operator!= (const ReferenceTrajectory&) const throw ();

@@ -27,15 +27,18 @@ namespace DerWeg {
             Vec c1;     ///< Coordinates of first control point
             Vec c2;     ///< Coordinates of second control point
             Vec e;      ///< Coordinates of end point
-            double length; ///Numerical approximation of the arclength
-            int qf_used_N; ///Number of intervals used for quadrature of arc_length
+            double length; ///< Numerical approximation of the arclength
+            int qf_used_N; ///< Number of intervals used for quadrature of arc_length
 
         public:
             friend class Segment;
 
+            bool behind_intersec;   ///< Indicator if curve is behind or in front of intersection
+
             /** Constructors */
             BezierCurve();
             BezierCurve(Vec&, Vec&, Vec&, Vec&);
+            BezierCurve(Vec&, Vec&, Vec&, Vec&, bool);
 
             /** Comparison Operators */
             bool operator== (const BezierCurve&) const;
@@ -76,6 +79,7 @@ namespace DerWeg {
             Returns the seeding parameter closest to the given position.
             min_N is the minimal number of subintervals for numerical integration of thee arc length. */
             DistanceParameters seeded_projection(const Vec position, const int seeding_pts_per_meter, const int min_N);
+
 
     };
 

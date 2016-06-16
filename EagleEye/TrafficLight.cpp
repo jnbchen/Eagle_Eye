@@ -48,6 +48,10 @@ void TrafficLight::update_position(Vec& measurement, State& state, double distan
 
     // Set up measurement covariance
     Matrix2d C_measure;
+    C_measure(0, 0) = pow(distance, 2) * covarcoeff_x;
+    C_measure(1, 1) = distance * covarcoeff_y;
+    C_measure(0, 1) = 0;
+    C_measure(1, 0) = 0;
 
     // Rotate measurement covariance matrix
     double alpha = state.orientation.get_rad_pi() +

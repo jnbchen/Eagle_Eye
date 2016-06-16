@@ -86,6 +86,13 @@ namespace DerWeg {
         std::string file_path;
         cfg.get("TrajectoryGenerator::segments_file", file_path);
 
+        std::vector<double> intersec_midpoint_temp;
+        cfg.get("TrajectoryGenerator::intersection_midpoint", intersec_midpoint_temp);
+        Vec intersec_midpoint(intersec_midpoint_temp[0], intersec_midpoint_temp[1]);
+        double newton_tolerance, newton_max_iter;
+        cfg.get("LateralControl::newton_tolerance", newton_tolerance);
+        cfg.get("LateralControl::newton_max_iter", newton_max_iter);
+
         std::ifstream input_file(file_path);
         std::string line;
         int segment_identifier = 0;
@@ -123,7 +130,7 @@ namespace DerWeg {
                 // empty line, do nothing
             }
             else if (line_content.size() == 4 && segment_identifier != 0) {
-                // data line, add to segment
+                // data line, construct bezier curve, add to segment
                 std::vector<Vec> points(4);
                 for (int i = 0; i < 4; ++i) {
                     std::vector<std::string> coord = split_string(line_content[i], ",");
@@ -135,10 +142,26 @@ namespace DerWeg {
                 segments[segment_identifier].add(bc);
             }
             else
-                LOUT("ERROR: something wrong with the segments file" << std::endl);
+                EOUT("ERROR: something wrong with the segments file" << std::endl);
         }
 
         LOUT("Number of Segments: " << segments.size() << std::endl);
+
+        for (std::map<int, Segment>::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
+            // get map value
+            Segment seg = iter->second;
+
+            // Find segment position
+            SegmentPosition seg_pos = seg.find_segment_position(intersec_midpoint, seeding_pts_per_meter, qf_min_N);
+            // get map key
+            //seg_pos.segment_id = iter->first;
+
+            for (int i=0; i < seg.size(); i++) {
+                BezierCurve& curve = seg.get(i);
+                curve.behind_intersec = (i > seg_pos.curve_id);
+            }
+
+        }
 
         std::vector<char> cmds;
         cfg.get("TrajectoryGenerator::driving_commands", cmds);
@@ -324,6 +347,7 @@ namespace DerWeg {
     void set_reference_trajectory() {
         ReferenceTrajectory rt;
         rt.path = segments[segment_index].get(curve_index);
+        rt.segment_id = segment_index;
         BBOARD->setReferenceTrajectory(rt);
     }
 

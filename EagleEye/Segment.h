@@ -29,7 +29,7 @@ namespace DerWeg{
             }
 
             /** Get i-th bezier curve of the segment */
-            BezierCurve get(const int i) const {
+            BezierCurve& get(const int i) {
                 return curves.at(i);
             }
 
@@ -68,7 +68,7 @@ namespace DerWeg{
             The parameter seeding_pts_per_meter is used to calculate how many seeding point are used on each curve (via arc length).
             max_distance is the maximum distance allowed from the position to the segment.
             min_N is the minimum number of quadrature subintervals for calculation of arc length.*/
-            SegmentPosition find_segment_position(const Vec position, const int seeding_pts_per_meter, const int min_N) const {
+            SegmentPosition find_segment_position(const Vec position, const int seeding_pts_per_meter, const int min_N) {
                 SegmentPosition seg_pos;
                 seg_pos.min_distance = std::numeric_limits<double>::max();
                 for (unsigned int i=0; i<curves.size(); i++) {

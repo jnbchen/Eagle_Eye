@@ -45,6 +45,8 @@ private:
     // Localization variables
     Vector2d mean_est;
     Matrix2d C_est;
+    double covarcoeff_x;
+    double covarcoeff_y;
 
 public:
     TrafficLightState state;
@@ -75,9 +77,9 @@ private:
     double default_acceleration;
     double default_deceleration;
     //duration of yellow signal
-    double yellow_phase = 1;
+    double yellow_phase;
     // distance from halt point in which velocity is set to zero because it's close enough
-    double halt_point_radius = 0.02;
+    double halt_point_radius;
     // distance to the point where the car has to stop before traffic light
     // (calculated via arclength or eucildean distance, should both work similarly)
     double halt_point_distance;
@@ -92,17 +94,17 @@ private:
 
     // Variables used for finding the position of the traffic light and its projection
     // onto the curve plus the point where the car has to stop
-    int qf_N = 4;
-    int sppm = 4;
-    int newton_steps = 20;
-    double newton_tol = 0.01;
+    int qf_N;
+    int sppm;
+    int newton_steps;
+    double newton_tol;
     // is the traffic light is found further than this distance from the given segment,
     // there probably something went wrong
     // This distance is still in MILLIMETRES
-    double tl_max_distance_to_curve = 2000;
+    double tl_max_distance_to_curve;
     // How far before the traffic light should the car stop?
     // This distance is still in MILLIMETRES
-    double stopping_distance = 500;
+    double stopping_distance;
 
     // Calculates the projection of the traffic light onto the current segment
     // and the point where the car has to stop on the reference curve.

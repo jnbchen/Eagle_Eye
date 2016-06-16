@@ -28,7 +28,6 @@ namespace DerWeg {
 
     int erode_size;
     int lower_red_h1; int lower_red_h2; int lower_red_s1; int lower_red_s2; int lower_red_v1; int lower_red_v2;
-//    int upper_red_h1; int upper_red_h2; int upper_red_v1; int upper_red_v2;/** upper red not fund */
     int yellow_h1; int yellow_h2; int yellow_s1; int yellow_s2; int yellow_v1; int yellow_v2;
     int green_h1; int green_h2; int green_s1; int green_s2; int green_v1; int green_v2;
 
@@ -51,33 +50,21 @@ namespace DerWeg {
         cfg.get("TrafficLigthDetection::lower_red_s2", lower_red_s2);
         cfg.get("TrafficLigthDetection::lower_red_v1", lower_red_v1);
         cfg.get("TrafficLigthDetection::lower_red_v2", lower_red_v2);
-//        cfg.get("TrafficLigthDetection::upper_red_h1", upper_red_h1);
-//        cfg.get("TrafficLigthDetection::upper_red_h2", upper_red_h2);
-//        cfg.get("TrafficLigthDetection::upper_red_v1", upper_red_v1);
-//        cfg.get("TrafficLigthDetection::upper_red_v2", upper_red_v2);
         cfg.get("TrafficLigthDetection::green_h1", green_h1);
         cfg.get("TrafficLigthDetection::green_h2", green_h2);
         cfg.get("TrafficLigthDetection::green_s1", green_s1);
         cfg.get("TrafficLigthDetection::green_s2", green_s2);
         cfg.get("TrafficLigthDetection::green_v1", green_v1);
         cfg.get("TrafficLigthDetection::green_v2", green_v2);
-//        cfg.get("TrafficLigthDetection::yellow_h1", yellow_h1);
-//        cfg.get("TrafficLigthDetection::yellow_h2", yellow_h2);
-//        cfg.get("TrafficLigthDetection::yellow_s1", yellow_s1);
-//        cfg.get("TrafficLigthDetection::yellow_s2", yellow_s2);
-//        cfg.get("TrafficLigthDetection::yellow_v1", yellow_v1);
-//        cfg.get("TrafficLigthDetection::yellow_v2", yellow_v2);
 
-//      Mat image;
-//      stereoGPU.getProjectionMatrix(image);
-//
-//        for(int i = 0; i < image.rows; i++) {
-//            for(int j = 0; j < image.cols; j++) {
-//                float intensity = image.at<float>(i,j);
-//                LOUT(intensity << "   ");
-//            }
-//            LOUT(std::endl);
-//        }
+        LOUT("erode_size = " << erode_size << std::endl);
+
+        Mat projection_matrix;
+        stereoGPU.getProjectionMatrix(projection_matrix);
+        Mat coord_trafo = projection_matrix(Rect(0, 0, 2, 2)).clone();
+        LOUT("coord_trafo = " << std::endl << " " << coord_trafo << std::endl);
+        coord_trafo = coord_trafo.inv();
+
     }
 
 
@@ -99,8 +86,7 @@ namespace DerWeg {
 
           // windows
           Mat image(ib.image);
-          CvRect rec;
-          rec.x=0,rec.y=140,rec.width=659,rec.height=200;
+          Rect rec(0, 140, 659, 200);
           image = image(rec);
 
           //blur and hsv
@@ -109,19 +95,11 @@ namespace DerWeg {
           cvtColor(image, im_hsv, cv::COLOR_BGR2HSV);
 
           //thresholing
-          Mat lower_red_hue_range;
-//          Mat upper_red_hue_range;
           Mat red_hue_range;
-//          Mat yellow_hue_range;
           Mat green_hue_range;
 
           //red
           inRange(im_hsv, cv::Scalar(lower_red_h1,lower_red_s1,lower_red_v1), cv::Scalar(lower_red_h2,lower_red_s2,lower_red_v2), red_hue_range);
-//          inRange(im_hsv, cv::Scalar(upper_red_h1,100,upper_red_v1), cv::Scalar(upper_red_h2,255,upper_red_v2), upper_red_hue_range);
-//          addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_range,-1);
-
-          //yellow
-//          inRange(im_hsv, cv::Scalar(yellow_h1,yellow_s1,yellow_v1), cv::Scalar(yellow_h2,yellow_s2,yellow_v2), yellow_hue_range);
 
           //green
           inRange(im_hsv, cv::Scalar(green_h1,green_s1,green_v1), cv::Scalar(green_h2,green_s2,green_v2), green_hue_range);
@@ -134,18 +112,14 @@ namespace DerWeg {
 //          erode(yellow_hue_range, yellow_hue_range, element);
           erode(green_hue_range, green_hue_range, element);
           //morphologyEx(red_hue_range, red_hue_range, MORPH_OPEN, element);
-
           //morphologyEx(green_hue_range, green_hue_range, MORPH_OPEN, element);
 
           vector<vector<Point> > contours_red;
-//          vector<vector<Point> > contours_yellow;
           vector<vector<Point> > contours_green;
           findContours(red_hue_range, contours_red, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
-//          findContours(yellow_hue_range, contours_yellow, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
           findContours(green_hue_range, contours_green, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
           //find ellipse
-          //red
           vector<RotatedRect> red_ellipses;
           vector<RotatedRect> green_ellipses;
 
@@ -164,23 +138,6 @@ namespace DerWeg {
               box.center.y += rec.y;
               red_ellipses.push_back(box);
           }
-
-//          //yellow
-//          for(size_t i = 0; i < contours_yellow.size(); i++){
-//              size_t count = contours_yellow[i].size();
-//              if( count < 10 || count > 100)
-//                continue;
-//
-//              Mat pointsf;
-//              Mat(contours_yellow[i]).convertTo(pointsf, CV_32F);
-//              RotatedRect box = fitEllipse(pointsf);
-//
-//              if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
-//                continue;
-//              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
-//              center.push_back(Point(box.center.x,box.center.y+rec.y));
-//              x[1] = 1;
-//          }
 
           //green
           for(size_t i = 0; i < contours_green.size(); i++){
@@ -217,12 +174,6 @@ namespace DerWeg {
 //              distance += depth.at<float>(red_ellipses[i].x, red_ellipses[i].y);
 //          }
 //          distance = distance/red_ellipses.size();
-
-          /** get rectified projection matrix e.g. for reconstructing 3D points
-         * @param projection_matrix
-         *   3x4 projection matrix of the (virtual) rectified camera */
-          Mat projection_matrix;
-          stereoGPU.getProjectionMatrix(projection_matrix);
 
 
 

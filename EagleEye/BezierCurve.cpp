@@ -7,13 +7,16 @@
 using namespace DerWeg;
 
 BezierCurve::BezierCurve() :
-    s(Vec(0,0)), c1(Vec(0,0)), c2(Vec(0,0)), e(Vec(0,0)), length(0), qf_used_N(0) {}
+    s(Vec(0,0)), c1(Vec(0,0)), c2(Vec(0,0)), e(Vec(0,0)), length(0), qf_used_N(0), behind_intersec(false) {}
 
 BezierCurve::BezierCurve(Vec& start, Vec& control1, Vec& control2, Vec& end)
-    : s(start), c1(control1), c2(control2), e(end), length(0), qf_used_N(0) {}
+    : s(start), c1(control1), c2(control2), e(end), length(0), qf_used_N(0), behind_intersec(false) {}
+
+BezierCurve::BezierCurve(Vec& start, Vec& control1, Vec& control2, Vec& end, bool bh_is)
+    : s(start), c1(control1), c2(control2), e(end), length(0), qf_used_N(0), behind_intersec(bh_is) {}
 
 bool BezierCurve::operator== (const BezierCurve& bc) const {
-    return s==bc.s && c1==bc.c1 && c2==bc.c2 && e==bc.e;
+    return s==bc.s && c1==bc.c1 && c2==bc.c2 && e==bc.e && behind_intersec==bc.behind_intersec;
 }
 
 bool BezierCurve::operator!= (const BezierCurve& bc) const {
@@ -153,3 +156,4 @@ DistanceParameters BezierCurve::seeded_projection(const Vec position, const int 
 bool BezierCurve::reached_end(const Vec& position) const {
     return ((e - c2) * (position - e) >= 0);
 }
+

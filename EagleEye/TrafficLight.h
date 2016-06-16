@@ -2,9 +2,10 @@
 #define _DerWeg_TRAFFICLIGHT_H__
 
 #include "../Elementary/Vec.h"
+#include "../Elementary/ConfigReader.h"
 #include "DataObjects.h"
 #include "Segment.h"
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <string>
 
 
@@ -125,9 +126,8 @@ private:
     void process_state(const TrafficLight& tlight, double current_velocity);
 
 public:
-//    TrafficLightBehaviour(double a, double yellow_t) :
-//        default_acceleration(a), default_deceleration(a), yellow_phase(yellow_t), last_known_state(none),
-//        mode(drive_on) {}
+    // empty default constructor
+    TrafficLightBehaviour() {}
 
     TrafficLightBehaviour(const ConfigReader& cfg);
 

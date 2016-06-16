@@ -5,12 +5,14 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
+#include "ImageProcessingFunctions.h"
 #include "../Elementary/Angle.h"
 #include "../Elementary/Vec.h"
 #include <vector>
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 
 using namespace cv;
@@ -24,7 +26,9 @@ namespace DerWeg {
   private:
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;
-    Mat depth, conf, rect;
+    Mat depth, conf, rect, coord_trafo;
+
+    std::string windowname;
 
     int erode_size;
     int lower_red_h1; int lower_red_h2; int lower_red_s1; int lower_red_s2; int lower_red_v1; int lower_red_v2;
@@ -35,7 +39,9 @@ namespace DerWeg {
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
-      stereoGPU ("/home/common/calib.txt") {}
+      stereoGPU ("/home/common/calib.txt"), windowname("Processed Image") {
+        cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+      }
 
     /** Destruktor */
     ~TrafficLightDetection () {}
@@ -43,25 +49,23 @@ namespace DerWeg {
     void init(const ConfigReader& cfg) {
         LOUT("Exec TrafficLightDetection init()" << std::endl);
 
-        cfg.get("TrafficLigthDetection::erode_size", erode_size);
-        cfg.get("TrafficLigthDetection::lower_red_h1", lower_red_h1);
-        cfg.get("TrafficLigthDetection::lower_red_h2", lower_red_h2);
-        cfg.get("TrafficLigthDetection::lower_red_s1", lower_red_s1);
-        cfg.get("TrafficLigthDetection::lower_red_s2", lower_red_s2);
-        cfg.get("TrafficLigthDetection::lower_red_v1", lower_red_v1);
-        cfg.get("TrafficLigthDetection::lower_red_v2", lower_red_v2);
-        cfg.get("TrafficLigthDetection::green_h1", green_h1);
-        cfg.get("TrafficLigthDetection::green_h2", green_h2);
-        cfg.get("TrafficLigthDetection::green_s1", green_s1);
-        cfg.get("TrafficLigthDetection::green_s2", green_s2);
-        cfg.get("TrafficLigthDetection::green_v1", green_v1);
-        cfg.get("TrafficLigthDetection::green_v2", green_v2);
-
-        LOUT("erode_size = " << erode_size << std::endl);
+        cfg.get("TrafficLightDetection::erode_size", erode_size);
+        cfg.get("TrafficLightDetection::lower_red_h1", lower_red_h1);
+        cfg.get("TrafficLightDetection::lower_red_h2", lower_red_h2);
+        cfg.get("TrafficLightDetection::lower_red_s1", lower_red_s1);
+        cfg.get("TrafficLightDetection::lower_red_s2", lower_red_s2);
+        cfg.get("TrafficLightDetection::lower_red_v1", lower_red_v1);
+        cfg.get("TrafficLightDetection::lower_red_v2", lower_red_v2);
+        cfg.get("TrafficLightDetection::green_h1", green_h1);
+        cfg.get("TrafficLightDetection::green_h2", green_h2);
+        cfg.get("TrafficLightDetection::green_s1", green_s1);
+        cfg.get("TrafficLightDetection::green_s2", green_s2);
+        cfg.get("TrafficLightDetection::green_v1", green_v1);
+        cfg.get("TrafficLightDetection::green_v2", green_v2);
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
-        Mat coord_trafo = projection_matrix(Rect(0, 0, 2, 2)).clone();
+        coord_trafo = projection_matrix(Rect(0, 0, 3, 3)).clone();
         LOUT("coord_trafo = " << std::endl << " " << coord_trafo << std::endl);
         coord_trafo = coord_trafo.inv();
 
@@ -87,12 +91,13 @@ namespace DerWeg {
           // windows
           Mat image(ib.image);
           Rect rec(0, 140, 659, 200);
-          image = image(rec);
+          //Region of Interest
+          Mat ROI_image = image(rec);
 
           //blur and hsv
-          medianBlur(image, image, 3);
+          medianBlur(ROI_image, ROI_image, 3);
           Mat im_hsv;
-          cvtColor(image, im_hsv, cv::COLOR_BGR2HSV);
+          cvtColor(ROI_image, im_hsv, cv::COLOR_BGR2HSV);
 
           //thresholing
           Mat red_hue_range;
@@ -104,15 +109,10 @@ namespace DerWeg {
           //green
           inRange(im_hsv, cv::Scalar(green_h1,green_s1,green_v1), cv::Scalar(green_h2,green_s2,green_v2), green_hue_range);
 
-          //erode
-          erode_size = 2;
-          // TODO:  init wont read erode_size parameter correctly
+          //TODO: OPENing / CLOSING anstatt ERODE
           Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( -1, -1 ) );
           erode(red_hue_range, red_hue_range, element);
-//          erode(yellow_hue_range, yellow_hue_range, element);
           erode(green_hue_range, green_hue_range, element);
-          //morphologyEx(red_hue_range, red_hue_range, MORPH_OPEN, element);
-          //morphologyEx(green_hue_range, green_hue_range, MORPH_OPEN, element);
 
           vector<vector<Point> > contours_red;
           vector<vector<Point> > contours_green;
@@ -125,7 +125,7 @@ namespace DerWeg {
 
           for(size_t i = 0; i < contours_red.size(); i++){
               size_t count = contours_red[i].size();
-              if( count < 10 || count > 100)
+              if( count < 10 || count > 200)
                 continue;
 
               Mat pointsf;
@@ -134,15 +134,17 @@ namespace DerWeg {
 
               if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
                 continue;
-              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+
+              //draw found ellipses into image
               box.center.y += rec.y;
+              ellipse(image, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
               red_ellipses.push_back(box);
           }
 
           //green
           for(size_t i = 0; i < contours_green.size(); i++){
               size_t count = contours_green[i].size();
-              if( count < 10 || count > 100)
+              if( count < 10 || count > 200)
                 continue;
 
               Mat pointsf;
@@ -151,10 +153,14 @@ namespace DerWeg {
 
               if( MAX(box.size.width, box.size.height) > MIN(box.size.width, box.size.height)*1.5)
                 continue;
-              //ellipse(cimage, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+              //draw found ellipses into image
               box.center.y += rec.y;
+              ellipse(image, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
               green_ellipses.push_back(box);
           }
+
+            // Show results of ellipse fitting
+          cv::imshow (windowname.c_str(), image);
 
 
           //=====================================================================
@@ -165,15 +171,55 @@ namespace DerWeg {
           Entscheidung für einen Ampelzustand  und update auf dem blackboard
           Positionsberechnung
           */
+          for(size_t i = 0; i < red_ellipses.size(); i++){
+            RotatedRect& box = red_ellipses[i];
+            //ellipse center
+            float u = box.center.x;
+            float v = box.center.y;
+            //TODO: Also use confidence for depth
 
+            Rect box_rect;
+            box_rect.x = box.center.x;
+            box_rect.y = box.center.y;
+            box_rect.height = box.size.height;
+            box_rect.width = box.size.width;
+            float distance = median(depth(box_rect));
 
+            Mat image_coords(3, 1, CV_64FC1);
+            image_coords.at<float>(0,0) = distance * u;
+            image_coords.at<float>(1,0) = distance * v;
+            image_coords.at<float>(2,0) = distance;
+            Mat camera_coords = coord_trafo * image_coords;
 
-          //distance calculate
-//          float distance = 0.0;
-//          for(unsigned int i = 0; i <= red_ellipses.size(); i++){
-//              distance += depth.at<float>(red_ellipses[i].x, red_ellipses[i].y);
-//          }
-//          distance = distance/red_ellipses.size();
+            LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
+            LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+
+          }
+
+          for(size_t i = 0; i < green_ellipses.size(); i++){
+            RotatedRect& box = red_ellipses[i];
+            //ellipse center
+            float u = box.center.x;
+            float v = box.center.y;
+            //TODO: Also use confidence for depth
+
+            Rect box_rect;
+            box_rect.x = box.center.x;
+            box_rect.y = box.center.y;
+            box_rect.height = box.size.height;
+            box_rect.width = box.size.width;
+            float distance = median(depth(box_rect));
+
+            Mat image_coords(3, 1, CV_64FC1);
+            image_coords.at<float>(0,0) = distance * u;
+            image_coords.at<float>(1,0) = distance * v;
+            image_coords.at<float>(2,0) = distance;
+            Mat camera_coords = coord_trafo * image_coords;
+
+            LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
+            LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+
+          }
 
 
 

@@ -26,7 +26,8 @@ namespace DerWeg {
   private:
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;
-    Mat depth, conf, rect, coord_trafo;
+    Mat depth, conf, rect;
+    CoordinateTransform transformer;
 
     std::string windowname;
     std::string windowname2;
@@ -67,10 +68,8 @@ namespace DerWeg {
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
-        coord_trafo = projection_matrix(Rect(0, 0, 3, 3)).clone();
-        LOUT("coord_trafo = " << std::endl << " " << coord_trafo << std::endl);
-        coord_trafo = coord_trafo.inv();
 
+        transformer = CoordinateTransform(cfg, projection_matrix);
     }
 
 
@@ -122,6 +121,7 @@ namespace DerWeg {
 
           cv::imshow (windowname2.c_str(), red_hue_range );
 
+          // Watch out, this call changes the input image !!
           findContours(red_hue_range, contours_red, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
           findContours(green_hue_range, contours_green, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
@@ -131,6 +131,7 @@ namespace DerWeg {
 
           for(size_t i = 0; i < contours_red.size(); i++){
               size_t count = contours_red[i].size();
+              //TODO: Ist 200 als Grenze okay ?? Oder kann eine Kontour auch über 200 pixel liegen?
               if( count < 10 || count > 200)
                 continue;
 
@@ -188,10 +189,13 @@ namespace DerWeg {
             image_coords.at<double>(0,0) = distance * u;
             image_coords.at<double>(1,0) = distance * v;
             image_coords.at<double>(2,0) = distance;
-            Mat camera_coords = coord_trafo * image_coords;
 
-            LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
-            LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+            //Mat camera_coords = coord_trafo * image_coords;
+
+            //LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
+            //LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+
+
 
           }
 
@@ -210,10 +214,10 @@ namespace DerWeg {
             image_coords.at<double>(0,0) = distance * u;
             image_coords.at<double>(1,0) = distance * v;
             image_coords.at<double>(2,0) = distance;
-            Mat camera_coords = coord_trafo * image_coords;
+            //Mat camera_coords = coord_trafo * image_coords;
 
-            LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
-            LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+            //LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
+            //LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
 
           }
 

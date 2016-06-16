@@ -29,6 +29,7 @@ namespace DerWeg {
     Mat depth, conf, rect, coord_trafo;
 
     std::string windowname;
+    std::string windowname2;
 
     int erode_size;
     int lower_red_h1; int lower_red_h2; int lower_red_s1; int lower_red_s2; int lower_red_v1; int lower_red_v2;
@@ -41,6 +42,7 @@ namespace DerWeg {
     TrafficLightDetection () :
       stereoGPU ("/home/common/calib.txt"), windowname("Processed Image") {
         cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+        cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
 
     /** Destruktor */
@@ -116,6 +118,10 @@ namespace DerWeg {
 
           vector<vector<Point> > contours_red;
           vector<vector<Point> > contours_green;
+
+
+          cv::imshow (windowname2.c_str(), red_hue_range );
+
           findContours(red_hue_range, contours_red, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
           findContours(green_hue_range, contours_green, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
@@ -137,7 +143,7 @@ namespace DerWeg {
 
               //draw found ellipses into image
               box.center.y += rec.y;
-              ellipse(image, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+              ellipse(image, box, Scalar(0,255,255));
               red_ellipses.push_back(box);
           }
 
@@ -155,13 +161,9 @@ namespace DerWeg {
                 continue;
               //draw found ellipses into image
               box.center.y += rec.y;
-              ellipse(image, box.center, box.size*0.5f, box.angle, 0, 360, Scalar(0,255,255), 1, CV_AA);
+              ellipse(image, box, Scalar(0,255,255));
               green_ellipses.push_back(box);
           }
-
-            // Show results of ellipse fitting
-          cv::imshow (windowname.c_str(), image);
-
 
           //=====================================================================
           /*
@@ -178,17 +180,14 @@ namespace DerWeg {
             float v = box.center.y;
             //TODO: Also use confidence for depth
 
-            Rect box_rect;
-            box_rect.x = box.center.x;
-            box_rect.y = box.center.y;
-            box_rect.height = box.size.height;
-            box_rect.width = box.size.width;
-            float distance = median(depth(box_rect));
+            Rect box_rect = box.boundingRect();
+            rectangle(image, box_rect, Scalar(255,0,0));
+            double distance = median(depth(box_rect));
 
             Mat image_coords(3, 1, CV_64FC1);
-            image_coords.at<float>(0,0) = distance * u;
-            image_coords.at<float>(1,0) = distance * v;
-            image_coords.at<float>(2,0) = distance;
+            image_coords.at<double>(0,0) = distance * u;
+            image_coords.at<double>(1,0) = distance * v;
+            image_coords.at<double>(2,0) = distance;
             Mat camera_coords = coord_trafo * image_coords;
 
             LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
@@ -197,23 +196,20 @@ namespace DerWeg {
           }
 
           for(size_t i = 0; i < green_ellipses.size(); i++){
-            RotatedRect& box = red_ellipses[i];
+            RotatedRect& box = green_ellipses[i];
             //ellipse center
             float u = box.center.x;
             float v = box.center.y;
             //TODO: Also use confidence for depth
 
-            Rect box_rect;
-            box_rect.x = box.center.x;
-            box_rect.y = box.center.y;
-            box_rect.height = box.size.height;
-            box_rect.width = box.size.width;
-            float distance = median(depth(box_rect));
+            Rect box_rect = box.boundingRect();
+            rectangle(image, box_rect, Scalar(255,0,0));
+            double distance = median(depth(box_rect));
 
             Mat image_coords(3, 1, CV_64FC1);
-            image_coords.at<float>(0,0) = distance * u;
-            image_coords.at<float>(1,0) = distance * v;
-            image_coords.at<float>(2,0) = distance;
+            image_coords.at<double>(0,0) = distance * u;
+            image_coords.at<double>(1,0) = distance * v;
+            image_coords.at<double>(2,0) = distance;
             Mat camera_coords = coord_trafo * image_coords;
 
             LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
@@ -221,7 +217,8 @@ namespace DerWeg {
 
           }
 
-
+          // Show results of ellipse fitting
+          cv::imshow (windowname.c_str(), image);
 
           //==================================================================
           // LOCALIZATION

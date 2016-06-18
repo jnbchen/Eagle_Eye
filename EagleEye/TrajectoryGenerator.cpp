@@ -149,21 +149,32 @@ namespace DerWeg {
 
         LOUT("Number of Segments: " << segments.size() << std::endl);
 
+
+/**
         for (std::map<int, Segment>::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
             // get map value
             Segment seg = iter->second;
+
+            //LOUT("find_seg_pos "<<iter->first<<std::endl);
 
             // Find segment position
             SegmentPosition seg_pos = seg.find_segment_position(intersec_midpoint, seeding_pts_per_meter, qf_min_N);
             // get map key
             //seg_pos.segment_id = iter->first;
 
+
+            //LOUT("found seg_pos "<<iter->first<<std::endl);
+
             for (int i=0; i < seg.size(); i++) {
                 BezierCurve& curve = seg.get(i);
                 curve.behind_intersec = (i > seg_pos.curve_id);
             }
 
+
+            LOUT("segment "<<iter->first<< " done" << std::endl);
+
         }
+*/
 
         std::vector<char> cmds;
         cfg.get("TrajectoryGenerator::driving_commands", cmds);
@@ -201,7 +212,9 @@ namespace DerWeg {
         cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
         angle_threshold = Angle::deg_angle(degree_angle);
 
+        LOUT("TEST"<<std::endl);
         tl_behaviour = TrafficLightBehaviour(cfg);
+        LOUT("TrajectoryGenerator init finished" << std::endl);
     }
 
     SegmentPosition find_start_position(const State state) {

@@ -49,19 +49,21 @@ void TrafficLight::observe_state(TrafficLightState signal) {
 }
 
 void TrafficLight::update_position(cv::Mat& measurement, double distance, State state) {
+    Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
+
     // Convert to millimetres
     distance *= 1000;
 
     // Set up measurement covariance
     Matrix2d C_measure;
-    C_measure(0, 0) = pow(distance, 2) * 10;
-    C_measure(1, 1) = distance * 10;
+    C_measure(0, 0) = pow(distance, 2) * covarcoeff_x;
+    C_measure(1, 1) = distance * covarcoeff_y;
     C_measure(0, 1) = 0;
     C_measure(1, 0) = 0;
 
     // Rotate measurement covariance matrix
-    double x = measurement.at<double>(0,0) - state.position.x;
-    double y = measurement.at<double>(1,0) - state.position.y;
+    double x = mean_measure(0) - state.position.x;
+    double y = mean_measure(1) - state.position.y;
     double alpha = state.orientation.get_rad_pi() + std::atan2(y, x);
     double alpha_sin = std::sin(alpha);
     double alpha_cos = std::cos(alpha);
@@ -71,8 +73,6 @@ void TrafficLight::update_position(cv::Mat& measurement, double distance, State 
     R(1, 0) = -alpha_sin;
     R(1, 1) = alpha_cos;
     C_measure = R.transpose() * (C_measure * R);
-
-    Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
 
     // Update estimate, simple average weighted by the covariances
     Matrix2d C_inv = (C_measure + C_est).inverse();
@@ -103,24 +103,20 @@ void TrafficLight::plot_estimate() const {
 
     // Plot estimated position in AnicarViewer
     std::stringstream plt;
-    /*
-    plt << "thick " << color << " plus "
-        << mean_est(0) << " " << mean_est(1) << "\n";
-    */
 
     // Plot axes of covariance ellipse
     Eigen::EigenSolver<Matrix2d> eigsolve(C_est, true);
-    Vector2d eigvals = eigsolve.eigenvalues().real();
+    // Vector2d eigvals = eigsolve.eigenvalues().real();
     Matrix2d eigvecs = eigsolve.eigenvectors().real();
-    int ind_max_eigval;
-    double max_eigval = eigvals.maxCoeff(&ind_max_eigval);
-    int ind_min_eigval;
-    double min_eigval = eigvals.minCoeff(&ind_min_eigval);
+    // int ind_max_eigval;
+    // double max_eigval = eigvals.maxCoeff(&ind_max_eigval);
+    // int ind_min_eigval;
+    // double min_eigval = eigvals.minCoeff(&ind_min_eigval);
 
     // Get the 95% confidence interval error ellipse
-    double chisquare_val = 2.4477;
-    double a = chisquare_val * std::sqrt(max_eigval);
-    double b = chisquare_val * std::sqrt(min_eigval);
+    // double chisquare_val = 2.4477;
+    // double a = chisquare_val * std::sqrt(max_eigval);
+    // double b = chisquare_val * std::sqrt(min_eigval);
 
     /*
     double phi = std::atan2(eigvecs(1, ind_max_eigval), eigvecs(0, ind_max_eigval));
@@ -135,8 +131,8 @@ void TrafficLight::plot_estimate() const {
 
     Vector2d p1 = mean_est + eigvecs.col(0);
     Vector2d p2 = mean_est - eigvecs.col(0);
-    Vector2d p3 = mean_est + eigvecs.col(0);
-    Vector2d p4 = mean_est - eigvecs.col(0);
+    Vector2d p3 = mean_est + eigvecs.col(1);
+    Vector2d p4 = mean_est - eigvecs.col(1);
 
     plt << "thick solid darkBlue line "
     << p1(0) << " " << p1(1) << " "

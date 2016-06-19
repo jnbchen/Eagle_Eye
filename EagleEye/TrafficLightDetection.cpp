@@ -114,6 +114,7 @@ namespace DerWeg {
 
 
     void execute () {
+        LOUT("Enter TLD execute()\n");
       try{
         while (true) {
           BBOARD->waitForImage();
@@ -202,7 +203,7 @@ namespace DerWeg {
 
           State state = BBOARD->getState();
           for(int i = detectedEllipses.size() - 1; i >= 0; i--){
-            DetectedEllipse dEllipse = detectedEllipses[i];
+            DetectedEllipse& dEllipse = detectedEllipses[i];
             RotatedRect& box = dEllipse.box;
             //ellipse center
             float u = box.center.x;
@@ -254,8 +255,6 @@ namespace DerWeg {
           // Show results of ellipse fitting
           cv::imshow (windowname.c_str(), image);
 
-
-
           int count_red_ellipses = 0, count_green_ellipses = 0;
 
           for (unsigned int i=0; i < detectedEllipses.size(); i++) {
@@ -275,7 +274,6 @@ namespace DerWeg {
           } else {
             final_state = red;
           }
-
 
           TrafficLightData tl_data;
 
@@ -302,7 +300,9 @@ namespace DerWeg {
                     break;
                 }
             }
+            LOUT("HERE1\n");
             tl.update_position(tl_pos, distance, state);
+            LOUT("HERE2\n");
             tl_data.position = tl.get_position();
           } else {
             tl_data.position = Vec(0,0);

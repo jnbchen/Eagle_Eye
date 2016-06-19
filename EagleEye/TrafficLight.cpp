@@ -1,6 +1,5 @@
 #include "TrafficLight.h"
 #include "../Blackboard/Blackboard.h"
-#include <string>
 #include <sstream>
 #include <cmath>
 
@@ -98,7 +97,7 @@ Vec TrafficLight::get_position() const {
     return Vec(mean_est(0), mean_est(1));
 }
 
-void TrafficLight::plot_estimate(const std::string& color) const {
+void TrafficLight::plot_estimate() const {
     // compare:
     // http://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/
 

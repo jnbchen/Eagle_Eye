@@ -317,7 +317,10 @@ namespace DerWeg {
               << tl_data.position.x << " " << tl_data.position.y << std::endl;
           BBOARD->addPlotCommand(pos.str());
 
-          //==================================================================
+          // Plot estimated positions of traffic lights (dark blue cross)
+          for (int i = 1; i <= 4; ++i) {
+              traffic_lights[i].plot_estimate();
+          }
 
           boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
           boost::this_thread::interruption_point();

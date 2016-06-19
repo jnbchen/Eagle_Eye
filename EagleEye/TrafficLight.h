@@ -8,7 +8,6 @@
 #include <eigen3/Eigen/Dense>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include <string>
 #include <vector>
 
 
@@ -62,7 +61,7 @@ public:
     void set_position(std::vector<double> position);
     void set_covar(std::vector<double> covar);
     Vec get_position() const;
-    void plot_estimate(const std::string& color) const;
+    void plot_estimate() const;
 
 };
 

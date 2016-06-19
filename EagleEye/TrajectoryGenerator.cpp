@@ -92,8 +92,49 @@ namespace DerWeg {
         cfg.get("TrajectoryGenerator::intersection_midpoint", intersec_midpoint_temp);
         Vec intersec_midpoint(intersec_midpoint_temp[0], intersec_midpoint_temp[1]);
         double newton_tolerance, newton_max_iter;
+
+        // Read parameters
         cfg.get("LateralControl::newton_tolerance", newton_tolerance);
         cfg.get("LateralControl::newton_max_iter", newton_max_iter);
+
+        cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
+        cfg.get("TrajectoryGenerator::sppm", seeding_pts_per_meter);
+        cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
+
+        double degree_angle;
+        cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
+        angle_threshold = Angle::deg_angle(degree_angle);
+
+        // Read driving commands
+        std::vector<char> cmds;
+        cfg.get("TrajectoryGenerator::driving_commands", cmds);
+        for (size_t i = 0; i < cmds.size(); i++){
+            switch (cmds[i]) {
+                case 's': commands.push_back(straight); break;
+                case 'l': commands.push_back(left); break;
+                case 'r': commands.push_back(right); break;
+                case 'o': commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+
+        std::vector<char> default_cmds;
+        cfg.get("TrajectoryGenerator::default_commands", default_cmds);
+        for (size_t i = 0; i < default_cmds.size(); i++){
+            switch (default_cmds[i]) {
+                case 's': default_commands.push_back(straight); break;
+                case 'l': default_commands.push_back(left); break;
+                case 'r': default_commands.push_back(right); break;
+                case 'o': default_commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+        if (default_commands.size() == 0) {
+            EOUT("No default command specified. Assume straight." << std::endl);
+            default_commands.push_back(straight);
+        }
+
+        tl_behaviour = TrafficLightBehaviour(cfg);
 
         std::ifstream input_file(file_path);
         std::string line;
@@ -150,71 +191,24 @@ namespace DerWeg {
         LOUT("Number of Segments: " << segments.size() << std::endl);
 
 
-/**
+
         for (std::map<int, Segment>::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
             // get map value
             Segment seg = iter->second;
-
-            //LOUT("find_seg_pos "<<iter->first<<std::endl);
 
             // Find segment position
             SegmentPosition seg_pos = seg.find_segment_position(intersec_midpoint, seeding_pts_per_meter, qf_min_N);
             // get map key
             //seg_pos.segment_id = iter->first;
 
-
-            //LOUT("found seg_pos "<<iter->first<<std::endl);
-
             for (int i=0; i < seg.size(); i++) {
                 BezierCurve& curve = seg.get(i);
                 curve.behind_intersec = (i > seg_pos.curve_id);
             }
 
-
-            LOUT("segment "<<iter->first<< " done" << std::endl);
-
-        }
-*/
-
-        std::vector<char> cmds;
-        cfg.get("TrajectoryGenerator::driving_commands", cmds);
-        for (size_t i = 0; i < cmds.size(); i++){
-            switch (cmds[i]) {
-                case 's': commands.push_back(straight); break;
-                case 'l': commands.push_back(left); break;
-                case 'r': commands.push_back(right); break;
-                case 'o': commands.push_back(out); break;
-                default : EOUT("Unknown driving command");
-            }
         }
 
-        std::vector<char> default_cmds;
-        cfg.get("TrajectoryGenerator::default_commands", default_cmds);
-        for (size_t i = 0; i < default_cmds.size(); i++){
-            switch (default_cmds[i]) {
-                case 's': default_commands.push_back(straight); break;
-                case 'l': default_commands.push_back(left); break;
-                case 'r': default_commands.push_back(right); break;
-                case 'o': default_commands.push_back(out); break;
-                default : EOUT("Unknown driving command");
-            }
-        }
-        if (default_commands.size() == 0) {
-            EOUT("No default command specified. Assume straight." << std::endl);
-            default_commands.push_back(straight);
-        }
-
-        cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
-        cfg.get("TrajectoryGenerator::sppm", seeding_pts_per_meter);
-        cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
-
-        double degree_angle;
-        cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
-        angle_threshold = Angle::deg_angle(degree_angle);
-
-        LOUT("TEST"<<std::endl);
-        tl_behaviour = TrafficLightBehaviour(cfg);
-        LOUT("TrajectoryGenerator init finished" << std::endl);
+        LOUT("TrajectoryGenerator init() finished" << std::endl);
     }
 
     SegmentPosition find_start_position(const State state) {
@@ -405,6 +399,13 @@ namespace DerWeg {
                             segment_index += 1;
                             commands.pop_front();
                         }
+                        // This avoids using segment 35, because this segment passes the intersection twice,
+                        // so curve.behind_intersec is not well defined and thus can lead to problems with traffic lights etc.
+                        // Solution: instead of driving segment 35, drive segment 31 and then segment 15
+                        // condition is true, is current segment ends with node 3 and the upcoming command is "out"
+                        else if (segment_index % 10 == 3 && commands.size() > 0 && commands.front() == out){
+                            commands.push_front(straight);
+                        }
 
                         LOUT("Start segment " << segment_index << std::endl);
                     }
@@ -416,6 +417,8 @@ namespace DerWeg {
                 else {
                     // do nothing
                 }
+
+                // Check for traffic light and set behaviour accordingly
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();

@@ -6,14 +6,13 @@
 #include "DataObjects.h"
 #include "Segment.h"
 #include <eigen3/Eigen/Dense>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 #include <string>
+#include <vector>
 
 
 namespace DerWeg {
-
-// none, if no traffic light was detected
-// "red" represents the red signal, yellow signal and red-yellow signal
-enum TrafficLightState {none=0, red=1, green=2};
 
 /*
 struct TL_StateTransition {
@@ -33,6 +32,7 @@ typedef Eigen::Matrix<double, 2, 1> Vector2d;
 class TrafficLight {
 
 private:
+    TrafficLightState state;
     // If an observation is made, it requires a certain number of observations in a row
     // before the state is accepted as a new state
     TrafficLightState potential_state;
@@ -50,15 +50,17 @@ private:
     double covarcoeff_y;
 
 public:
-    TrafficLightState state;
+    TrafficLightState getState();
 
-    TrafficLight(int transition_votes);
+    TrafficLight(){}
+
+    TrafficLight(int transition_votes, double covarcoeff_x, double covarcoeff_y);
 
     void observe_state(TrafficLightState signal);
 
-    void update_position(Vec& measurement, State& state, double distance, double confidence = 1);
-    void set_position(double x, double y);
-    void set_covar(double var_x, double var_y, double covar);
+    void update_position(cv::Mat& position, double distance, State state);
+    void set_position(std::vector<double> position);
+    void set_covar(std::vector<double> covar);
     Vec get_position() const;
     void plot_estimate(const std::string& color) const;
 
@@ -118,12 +120,12 @@ private:
     // and the point where the car has to stop on the reference curve.
     // tl_seg has to be the segment on which the traffic light is located
     // !! CALCULATE THE DISTANCES IN METRES !!
-    void calculate_curve_distances(const TrafficLight& tlight, Segment tl_seg, SegmentPosition current_pos);
+    void calculate_curve_distances(const TrafficLightData& tlight, Segment tl_seg, SegmentPosition current_pos);
 
     // Processes the current traffic light
     // Depending on its state and distance the implemented
     // logic decides whether to drive on or stop
-    void process_state(const TrafficLight& tlight, double current_velocity);
+    void process_state(const TrafficLightData& tlight, double current_velocity);
 
 public:
     // empty default constructor
@@ -140,7 +142,7 @@ public:
     // if the current segment is the segment prior to the tl_seg, current_pos.min_distance is set to
     // the distance remaining til the end of the current segment and the other values contain
     // the start of tl_seg
-    double calculate_max_velocity(const TrafficLight& tlight, double current_velocity,
+    double calculate_max_velocity(const TrafficLightData& tlight, double current_velocity,
                                     Segment tl_seg, SegmentPosition current_pos);
 };
 

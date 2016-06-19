@@ -2,6 +2,8 @@
 #include <math.h>
 #include <limits>
 
+#include "../Elementary/ThreadSafeLogging.h"
+
 #include "BezierCurve.h"
 
 using namespace DerWeg;

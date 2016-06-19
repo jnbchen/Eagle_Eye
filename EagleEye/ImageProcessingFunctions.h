@@ -36,6 +36,8 @@ float median(const Mat& mat){
 
 class CoordinateTransform {
 private:
+    // vector for the transotion from the left camera to the stargazer
+    // the z-coordinate of the stargazer is moved to the ground
     Mat left_cam_to_stargazer;
     Mat image_to_camera;
 
@@ -56,8 +58,13 @@ public:
         left_cam_to_stargazer.at<double>(2,0) = temp_offset[2];
     }
 
-    Mat image_to_camera_coords(Mat image_coords) {
-        return image_to_camera * image_coords;
+    Mat image_to_camera_coords(double u, double v, double distance) {
+        Mat scaled_image_coords(3, 1, CV_64FC1);
+        scaled_image_coords.at<double>(0,0) = distance * u;
+        scaled_image_coords.at<double>(1,0) = distance * v;
+        scaled_image_coords.at<double>(2,0) = distance;
+
+        return image_to_camera * scaled_image_coords;
     }
 
     Mat camera_to_world_coords(Mat cam_coords, const State state) {

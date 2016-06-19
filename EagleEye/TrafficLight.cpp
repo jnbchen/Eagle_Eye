@@ -12,8 +12,13 @@ namespace DerWeg {
 // TrafficLight implementation
 // -------------------------------------------------------------------------------
 
-TrafficLight::TrafficLight(int transition_observations) :
-    potential_state(none), potential_state_observations(0), min_observations(transition_observations) {}
+TrafficLight::TrafficLight(int transition_observations, double ccoeff_x, double ccoeff_y) :
+    potential_state(none), potential_state_observations(0), min_observations(transition_observations),
+    covarcoeff_x(ccoeff_x), covarcoeff_y(ccoeff_y) {}
+
+TrafficLightState TrafficLight::getState() {
+    return state;
+}
 
 void TrafficLight::observe_state(TrafficLightState signal) {
     //Do nothing if the observed signal is the same as the current state
@@ -44,18 +49,21 @@ void TrafficLight::observe_state(TrafficLightState signal) {
     }
 }
 
-void TrafficLight::update_position(Vec& measurement, State& state, double distance, double confidence) {
+void TrafficLight::update_position(cv::Mat& measurement, double distance, State state) {
+    // Convert to millimetres
+    distance *= 1000;
 
     // Set up measurement covariance
     Matrix2d C_measure;
-    C_measure(0, 0) = pow(distance, 2) * covarcoeff_x;
-    C_measure(1, 1) = distance * covarcoeff_y;
+    C_measure(0, 0) = pow(distance, 2) * 10;
+    C_measure(1, 1) = distance * 10;
     C_measure(0, 1) = 0;
     C_measure(1, 0) = 0;
 
     // Rotate measurement covariance matrix
-    double alpha = state.orientation.get_rad_pi() +
-                  std::atan2(measurement.y, measurement.x);
+    double x = measurement.at<double>(0,0) - state.position.x;
+    double y = measurement.at<double>(1,0) - state.position.y;
+    double alpha = state.orientation.get_rad_pi() + std::atan2(y, x);
     double alpha_sin = std::sin(alpha);
     double alpha_cos = std::cos(alpha);
     Matrix2d R;
@@ -65,9 +73,7 @@ void TrafficLight::update_position(Vec& measurement, State& state, double distan
     R(1, 1) = alpha_cos;
     C_measure = R.transpose() * (C_measure * R);
 
-    // Convert measured position to global coordinates
-    measurement += state.position;
-    Vector2d mean_measure(measurement.x, measurement.y);
+    Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
 
     // Update estimate, simple average weighted by the covariances
     Matrix2d C_inv = (C_measure + C_est).inverse();
@@ -76,16 +82,16 @@ void TrafficLight::update_position(Vec& measurement, State& state, double distan
     C_est = C_measure * (C_inv * C_est);
 }
 
-void TrafficLight::set_position(double x, double y) {
-    mean_est(0) = x;
-    mean_est(1) = y;
+void TrafficLight::set_position(std::vector<double> position) {
+    mean_est(0) = position[0];
+    mean_est(1) = position[1];
 }
 
-void TrafficLight::set_covar(double var_x, double var_y, double covar) {
-    C_est(0, 0) = var_x;
-    C_est(1, 1) = var_y;
-    C_est(0, 1) = covar;
-    C_est(1, 0) = covar;
+void TrafficLight::set_covar(std::vector<double> covar) {
+    C_est(0, 0) = covar[0];
+    C_est(1, 1) = covar[1];
+    C_est(0, 1) = covar[2];
+    C_est(1, 0) = covar[2];
 }
 
 Vec TrafficLight::get_position() const {
@@ -166,7 +172,7 @@ TrafficLightBehaviour::TrafficLightBehaviour(const ConfigReader& cfg) {
     tl_projected_distance = 100000;
 }
 
-void TrafficLightBehaviour::calculate_curve_distances(const TrafficLight& tlight, Segment tl_seg,
+void TrafficLightBehaviour::calculate_curve_distances(const TrafficLightData& tlight, Segment tl_seg,
                                                         SegmentPosition current_pos) {
     if (tlight.state == none) {
     // if no traffic light detected, set values very high to not stop anywhere
@@ -176,13 +182,13 @@ void TrafficLightBehaviour::calculate_curve_distances(const TrafficLight& tlight
     }
 
     // seed the segment the traffic light is on to find the curve closest to the traffic light
-    SegmentPosition tl_pos = tl_seg.find_segment_position(tlight.get_position(), sppm, qf_N);
+    SegmentPosition tl_pos = tl_seg.find_segment_position(tlight.position, sppm, qf_N);
     if (tl_pos.min_distance > tl_max_distance_to_curve) {
         EOUT("Error in calculate_curve_distances, possibly the traffic light is not on the given segment" << endl);
     }
     // Calculate the projected parameter on the curve closest to the traffic light
     double tl_curve_param = tl_seg.get(tl_pos.curve_id).project(
-                    tlight.get_position(), tl_pos.curve_parameter, newton_tol, newton_steps);
+                    tlight.position, tl_pos.curve_parameter, newton_tol, newton_steps);
 
     // Calculate the distance in METRES to the projection point on the traffic light onto the curve
     double length = tl_seg.arc_length(current_pos.curve_id, current_pos.curve_parameter,
@@ -193,14 +199,14 @@ void TrafficLightBehaviour::calculate_curve_distances(const TrafficLight& tlight
         EOUT("Error, invalid arguments in Segment.arc_length(). Call from calculate_curve_distances" << endl);
         // If error, estimate arc length by euclidean distance
         // This should only occur if the car passed the traffic light, hence the negative sign
-        tl_projected_distance = -0.001 * ((tlight.get_position() - BBOARD->getState().position).length());
+        tl_projected_distance = -0.001 * ((tlight.position - BBOARD->getState().position).length());
     }
     // Calculate the distance in METRES to the stopping point
     halt_point_distance = tl_projected_distance - 0.001 * stopping_distance;
 
 }
 
-void TrafficLightBehaviour::process_state(const TrafficLight& tlight, double current_velocity) {
+void TrafficLightBehaviour::process_state(const TrafficLightData& tlight, double current_velocity) {
     if (last_known_state == tlight.state) {
         return;
     }
@@ -233,7 +239,7 @@ void TrafficLightBehaviour::process_state(const TrafficLight& tlight, double cur
 
 }
 
-double TrafficLightBehaviour::calculate_max_velocity(const TrafficLight& tlight, double current_velocity,
+double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tlight, double current_velocity,
                                                         Segment tl_seg, SegmentPosition current_pos) {
     calculate_curve_distances(tlight, tl_seg, current_pos);
     process_state(tlight, current_velocity);

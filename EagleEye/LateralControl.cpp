@@ -35,6 +35,16 @@ namespace DerWeg {
         double stanley_k0, stanley_k1;
         double axis_distance;
 
+        double v_max;
+        double v_min;
+        double a_lateral_max;
+        // curvature, we always assume to have -> prevents the car to drive move than a certain velocity and
+        // and also prevents dividing by zero
+        double virtual_min_kappa;
+
+        //if set to one, set velocity manually, if set to zero, car automatically accelerates
+        bool manual_velocity;
+
     public:
         LateralControl () : lastProjectionParameter(0) {;}
         ~LateralControl () {;}
@@ -47,6 +57,13 @@ namespace DerWeg {
         cfg.get("LateralControl::stanley_k0", stanley_k0);
         cfg.get("LateralControl::stanley_k1", stanley_k1);
         cfg.get("LateralControl::axis_distance", axis_distance);
+
+        cfg.get("LongitudinalControl::v_max", v_max);
+        cfg.get("LongitudinalControl::v_min", v_min);
+        cfg.get("LongitudinalControl::a_lateral_max", a_lateral_max);
+        cfg.get("LongitudinalControl::manual_velocity", manual_velocity);
+
+        virtual_min_kappa = a_lateral_max / pow(v_max, 2);
 	}
 
         void execute () {
@@ -63,13 +80,32 @@ namespace DerWeg {
               ControllerInput input = calculate_curve_data(BBOARD->getState());
 
 
+              //get current steering angle and velocity
+              Velocity dv = BBOARD->getDesiredVelocity();
+
+
               //Stanley-Controller here
               double u = precontrol_k*input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
               double delta = atan(axis_distance * u);
-
-              //Set steering angle, keep velocity
-              Velocity dv = BBOARD->getDesiredVelocity();
+              // set steering angle
               dv.steer = Angle::rad_angle(delta);
+
+
+              //Velocity control
+              double max_velocity;
+              if (!manual_velocity) {
+                  // calculate maximal velocity from curvature
+                  double kappa = max(virtual_min_kappa, abs(input.curvature));
+                  // get maximal velocity for the current curvature to not exceed given lateral acceleration
+                  max_velocity = max(v_min, pow(a_lateral_max / kappa, 0.5));
+              } else {
+                  // if velocity is set manually, use last velocity from blackboard
+                  max_velocity = dv.velocity;
+              }
+              // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
+              dv.velocity = min(max_velocity, BBOARD->getReferenceTrajectory().v_max);
+
+              // set steering angle and velocity
               BBOARD->setDesiredVelocity(dv);
 
               boost::this_thread::sleep(boost::posix_time::milliseconds(10));

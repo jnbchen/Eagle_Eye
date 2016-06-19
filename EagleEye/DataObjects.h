@@ -10,6 +10,11 @@
 
 namespace DerWeg {
 
+    // none, if no traffic light was detected
+    // "red" represents the red signal, yellow signal and red-yellow signal
+    enum TrafficLightState {none=0, red=1, green=2};
+
+
   /** struct to describe present dynamic state of Anicar from localization with StateEstimator*/
   struct State {
     Vec position;       ///< the position (x,y) in mm
@@ -32,9 +37,15 @@ namespace DerWeg {
   struct ReferenceTrajectory {
     BezierCurve path;  ///< reference path, a bezier curve
     int segment_id; ///< ID of the segment the current BezierCurve belongs to
+    double v_max; ///< maximal velocity the car shall drive (e.g. calculated by the traffic light behaviour)
 
     bool operator== (const ReferenceTrajectory&) const throw ();
     bool operator!= (const ReferenceTrajectory&) const throw ();
+  };
+
+  struct TrafficLightData {
+    TrafficLightState state;
+    Vec position;
   };
 
 

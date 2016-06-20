@@ -44,7 +44,9 @@ namespace DerWeg {
     std::string windowname2;
 
     int erode_size;
+    int dilate_size;
     int lower_red_h1; int lower_red_h2; int lower_red_s1; int lower_red_s2; int lower_red_v1; int lower_red_v2;
+    int upper_red_h1; int upper_red_h2; int upper_red_s1; int upper_red_s2; int upper_red_v1; int upper_red_v2;
     int yellow_h1; int yellow_h2; int yellow_s1; int yellow_s2; int yellow_v1; int yellow_v2;
     int green_h1; int green_h2; int green_s1; int green_s2; int green_v1; int green_v2;
 
@@ -67,12 +69,19 @@ namespace DerWeg {
         LOUT("Exec TrafficLightDetection init()" << std::endl);
 
         cfg.get("TrafficLightDetection::erode_size", erode_size);
+        cfg.get("TrafficLightDetection::dilate_size", dilate_size);
         cfg.get("TrafficLightDetection::lower_red_h1", lower_red_h1);
         cfg.get("TrafficLightDetection::lower_red_h2", lower_red_h2);
         cfg.get("TrafficLightDetection::lower_red_s1", lower_red_s1);
         cfg.get("TrafficLightDetection::lower_red_s2", lower_red_s2);
         cfg.get("TrafficLightDetection::lower_red_v1", lower_red_v1);
         cfg.get("TrafficLightDetection::lower_red_v2", lower_red_v2);
+        cfg.get("TrafficLightDetection::upper_red_h1", upper_red_h1);
+        cfg.get("TrafficLightDetection::upper_red_h2", upper_red_h2);
+        cfg.get("TrafficLightDetection::upper_red_s1", upper_red_s1);
+        cfg.get("TrafficLightDetection::upper_red_s2", upper_red_s2);
+        cfg.get("TrafficLightDetection::upper_red_v1", upper_red_v1);
+        cfg.get("TrafficLightDetection::upper_red_v2", upper_red_v2);
         cfg.get("TrafficLightDetection::green_h1", green_h1);
         cfg.get("TrafficLightDetection::green_h2", green_h2);
         cfg.get("TrafficLightDetection::green_s1", green_s1);
@@ -142,19 +151,27 @@ namespace DerWeg {
           cvtColor(ROI_image, im_hsv, cv::COLOR_BGR2HSV);
 
           //thresholing
+          Mat lower_red_hue_range;
+          Mat upper_red_hue_range;
           Mat red_hue_range;
           Mat green_hue_range;
 
           //red
-          inRange(im_hsv, cv::Scalar(lower_red_h1,lower_red_s1,lower_red_v1), cv::Scalar(lower_red_h2,lower_red_s2,lower_red_v2), red_hue_range);
-
+          inRange(im_hsv, cv::Scalar(lower_red_h1,lower_red_s1,lower_red_v1), cv::Scalar(lower_red_h2,lower_red_s2,lower_red_v2), lower_red_hue_range);
+          inRange(im_hsv, cv::Scalar(upper_red_h1,upper_red_s1,upper_red_v1), cv::Scalar(upper_red_h2,upper_red_s2,upper_red_v2), upper_red_hue_range);
+          addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_range);
+          
           //green
           inRange(im_hsv, cv::Scalar(green_h1,green_s1,green_v1), cv::Scalar(green_h2,green_s2,green_v2), green_hue_range);
 
           //TODO: OPENing / CLOSING anstatt ERODE
-          Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( -1, -1 ) );
-          erode(red_hue_range, red_hue_range, element);
-          erode(green_hue_range, green_hue_range, element);
+          Mat element_erode = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( -1, -1 ) );
+          Mat element_dilate = getStructuringElement( MORPH_ELLIPSE, Size( 2*element_dilate + 1, 2*element_dilate+1 ),Point( -1, -1 ) );
+          // für red dilate dann erode, da der Rotkreis so dünn ist.( = closing)
+          dilate(red_hue_range, red_hue_range, elemant_dilate)
+          erode(red_hue_range, red_hue_range, element_erode);
+          // für green nur erode, ansont die Blatten von Baum vergrößt werden.
+          erode(green_hue_range, green_hue_range, element_erode);
 
           vector<vector<Point> > contours_red;
           vector<vector<Point> > contours_green;
@@ -171,7 +188,7 @@ namespace DerWeg {
           for(size_t i = 0; i < contours_red.size(); i++){
               size_t count = contours_red[i].size();
               //TODO: Ist 200 als Grenze okay ?? Oder kann eine Kontour auch über 200 pixel liegen?
-              if( count < 10 || count > 200)
+              if( count < 15 || count > 200)
                 continue;
 
               Mat pointsf;
@@ -187,7 +204,7 @@ namespace DerWeg {
           for(size_t i = 0; i < contours_green.size(); i++){
               size_t count = contours_green[i].size();
               //TODO: Ist 200 als Grenze okay ?? Oder kann eine Kontour auch über 200 pixel liegen?
-              if( count < 10 || count > 200)
+              if( count < 15 || count > 200)
                 continue;
 
               Mat pointsf;

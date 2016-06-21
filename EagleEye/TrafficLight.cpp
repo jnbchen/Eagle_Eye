@@ -11,8 +11,14 @@ namespace DerWeg {
 // TrafficLight implementation
 // -------------------------------------------------------------------------------
 
+TrafficLight::TrafficLight() :
+    state(none), potential_state(none), potential_state_observations(0), min_observations(3),
+    covarcoeff_x(0), covarcoeff_y(0) {
+        LOUT("Constructor, state = "<< state << std::endl);
+    }
+
 TrafficLight::TrafficLight(int transition_observations, double ccoeff_x, double ccoeff_y) :
-    potential_state(none), potential_state_observations(0), min_observations(transition_observations),
+    state(none), potential_state(none), potential_state_observations(0), min_observations(transition_observations),
     covarcoeff_x(ccoeff_x), covarcoeff_y(ccoeff_y) {}
 
 TrafficLightState TrafficLight::getState() {
@@ -20,12 +26,16 @@ TrafficLightState TrafficLight::getState() {
 }
 
 void TrafficLight::observe_state(TrafficLightState signal) {
+    //LOUT("potential state = " << potential_state << std::endl);
+    //LOUT("state = " << state << std::endl);
+    //LOUT("signal = " << signal << std::endl);
     //Do nothing if the observed signal is the same as the current state
     if (state == signal) {
         //potential_state = state;
         //potential_state_observations = 0;
         return;
     }
+
     // if a red signal was observed, always accept it, even if it was only in one image!
     if (signal == red) {
         state = red;
@@ -48,11 +58,9 @@ void TrafficLight::observe_state(TrafficLightState signal) {
     }
 }
 
-void TrafficLight::update_position(cv::Mat& measurement, double distance, State state) {
-    LOUT("NO FAIL1\n");
+void TrafficLight::update_position(cv::Mat& measurement, double distance, State car_state) {
     LOUT("measurement = " << measurement << "\n");
     Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
-    LOUT("NO FAIL2\n");
     // Convert to millimetres
     distance *= 1000;
 
@@ -64,9 +72,9 @@ void TrafficLight::update_position(cv::Mat& measurement, double distance, State 
     C_measure(1, 0) = 0;
 
     // Rotate measurement covariance matrix
-    double x = mean_measure(0) - state.position.x;
-    double y = mean_measure(1) - state.position.y;
-    double alpha = state.orientation.get_rad_pi() + std::atan2(y, x);
+    double x = mean_measure(0) - car_state.position.x;
+    double y = mean_measure(1) - car_state.position.y;
+    double alpha = car_state.orientation.get_rad_pi() + std::atan2(y, x);
     double alpha_sin = std::sin(alpha);
     double alpha_cos = std::cos(alpha);
     Matrix2d R;
@@ -166,7 +174,12 @@ void TrafficLightBehaviour::calculate_curve_distances(const TrafficLightData& tl
     // seed the segment the traffic light is on to find the curve closest to the traffic light
     SegmentPosition tl_pos = tl_seg.find_segment_position(tlight.position, sppm, qf_N);
     if (tl_pos.min_distance > tl_max_distance_to_curve) {
-        EOUT("Error in calculate_curve_distances, possibly the traffic light is not on the given segment" << endl);
+        EOUT("Error in calculate_curve_distances, possibly the traffic light is not on the given segment" << endl
+             << "Distance of traffic light to curve is "<< tl_pos.min_distance<<endl
+             << "Projected position = " << tl_seg.get(tl_pos.curve_id)(tl_pos.curve_parameter) << endl
+             << "Traffic light pos = " << tlight.position << endl
+             << "tl_state = " << tlight.state << endl);
+
     }
     // Calculate the projected parameter on the curve closest to the traffic light
     double tl_curve_param = tl_seg.get(tl_pos.curve_id).project(
@@ -245,6 +258,8 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
         double emergency_brake_deceleration = std::pow(current_velocity, 2) / (2 * halt_point_distance);
         double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
         return std::pow(2 * max_deceleration * halt_point_distance, 0.5);
+    } else {
+        return v_max;
     }
 
 }

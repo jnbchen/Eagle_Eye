@@ -51,7 +51,7 @@ private:
 public:
     TrafficLightState getState();
 
-    TrafficLight(){}
+    TrafficLight();
 
     TrafficLight(int transition_votes, double covarcoeff_x, double covarcoeff_y);
 

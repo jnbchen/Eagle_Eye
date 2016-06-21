@@ -12,7 +12,7 @@ namespace DerWeg {
 
     // none, if no traffic light was detected
     // "red" represents the red signal, yellow signal and red-yellow signal
-    enum TrafficLightState {none=0, red=1, green=2};
+    enum TrafficLightState {none, red, green};
 
 
   /** struct to describe present dynamic state of Anicar from localization with StateEstimator*/

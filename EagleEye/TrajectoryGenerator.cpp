@@ -440,7 +440,10 @@ namespace DerWeg {
                     seg_pos.curve_parameter = segments[segment_index].get(curve_index).project(
                                                             state.position, 0.5, newton_tolerance, newton_max_iter);
                     seg_pos.min_distance = 0;
-                    v = tl_behaviour.calculate_max_velocity(BBOARD->getTrafficLight(), state.velocity,
+
+                    TrafficLightData tl_data = BBOARD->getTrafficLight();
+                    //LOUT("tl state = " << tl_data.state << std::endl);
+                    v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity,
                                                             segments[tl_seg], seg_pos);
                   }
                 set_reference_trajectory(v);

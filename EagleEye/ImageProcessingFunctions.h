@@ -63,6 +63,7 @@ public:
         scaled_image_coords.at<double>(0,0) = distance * u;
         scaled_image_coords.at<double>(1,0) = distance * v;
         scaled_image_coords.at<double>(2,0) = distance;
+        LOUT("scaled_image_coords = " << scaled_image_coords << "\n");
 
         return image_to_camera * scaled_image_coords;
     }
@@ -84,7 +85,7 @@ public:
         // z coordinate doesn't change in this transformation
         result.at<double>(0,0) = world.x;
         result.at<double>(1,0) = world.y;
-
+        LOUT("result = " << result << "\n");
         return result;
     }
 

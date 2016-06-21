@@ -124,6 +124,7 @@ namespace DerWeg {
 
     void execute () {
         LOUT("Enter TLD execute()\n");
+        BBOARD->waitForReferenceTrajectory();
       try{
         while (true) {
           BBOARD->waitForImage();
@@ -217,6 +218,8 @@ namespace DerWeg {
               detectedEllipses.push_back(DetectedEllipse(box, green));
           }
 
+          LOUT("Detected ellipses count = " << detectedEllipses.size() << endl);
+
 
           State state = BBOARD->getState();
           for(int i = detectedEllipses.size() - 1; i >= 0; i--){
@@ -229,18 +232,31 @@ namespace DerWeg {
 
             Rect box_rect = box.boundingRect();
 
+
             // draw ellipses into image
             ellipse(image, box, Scalar(0,255,255));
             rectangle(image, box_rect, Scalar(255,0,0));
 
-
             if (box_rect.width > 1.5 * box_rect.height || box_rect.height > 2.5 * box_rect.width) {
                 detectedEllipses.erase(detectedEllipses.begin() + i);
+                LOUT("Ellipse kicked out because of height/width\n");
                 continue;
             }
+            //make box half its size, to prevent using depth values from outside the traffic light
+            box_rect.x = box_rect.x + box_rect.width/4;
+            box_rect.y = box_rect.y + box_rect.height/4;
+            box_rect.width = box_rect.width/2;
+            box_rect.height = box_rect.height/2;
+
+            rectangle(image, box_rect, Scalar(255,255,0));
 
             double distance = median(depth(box_rect));
             dEllipse.distance = distance;
+
+            // Debugging depth information
+            LOUT("Distance = "<<distance<<endl);
+            LOUT("Distance ROI = " << depth(box_rect) << endl);
+            LOUT("Confidence ROI = " << conf(box_rect) << endl);
 
             Mat camera_coords = transformer.image_to_camera_coords(u, v, distance);
             // Convert metres to millimetres
@@ -259,11 +275,13 @@ namespace DerWeg {
                     !( abs(height - red_height) < height_tol || abs(height - yellow_height) < height_tol )
                 ) {
                    detectedEllipses.erase(detectedEllipses.begin() + i);
+                   LOUT("RED Ellipse kicked out because of height tolerance\n");
                    continue;
             } else if (dEllipse.color == green &&
                     !( abs(height - green_height) < height_tol)
                 ) {
                    detectedEllipses.erase(detectedEllipses.begin() + i);
+                   LOUT("RED Ellipse kicked out because of height tolerance\n");
                    continue;
             }
 
@@ -275,12 +293,15 @@ namespace DerWeg {
           int count_red_ellipses = 0, count_green_ellipses = 0;
 
           for (unsigned int i=0; i < detectedEllipses.size(); i++) {
+            LOUT("ellipse " << i << " world coordinates: "<< detectedEllipses[i].world_coords << std::endl);
             if (detectedEllipses[i].color == red) {
                 count_red_ellipses++;
             } else if (detectedEllipses[i].color == green) {
                 count_green_ellipses++;
             }
           }
+
+            LOUT("red: "<< count_red_ellipses << ", green: "<<count_green_ellipses<<"\n");
 
           TrafficLightState final_state;
 
@@ -301,31 +322,41 @@ namespace DerWeg {
           } else {
             tl_number = (rt.segment_id / 10);
           }
-
+          //LOUT("tl_number = " << tl_number << std::endl);
           TrafficLight& tl = traffic_lights[tl_number];
 
+          //LOUT("Final state = " << final_state << std::endl);
           tl.observe_state(final_state);
           tl_data.state = tl.getState();
+          //LOUT("Final state copied = " << tl_data.state << std::endl);
 
-          if (final_state != none) {
+
+          if (tl_data.state != none) {
             Mat tl_pos;
             double distance = 0;
-            unsigned int i = 0;
-            while (detectedEllipses[i].color != final_state &&
-                    i < detectedEllipses.size() - 1) {
-                tl_pos = detectedEllipses[i].world_coords;
-                distance = detectedEllipses[i].distance;
-                ++i;
+            bool found_correct_ellipse = false;
+            for (unsigned int i=0; i<detectedEllipses.size(); i++) {
+                if (detectedEllipses[i].color == tl_data.state) {
+                    tl_pos = detectedEllipses[i].world_coords;
+                    distance = detectedEllipses[i].distance;
+                    found_correct_ellipse = true;
+                    break;
+                }
+            }
+            if (found_correct_ellipse) {
+                LOUT("tl_pos = "<<tl_pos <<"\n");
+
+                traffic_lights[tl_number].update_position(tl_pos, distance, state);
+                tl_data.position = traffic_lights[tl_number].get_position();
+            } else {
+                LOUT("Error in tl_data.state/finding the correct ellipse \n");
             }
 
-            LOUT("HERE1\n");
-            tl.update_position(tl_pos, distance, state);
-            LOUT("HERE2\n");
-            tl_data.position = tl.get_position();
           } else {
             tl_data.position = Vec(0,0);
           }
 
+          //LOUT("Write tl_data to blackboard, state = " << tl_data.state <<std::endl);
           BBOARD->setTrafficLight(tl_data);
 
 

@@ -95,7 +95,7 @@ namespace DerWeg {
               double max_velocity;
               if (!manual_velocity) {
                   // calculate maximal velocity from curvature
-                  double kappa = max(virtual_min_kappa, abs(input.curvature * 1000));
+                  double kappa = max(virtual_min_kappa, abs(u * 1000));
                   // multiply with 1000, because the curvature has units 1/mm
 
                   // get maximal velocity for the current curvature to not exceed given lateral acceleration
@@ -103,7 +103,7 @@ namespace DerWeg {
               } else {
                   // if velocity is set manually, use last velocity from blackboard
                   max_velocity = dv.velocity;
-                  LOUT("max_v = "<<max_velocity<<std::endl);
+                  //LOUT("max_v = "<<max_velocity<<std::endl);
               }
               // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
               dv.velocity = min(max_velocity, BBOARD->getReferenceTrajectory().v_max);

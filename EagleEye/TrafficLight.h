@@ -95,6 +95,8 @@ private:
     double default_acceleration;
     double default_deceleration;
 
+    double v_max;
+
     //duration of yellow signal in seconds
     double yellow_phase;
     // distance from halt point in which velocity is set to zero because it's close enough
@@ -119,7 +121,7 @@ private:
     // and the point where the car has to stop on the reference curve.
     // tl_seg has to be the segment on which the traffic light is located
     // !! CALCULATE THE DISTANCES IN METRES !!
-    void calculate_curve_distances(const TrafficLightData& tlight, Segment tl_seg, SegmentPosition current_pos);
+    void calculate_curve_distances(const TrafficLightData& tlight,  Segment& tl_seg, const SegmentPosition& current_pos);
 
     // Processes the current traffic light
     // Depending on its state and distance the implemented
@@ -142,7 +144,7 @@ public:
     // the distance remaining til the end of the current segment and the other values contain
     // the start of tl_seg
     double calculate_max_velocity(const TrafficLightData& tlight, double current_velocity,
-                                    Segment tl_seg, SegmentPosition current_pos);
+                                     Segment& tl_seg, const SegmentPosition& current_pos);
 };
 
 } // namespace DerWeg

@@ -160,15 +160,15 @@ namespace DerWeg {
           inRange(im_hsv, cv::Scalar(lower_red_h1,lower_red_s1,lower_red_v1), cv::Scalar(lower_red_h2,lower_red_s2,lower_red_v2), lower_red_hue_range);
           inRange(im_hsv, cv::Scalar(upper_red_h1,upper_red_s1,upper_red_v1), cv::Scalar(upper_red_h2,upper_red_s2,upper_red_v2), upper_red_hue_range);
           addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_range);
-          
+
           //green
           inRange(im_hsv, cv::Scalar(green_h1,green_s1,green_v1), cv::Scalar(green_h2,green_s2,green_v2), green_hue_range);
 
           //TODO: OPENing / CLOSING anstatt ERODE
           Mat element_erode = getStructuringElement( MORPH_ELLIPSE, Size( 2*erode_size + 1, 2*erode_size+1 ),Point( -1, -1 ) );
-          Mat element_dilate = getStructuringElement( MORPH_ELLIPSE, Size( 2*element_dilate + 1, 2*element_dilate+1 ),Point( -1, -1 ) );
+          Mat element_dilate = getStructuringElement( MORPH_ELLIPSE, Size( 2*dilate_size + 1, 2*dilate_size+1 ),Point( -1, -1 ) );
           // für red dilate dann erode, da der Rotkreis so dünn ist.( = closing)
-          dilate(red_hue_range, red_hue_range, elemant_dilate)
+          dilate(red_hue_range, red_hue_range, element_dilate);
           erode(red_hue_range, red_hue_range, element_erode);
           // für green nur erode, ansont die Blatten von Baum vergrößt werden.
           erode(green_hue_range, green_hue_range, element_erode);
@@ -309,13 +309,10 @@ namespace DerWeg {
 
           if (final_state != none) {
             Mat tl_pos;
-            double distance;
-            for (unsigned int i=0; i < detectedEllipses.size(); i++) {
-                if (detectedEllipses[i].color == final_state) {
-                    tl_pos = detectedEllipses[i].world_coords;
-                    distance = detectedEllipses[i].distance;
-                    break;
-                }
+            double distance = 0;
+            for (unsigned int i=0; i < detectedEllipses.size() && detectedEllipses[i].color != final_state; i++) {
+                tl_pos = detectedEllipses[i].world_coords;
+                distance = detectedEllipses[i].distance;
             }
             LOUT("HERE1\n");
             tl.update_position(tl_pos, distance, state);

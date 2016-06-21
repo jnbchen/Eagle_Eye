@@ -49,8 +49,9 @@ void TrafficLight::observe_state(TrafficLightState signal) {
 }
 
 void TrafficLight::update_position(cv::Mat& measurement, double distance, State state) {
+    LOUT("NO FAIL\n");
     Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
-
+    LOUT("NO FAIL\n");
     // Convert to millimetres
     distance *= 1000;
 
@@ -159,6 +160,7 @@ TrafficLightBehaviour::TrafficLightBehaviour(const ConfigReader& cfg) {
     cfg.get("TrafficLightBehaviour::stopping_distance", stopping_distance);
     cfg.get("TrafficLightBehaviour::halt_point_radius", halt_point_radius);
     cfg.get("TrafficLightBehaviour::default_deceleration", default_deceleration);
+    cfg.get("LongitudinalControl::v_max", v_max);
     default_acceleration = default_deceleration;
 
     last_known_state = none;
@@ -167,8 +169,8 @@ TrafficLightBehaviour::TrafficLightBehaviour(const ConfigReader& cfg) {
     tl_projected_distance = 100000;
 }
 
-void TrafficLightBehaviour::calculate_curve_distances(const TrafficLightData& tlight, Segment tl_seg,
-                                                        SegmentPosition current_pos) {
+void TrafficLightBehaviour::calculate_curve_distances(const TrafficLightData& tlight,  Segment& tl_seg,
+                                                        const SegmentPosition& current_pos) {
     if (tlight.state == none) {
     // if no traffic light detected, set values very high to not stop anywhere
         tl_projected_distance = 100000;
@@ -235,7 +237,10 @@ void TrafficLightBehaviour::process_state(const TrafficLightData& tlight, double
 }
 
 double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tlight, double current_velocity,
-                                                        Segment tl_seg, SegmentPosition current_pos) {
+                                                        Segment& tl_seg, const SegmentPosition& current_pos) {
+    if (tlight.state == none) {
+        return v_max;
+    }
     calculate_curve_distances(tlight, tl_seg, current_pos);
     process_state(tlight, current_velocity);
 

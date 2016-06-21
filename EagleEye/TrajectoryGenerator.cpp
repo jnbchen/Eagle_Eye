@@ -53,6 +53,9 @@ namespace DerWeg {
     int qf_min_N;
     Angle angle_threshold;
 
+    double newton_tolerance;
+    int newton_max_iter;
+    double v_max;
     TrafficLightBehaviour tl_behaviour;
 
   public:
@@ -91,7 +94,6 @@ namespace DerWeg {
         std::vector<double> intersec_midpoint_temp;
         cfg.get("TrajectoryGenerator::intersection_midpoint", intersec_midpoint_temp);
         Vec intersec_midpoint(intersec_midpoint_temp[0], intersec_midpoint_temp[1]);
-        double newton_tolerance, newton_max_iter;
 
         // Read parameters
         cfg.get("LateralControl::newton_tolerance", newton_tolerance);
@@ -104,6 +106,8 @@ namespace DerWeg {
         double degree_angle;
         cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
         angle_threshold = Angle::deg_angle(degree_angle);
+
+        cfg.get("LongitudinalControl::v_max", v_max);
 
         // Read driving commands
         std::vector<char> cmds;
@@ -133,6 +137,11 @@ namespace DerWeg {
             EOUT("No default command specified. Assume straight." << std::endl);
             default_commands.push_back(straight);
         }
+
+        TrafficLightData tl;
+        tl.state = none;
+        tl.position = Vec(0,0);
+        BBOARD->setTrafficLight(tl);
 
         tl_behaviour = TrafficLightBehaviour(cfg);
 
@@ -355,10 +364,11 @@ namespace DerWeg {
         return seg_lookup[starting_node][next_command];
     }
 
-    void set_reference_trajectory() {
+    void set_reference_trajectory(double desired_velocity) {
         ReferenceTrajectory rt;
         rt.path = segments[segment_index].get(curve_index);
         rt.segment_id = segment_index;
+        rt.v_max = desired_velocity;
         BBOARD->setReferenceTrajectory(rt);
     }
 
@@ -373,7 +383,7 @@ namespace DerWeg {
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 
-        set_reference_trajectory();
+        set_reference_trajectory(0);
 
         try{
             while (true) {
@@ -410,8 +420,6 @@ namespace DerWeg {
                         LOUT("Start segment " << segment_index << std::endl);
                     }
 
-                    set_reference_trajectory();
-
                     LOUT("Curve index: " << curve_index << std::endl);
                 }
                 else {
@@ -419,6 +427,23 @@ namespace DerWeg {
                 }
 
                 // Check for traffic light and set behaviour accordingly
+                int tl_seg;
+                double v;
+                  if (segments[segment_index].get(curve_index).behind_intersec) {
+                    v = v_max;
+                  } else {
+                    State state = BBOARD->getState();
+                    tl_seg = segment_index;
+                    SegmentPosition seg_pos;
+                    seg_pos.curve_id = curve_index;
+                    seg_pos.segment_id = segment_index;
+                    seg_pos.curve_parameter = segments[segment_index].get(curve_index).project(
+                                                            state.position, 0.5, newton_tolerance, newton_max_iter);
+                    seg_pos.min_distance = 0;
+                    v = tl_behaviour.calculate_max_velocity(BBOARD->getTrafficLight(), state.velocity,
+                                                            segments[tl_seg], seg_pos);
+                  }
+                set_reference_trajectory(v);
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();

@@ -49,9 +49,10 @@ void TrafficLight::observe_state(TrafficLightState signal) {
 }
 
 void TrafficLight::update_position(cv::Mat& measurement, double distance, State state) {
-    LOUT("NO FAIL\n");
+    LOUT("NO FAIL1\n");
+    LOUT("measurement = " << measurement << "\n");
     Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
-    LOUT("NO FAIL\n");
+    LOUT("NO FAIL2\n");
     // Convert to millimetres
     distance *= 1000;
 
@@ -102,45 +103,29 @@ void TrafficLight::plot_estimate() const {
     // compare:
     // http://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/
 
-    // Plot estimated position in AnicarViewer
-    std::stringstream plt;
-
     // Plot axes of covariance ellipse
     Eigen::EigenSolver<Matrix2d> eigsolve(C_est, true);
-    // Vector2d eigvals = eigsolve.eigenvalues().real();
+    Vector2d eigvals = eigsolve.eigenvalues().real();
     Matrix2d eigvecs = eigsolve.eigenvectors().real();
-    // int ind_max_eigval;
-    // double max_eigval = eigvals.maxCoeff(&ind_max_eigval);
-    // int ind_min_eigval;
-    // double min_eigval = eigvals.minCoeff(&ind_min_eigval);
 
     // Get the 95% confidence interval error ellipse
-    // double chisquare_val = 2.4477;
-    // double a = chisquare_val * std::sqrt(max_eigval);
-    // double b = chisquare_val * std::sqrt(min_eigval);
+    const double chisquare_val = 2.4477;
+    double a = chisquare_val * std::sqrt(eigvals(0));
+    double b = chisquare_val * std::sqrt(eigvals(1));
 
-    /*
-    double phi = std::atan2(eigvecs(1, ind_max_eigval), eigvecs(0, ind_max_eigval));
-    double phi_sin = std::sin(phi);
-    double phi_cos = std::cos(phi);
-    Matrix2d R;
-    R(0, 0) = phi_cos;
-    R(0, 1) = phi_sin;
-    R(1, 0) = -phi_sin;
-    R(1, 1) = phi_cos;
-    */
+    // Axes of 95% confidence ellipse
+    Vector2d p1 = mean_est + eigvecs.col(0) * a;
+    Vector2d p2 = mean_est - eigvecs.col(0) * a;
+    Vector2d p3 = mean_est + eigvecs.col(1) * b;
+    Vector2d p4 = mean_est - eigvecs.col(1) * b;
 
-    Vector2d p1 = mean_est + eigvecs.col(0);
-    Vector2d p2 = mean_est - eigvecs.col(0);
-    Vector2d p3 = mean_est + eigvecs.col(1);
-    Vector2d p4 = mean_est - eigvecs.col(1);
-
+    // Plot in AnicarViewer
+    std::stringstream plt;
     plt << "thick solid darkBlue line "
     << p1(0) << " " << p1(1) << " "
     << p2(0) << " " << p2(1) << " "
     << p3(0) << " " << p3(1) << " "
     << p4(0) << " " << p4(1) << "\n";
-
     BBOARD->addPlotCommand(plt.str());
 }
 

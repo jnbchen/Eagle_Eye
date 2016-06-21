@@ -310,10 +310,14 @@ namespace DerWeg {
           if (final_state != none) {
             Mat tl_pos;
             double distance = 0;
-            for (unsigned int i=0; i < detectedEllipses.size() && detectedEllipses[i].color != final_state; i++) {
+            unsigned int i = 0;
+            while (detectedEllipses[i].color != final_state &&
+                    i < detectedEllipses.size() - 1) {
                 tl_pos = detectedEllipses[i].world_coords;
                 distance = detectedEllipses[i].distance;
+                ++i;
             }
+
             LOUT("HERE1\n");
             tl.update_position(tl_pos, distance, state);
             LOUT("HERE2\n");

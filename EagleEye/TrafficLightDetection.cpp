@@ -52,6 +52,8 @@ namespace DerWeg {
 
     double red_height, yellow_height, green_height, height_tol;
 
+    int min_confidence_level;
+
     map<int, TrafficLight> traffic_lights;
 
 
@@ -92,6 +94,7 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::yellow_height", yellow_height);
         cfg.get("TrafficLightDetection::green_height", green_height);
         cfg.get("TrafficLightDetection::height_tol", height_tol);
+        cfg.get("TrafficLightDetection::min_confidence_level", min_confidence_level);
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
@@ -228,7 +231,6 @@ namespace DerWeg {
             //ellipse center
             float u = box.center.x;
             float v = box.center.y;
-            //TODO: Also use confidence for depth
 
             Rect box_rect = box.boundingRect();
 
@@ -242,15 +244,52 @@ namespace DerWeg {
                 LOUT("Ellipse kicked out because of height/width\n");
                 continue;
             }
+
             //make box half its size, to prevent using depth values from outside the traffic light
             box_rect.x = box_rect.x + box_rect.width/4;
             box_rect.y = box_rect.y + box_rect.height/4;
             box_rect.width = box_rect.width/2;
             box_rect.height = box_rect.height/2;
 
+            // restrict box to image, only consider left and right boarder
+            // kick boxes outside the  ROI
+            if (box_rect.x > rec.width || box_rect.x + box_rect.width <= 0) {
+                detectedEllipses.erase(detectedEllipses.begin() + i);
+                LOUT("Ellipse kicked out because outside image\n");
+                continue;
+            }
+            else if (box_rect.x < 0) {
+                box_rect.width += box_rect.x;
+                box_rect.x = 0;
+            }
+            else if (box_rect.x + box_rect.width > rec.width) {
+                box_rect.width = rec.width - box_rect.x;
+            }
+            else {
+                // bounding box within image, do nothing
+            }
+
             rectangle(image, box_rect, Scalar(255,255,0));
 
-            double distance = median(depth(box_rect));
+
+            // get distance, either by stereo vision or by height if confidence is low
+            Mat confidence_mask;
+            threshold(conf(box_rect), confidence_mask, min_confidence_level, 1, THRESH_BINARY);
+
+            double distance;
+            if (countNonZero(confidence_mask) < 1) {
+                // confidence is too low, calculate distance from height
+                LOUT("Fallback: Calculate distance by height" << std::endl);
+                // TODO: implement method distance calculation from height
+                distance = 1000; // dummy
+            }
+            else {
+                // confidence is ok, get median from remaining pixels
+                Mat remaining;
+                depth(box_rect).copyTo(remaining, confidence_mask);
+                distance = median(remaining);
+            }
+
             dEllipse.distance = distance;
 
             // Debugging depth information

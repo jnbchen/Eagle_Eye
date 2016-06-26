@@ -61,8 +61,6 @@ void TrafficLight::observe_state(TrafficLightState signal) {
 void TrafficLight::update_position(cv::Mat& measurement, double distance, State car_state) {
     LOUT("measurement = " << measurement << "\n");
     Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
-    // Convert to millimetres
-    distance *= 1000;
 
     // Set up measurement covariance
     Matrix2d C_measure;
@@ -243,6 +241,7 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
     process_state(tlight, current_velocity);
 
     if (mode == drive_on) {
+        LOUT("Current vel" << current_velocity << "\n");
         return current_velocity;
     } else if (mode == stop) {
         // All calculations are based on the assumption of braking with constant deceleration
@@ -257,8 +256,11 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
         }
         double emergency_brake_deceleration = std::pow(current_velocity, 2) / (2 * halt_point_distance);
         double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
-        return std::pow(2 * max_deceleration * halt_point_distance, 0.5);
+        double v = std::pow(2 * max_deceleration * halt_point_distance, 0.5);
+        LOUT("case stop, v = " << v << "\n");
+        return v;
     } else {
+        LOUT("Case else v_max = " << v_max <<"\n");
         return v_max;
     }
 

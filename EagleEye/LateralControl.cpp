@@ -105,8 +105,17 @@ namespace DerWeg {
                   max_velocity = dv.velocity;
                   //LOUT("max_v = "<<max_velocity<<std::endl);
               }
+
+              double v_max_ref =  BBOARD->getReferenceTrajectory().v_max;
               // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-              dv.velocity = min(max_velocity, BBOARD->getReferenceTrajectory().v_max);
+              dv.velocity = min(max_velocity, v_max_ref);
+
+              //LOUT("max_velocity = " << max_velocity << endl);
+              //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
+              //LOUT("dv.velocity = " << dv.velocity<<endl);
+              if (v_max_ref < 0) {
+                LOUT("v_max_ref = " << v_max_ref << endl);
+              }
 
               // set steering angle and velocity
               BBOARD->setDesiredVelocity(dv);

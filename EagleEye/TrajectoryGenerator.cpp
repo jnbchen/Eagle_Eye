@@ -445,6 +445,9 @@ namespace DerWeg {
                     //LOUT("tl state = " << tl_data.state << std::endl);
                     v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity,
                                                             segments[tl_seg], seg_pos);
+                    if (v < 0) {
+                        LOUT("TrajGen v = " << v <<"\n");
+                    }
                   }
                 set_reference_trajectory(v);
 

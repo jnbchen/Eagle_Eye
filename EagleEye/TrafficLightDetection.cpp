@@ -291,6 +291,8 @@ namespace DerWeg {
                     shifted.y += 1.3 * max(box.size.width, box.size.height);
                     rectangle(image, shifted, Scalar(255,255,0));
 
+                    shifted.y -= rec.y;
+
                     Mat hue_box;
                     extractChannel(im_hsv(shifted), hue_box, 0);
 
@@ -315,25 +317,27 @@ namespace DerWeg {
                 }
 
                 Mat unscaled_cam_coords = transformer.image_to_camera_coords(u, v);
-                distance = (expected_height - camera_height) / unscaled_cam_coords.at<double>(1,0);
+                distance = -(expected_height - camera_height) / unscaled_cam_coords.at<double>(1,0);
             }
             else {
                 // confidence is ok, get median from remaining pixels
                 Mat remaining;
                 depth(box_rect).copyTo(remaining, confidence_mask);
                 distance = median(remaining);
+                // Convert to millimetres
+                distance *= 1000;
             }
 
+            // Distance in Millimetres
             dEllipse.distance = distance;
 
             // Debugging depth information
-            LOUT("Distance = "<<distance<<endl);
-            LOUT("Distance ROI = " << depth(box_rect) << endl);
-            LOUT("Confidence ROI = " << conf(box_rect) << endl);
+            //LOUT("Distance = "<<distance<<endl);
+            //LOUT("Distance ROI = " << depth(box_rect) << endl);
+            //LOUT("Confidence ROI = " << conf(box_rect) << endl);
 
             Mat camera_coords = transformer.image_to_camera_coords(u, v, distance);
-            // Convert metres to millimetres
-            camera_coords *= 1000;
+
             Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
 
             dEllipse.world_coords = world_coords;

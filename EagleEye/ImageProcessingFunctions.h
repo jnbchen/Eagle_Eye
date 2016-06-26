@@ -27,7 +27,7 @@ float median(const Mat& mat){
     }
 
     // Delete zeros out of array before median is computed
-    for (int i = array.size(); i >= 0; --i) {
+    for (int i = array.size() - 1; i >= 0; --i) {
         if (array[i] == 0) {
             array.erase(array.begin() + i);
         }
@@ -70,7 +70,7 @@ public:
         scaled_image_coords.at<double>(0,0) = distance * u;
         scaled_image_coords.at<double>(1,0) = distance * v;
         scaled_image_coords.at<double>(2,0) = distance;
-        LOUT("scaled_image_coords = " << scaled_image_coords << "\n");
+        //LOUT("scaled_image_coords = " << scaled_image_coords << "\n");
 
         return image_to_camera * scaled_image_coords;
     }
@@ -96,7 +96,7 @@ public:
         // z coordinate doesn't change in this transformation
         result.at<double>(0,0) = world.x;
         result.at<double>(1,0) = world.y;
-        LOUT("result = " << result << "\n");
+        //LOUT("result = " << result << "\n");
         return result;
     }
 

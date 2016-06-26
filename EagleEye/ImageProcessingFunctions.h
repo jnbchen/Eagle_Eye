@@ -26,6 +26,13 @@ float median(const Mat& mat){
       }
     }
 
+    // Delete zeros out of array before median is computed
+    for (int i = array.size(); i >= 0; --i) {
+        if (array[i] == 0) {
+            array.erase(array.begin() + i);
+        }
+    }
+
     std::vector<float>::iterator first = array.begin();
     std::vector<float>::iterator last = array.end();
     std::vector<float>::iterator middle = first + (last - first) / 2;
@@ -66,6 +73,10 @@ public:
         LOUT("scaled_image_coords = " << scaled_image_coords << "\n");
 
         return image_to_camera * scaled_image_coords;
+    }
+
+    Mat image_to_camera_coords(double u, double v) {
+        return image_to_camera_coords(u, v, 1);
     }
 
     Mat camera_to_world_coords(Mat cam_coords, const State state) {

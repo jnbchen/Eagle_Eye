@@ -50,7 +50,7 @@ namespace DerWeg {
     int yellow_h1; int yellow_h2; int yellow_s1; int yellow_s2; int yellow_v1; int yellow_v2;
     int green_h1; int green_h2; int green_s1; int green_s2; int green_v1; int green_v2;
 
-    double red_height, yellow_height, green_height, height_tol;
+    double red_height, yellow_height, green_height, height_tol, camera_height;
 
     int min_confidence_level;
 
@@ -95,6 +95,10 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::green_height", green_height);
         cfg.get("TrafficLightDetection::height_tol", height_tol);
         cfg.get("TrafficLightDetection::min_confidence_level", min_confidence_level);
+
+        vector<double> tmp;
+        cfg.get("CoordinateTransform::cam_to_stargazer", tmp);
+        camera_height = abs(tmp[2]); // z-coordinate
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
@@ -280,8 +284,38 @@ namespace DerWeg {
             if (countNonZero(confidence_mask) < 1) {
                 // confidence is too low, calculate distance from height
                 LOUT("Fallback: Calculate distance by height" << std::endl);
-                // TODO: implement method distance calculation from height
-                distance = 1000; // dummy
+
+                double expected_height;
+                if (dEllipse.color == red) {
+                    Rect shifted(box_rect);
+                    shifted.y += 1.3 * max(box.size.width, box.size.height);
+                    rectangle(image, shifted, Scalar(255,255,0));
+
+                    Mat hue_box;
+                    extractChannel(im_hsv(shifted), hue_box, 0);
+
+                    Mat box_lower_red, box_upper_red, box_green;
+                    inRange(hue_box, cv::Scalar(lower_red_h1), cv::Scalar(lower_red_h2), box_lower_red);
+                    inRange(hue_box, cv::Scalar(upper_red_h1), cv::Scalar(upper_red_h2), box_upper_red);
+                    inRange(hue_box, cv::Scalar(green_h1), cv::Scalar(green_h2), box_green);
+
+                    int red = countNonZero(box_lower_red) + countNonZero(box_upper_red);
+                    int green = countNonZero(box_green);
+
+                    if (red >= green) {
+                        expected_height = red_height;
+                    } else {
+                        expected_height = yellow_height;
+                    }
+                } else if (dEllipse.color == green) {
+                    expected_height = green_height;
+                } else {
+                    // Should not happen
+                    LOUT("Error in ellipse colors\n");
+                }
+
+                Mat unscaled_cam_coords = transformer.image_to_camera_coords(u, v);
+                distance = (expected_height - camera_height) / unscaled_cam_coords.at<double>(1,0);
             }
             else {
                 // confidence is ok, get median from remaining pixels

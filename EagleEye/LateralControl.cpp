@@ -108,7 +108,7 @@ namespace DerWeg {
 
               double v_max_ref =  BBOARD->getReferenceTrajectory().v_max;
               // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-              dv.velocity = min(max_velocity, v_max_ref);
+              dv.velocity = max(0.0, min(max_velocity, v_max_ref));
 
               //LOUT("max_velocity = " << max_velocity << endl);
               //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);

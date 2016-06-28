@@ -14,7 +14,7 @@ namespace DerWeg {
 TrafficLight::TrafficLight() :
     state(none), potential_state(none), potential_state_observations(0), min_observations(3),
     covarcoeff_x(0), covarcoeff_y(0) {
-        LOUT("Constructor, state = "<< state << std::endl);
+        //LOUT("Constructor, state = "<< state << std::endl);
     }
 
 TrafficLight::TrafficLight(int transition_observations, double ccoeff_x, double ccoeff_y) :
@@ -59,7 +59,7 @@ void TrafficLight::observe_state(TrafficLightState signal) {
 }
 
 void TrafficLight::update_position(cv::Mat& measurement, double distance, State car_state) {
-    LOUT("measurement = " << measurement << "\n");
+    //LOUT("measurement = " << measurement << "\n");
     Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
 
     // Set up measurement covariance

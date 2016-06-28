@@ -257,7 +257,8 @@ namespace DerWeg {
 
             // restrict box to image, only consider left and right boarder
             // kick boxes outside the  ROI
-            if (box_rect.x > rec.width || box_rect.x + box_rect.width <= 0) {
+            int min_image_width = min(rec.width, min(depth.cols, conf.cols));
+            if (box_rect.x > min_image_width || box_rect.x + box_rect.width <= 0) {
                 detectedEllipses.erase(detectedEllipses.begin() + i);
                 LOUT("Ellipse kicked out because outside image\n");
                 continue;
@@ -266,19 +267,27 @@ namespace DerWeg {
                 box_rect.width += box_rect.x;
                 box_rect.x = 0;
             }
-            else if (box_rect.x + box_rect.width > rec.width) {
-                box_rect.width = rec.width - box_rect.x;
+            else if (box_rect.x + box_rect.width > min_image_width) {
+                box_rect.width = min_image_width - box_rect.x;
             }
             else {
                 // bounding box within image, do nothing
             }
+            /*
+            LOUT("box_rect.x = " << box_rect.x << "\n");
+            LOUT("box_rect.width = " << box_rect.width << "\n");
+            LOUT("box_rect.x + box_rect.width = " << box_rect.x + box_rect.width << "\n");
+            LOUT("conf.cols = " << conf.cols << "\n");
+            LOUT("image.cols = " << image.cols << "\n");
+            LOUT("rec.width = " << rec.width << "\n");
+            */
 
             rectangle(image, box_rect, Scalar(255,255,0));
-
 
             // get distance, either by stereo vision or by height if confidence is low
             Mat confidence_mask;
             threshold(conf(box_rect), confidence_mask, min_confidence_level, 1, THRESH_BINARY);
+
 
             double distance;
             if (countNonZero(confidence_mask) < 1) {

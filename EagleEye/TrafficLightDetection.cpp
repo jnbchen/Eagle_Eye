@@ -417,6 +417,9 @@ namespace DerWeg {
                     tl_pos = detectedEllipses[i].world_coords;
                     distance = detectedEllipses[i].distance;
                     found_correct_ellipse = true;
+
+                    double u = detectedEllipses[i].box.center.x;
+                    LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
                     break;
                 }
             }

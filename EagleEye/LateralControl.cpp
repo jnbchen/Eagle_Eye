@@ -129,7 +129,7 @@ namespace DerWeg {
         /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
         and the curvature of the curve. Those values are needed for the controller. */
         ControllerInput calculate_curve_data(const State& state)  {
-            Vec pos = state.rear_position;
+            Vec pos = state.control_position;
 
             stringstream pos_point;
             pos_point << "thick black dot " << pos.x << " " << pos.y;

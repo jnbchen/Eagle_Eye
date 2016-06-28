@@ -1,10 +1,16 @@
 #ifndef _DerWeg_SEGMENT_H__
 #define _DerWeg_SEGMENT_H__
 
+#include "../Blackboard/Blackboard.h"
 #include "../Elementary/ThreadSafeLogging.h"
 #include "BezierCurve.h"
+#include <sstream>
+
+using namespace std;
 
 namespace DerWeg{
+
+    typedef vector <pair <double,double> > dTable;
 
     /** Struct to represent the position within a segment, and the minimum distance found to the segment */
     struct SegmentPosition {
@@ -16,6 +22,22 @@ namespace DerWeg{
         double curve_parameter;
         //Vec projected_point;
         double min_distance;
+
+        /**
+        Advances the segment position by the given delta_t
+        Does not guerantee that the curve_id stays within the segment!
+        */
+        int advance(double delta_t) {
+            curve_parameter += delta_t;
+            while (curve_parameter > 1) {
+                curve_id += 1;
+                curve_parameter -= 1;
+            }
+            //doesn't tell anything after advancing..
+            min_distance = -1;
+
+            return curve_id;
+        }
     };
 
     /** Class to represent segments consisting of bezier curves */
@@ -51,16 +73,19 @@ namespace DerWeg{
                     if (t1 < t2) {
                         return get(curve1).arc_length(t1,t2,qf_N);
                     } else {
-                        return -1;
+                        return -2;
                     }
                 }
 
                 double sum = 0;
+                //LOUT("CTRL: Segment.arc_length() 1\n");
+                //LOUT("CTRL: t1, t2 = " << t1 << ", " << t2 << std::endl);
                 sum += get(curve1).arc_length(t1,1,qf_N);
                 sum += get(curve2).arc_length(0,t2,qf_N);
                 for (int i = curve1 + 1; i < curve2; i++) {
                     sum += get(i).arc_length(qf_N);
                 }
+                //LOUT("CTRL: Segment.arc_length() 2\n");
                 return sum;
             }
 
@@ -74,6 +99,7 @@ namespace DerWeg{
                 seg_pos.min_distance = std::numeric_limits<double>::max();
                 for (unsigned int i=0; i < curves.size(); i++) {
                     DistanceParameters p = this->get(i).seeded_projection(position, seeding_pts_per_meter, min_N);
+                    //LOUT("c_id = " << i << "\nt = " << p.t << "\nd = " << p.distance << "\n");
                     if (p.distance < seg_pos.min_distance) {
                         seg_pos.curve_id = i;
                         seg_pos.curve_parameter = p.t;
@@ -81,6 +107,62 @@ namespace DerWeg{
                     }
                 }
                 return seg_pos;
+            }
+
+            vector<double> precalculate_curvature(SegmentPosition seg_pos, double delta_s, int N_steps, double seeding_distance, int min_qf) {
+                dTable sample_curvatures;
+
+                double total_length = delta_s * N_steps;
+                double length = 0;
+
+                // sample curvatures
+                do {
+                    pair<double,double> new_entry;
+                    new_entry.first = length;
+                    new_entry.second = get(seg_pos.curve_id).curvature(seg_pos.curve_parameter);
+                    sample_curvatures.push_back(new_entry);
+
+                    std::stringstream pos;
+                    Vec point = get(seg_pos.curve_id)(seg_pos.curve_parameter);
+                    pos << "thick black dot "
+                        << point.x << " " << point.y << std::endl;
+                    BBOARD->addPlotCommand(pos.str());
+
+                    pair<int,double> old_pos(seg_pos.curve_id, seg_pos.curve_parameter);
+                    seg_pos.advance(seeding_distance);
+
+                    if(seg_pos.curve_id < size()) {
+                        // if still within curve
+                        length += arc_length(old_pos.first, old_pos.second, seg_pos.curve_id, seg_pos.curve_parameter, min_qf);
+                    } else {
+                        // if out of curve
+                        pair<double,double> new_entry;
+                        new_entry.first = total_length + 1;
+                        new_entry.second = 0;
+                        sample_curvatures.push_back(new_entry);
+                    }
+                } while (sample_curvatures[sample_curvatures.size()-1].first < total_length);
+
+                vector<double> res;
+                //add curvature at current position
+                res.push_back(sample_curvatures[0].second);
+
+                int index = 0;
+                for (int k=1; k<= N_steps; k++) {
+                    double s = k * delta_s;
+                    while (sample_curvatures[index].first < s) {
+                        index++;
+                    }
+                    //linear interpolation:
+                    double percentage = (s - sample_curvatures[index - 1].first) /
+                                        (sample_curvatures[index].first - sample_curvatures[index - 1].first);
+                    if (!(0 <= percentage && percentage <= 1)) {
+                        LOUT("Error in precalculation of curvature \n");
+                    }
+                    double curv_at_s = percentage * sample_curvatures[index - 1].second + (1 - percentage) * sample_curvatures[index].second;
+                    res.push_back(curv_at_s);
+                }
+                return res;
             }
 
 

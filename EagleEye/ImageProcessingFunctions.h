@@ -91,7 +91,7 @@ public:
 
         // rotate vehicle coordintes and shift coordinate system to get x,y in world coordinates
         Vec vehicle_coords(result.at<double>(0,0), result.at<double>(1,0));
-        Vec world = vehicle_coords.rotate(state.orientation) + state.position;
+        Vec world = vehicle_coords.rotate(state.orientation) + state.sg_position;
 
         // z coordinate doesn't change in this transformation
         result.at<double>(0,0) = world.x;

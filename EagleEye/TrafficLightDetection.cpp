@@ -451,7 +451,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

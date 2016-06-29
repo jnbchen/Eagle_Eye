@@ -22,7 +22,7 @@ namespace DerWeg {
     ImageBuffer ib;
     DerWeg::StereoGPU stereoGPU;
     std::string windownameRect, windownameConf, windownameVisu;
-    cv::Mat depth, conf, rect;
+    cv::Mat depth, conf, rect, rect_right;
   public:
     /** Konstruktor initialisiert die Opencv-Fenster und den Tiefenschaetzer */
     SaveStereoCameraImage () :
@@ -50,6 +50,8 @@ namespace DerWeg {
     void execute () {
       try{
         while (true) {
+
+
           BBOARD->waitForImage();   // wait for next image
           ib=BBOARD->getImage();    // get next image pair from blackboard
           if (!ib.is_empty()) {     // display left image, if available
@@ -58,10 +60,15 @@ namespace DerWeg {
           if (ib.is_stereo()) {     // display right image, if available
             //cv::imshow (windowname2.c_str(), ib.image_right);
           }
+
+
 //          DerWeg::Timestamp now;
           stereoGPU.runStereoMatching (ib.image, ib.image_right); // starte die Tiefenberechnung
 //          EOUT("Zeit fuer Stereoanstoss: " << now.elapsed_msec() << '\n');
           stereoGPU.getRectifiedLeftImage (rect);
+
+
+          stereoGPU.getRectifiedRightImage (rect_right);
 //          EOUT("Zeit fuer Rektifikation: " << now.elapsed_msec() << '\n');
           stereoGPU.getStereoResults (depth,conf); // warte, bis die Tiefenberechnung abgeschlossen ist und hole die Ergebnisse ab (in depth, conf, disp, rect)
 //          EOUT("Zeit fuer Stereo: " << now.elapsed_msec() << '\n');
@@ -94,11 +101,21 @@ namespace DerWeg {
 
           cv::imwrite(string(rectFileName) + "_rect.png", rect);
 
+
+
+        char rect_rightFileName[100];
+        strcpy(rect_rightFileName, "../data/StereoImages/Stereo_");
+        strcat(rect_rightFileName, timeString.c_str());
+
+          cv::imwrite(string(rect_rightFileName) + "_rect_right.png", rect_right);
+
+
+
         char depthFileName[100];
         strcpy(depthFileName, "../data/StereoImages/Stereo_");
         strcat(depthFileName, timeString.c_str());
 
-          cv::imwrite(string(depthFileName) + "_depth.png", depth*100);
+          cv::imwrite(string(depthFileName) + "_depth.png", depth*100); //*100
 
         char confFileName[100];
         strcpy(confFileName, "../data/StereoImages/Stereo_");

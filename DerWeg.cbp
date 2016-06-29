@@ -63,7 +63,10 @@
 		<Unit filename="EagleEye/TestDrive.cpp" />
 		<Unit filename="EagleEye/TrafficLight.cpp" />
 		<Unit filename="EagleEye/TrafficLight.h" />
+		<Unit filename="EagleEye/TrafficLightBehaviour.cpp" />
+		<Unit filename="EagleEye/TrafficLightBehaviour.h" />
 		<Unit filename="EagleEye/TrafficLightDetection.cpp" />
+		<Unit filename="EagleEye/TrafficLightDummy.cpp" />
 		<Unit filename="EagleEye/TrajectoryGenerator.cpp" />
 		<Unit filename="EagleEye/WriteSVG.cpp" />
 		<Unit filename="Elementary/Angle.cpp" />

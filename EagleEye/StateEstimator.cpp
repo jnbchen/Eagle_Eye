@@ -19,6 +19,8 @@ namespace DerWeg {
     }
 
     void execute () {
+      BBOARD->waitForOdometry();
+      BBOARD->waitForVehiclePose();
       try{
         while (true) {
 
@@ -26,9 +28,9 @@ namespace DerWeg {
             Pose pose = BBOARD->getVehiclePose();
             Odometry odometry = BBOARD->getOdometry();
 
-            state.position = pose.position;
+            state.sg_position = pose.position;
             //Calculate position of rear axis center
-            state.rear_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
+            state.control_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
             state.stddev = pose.stddev;
             state.orientation = pose.orientation;
             state.velocity = pose.velocity;

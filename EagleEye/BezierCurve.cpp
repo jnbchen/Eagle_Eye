@@ -2,6 +2,8 @@
 #include <math.h>
 #include <limits>
 
+#include "../Elementary/ThreadSafeLogging.h"
+
 #include "BezierCurve.h"
 
 using namespace DerWeg;
@@ -104,6 +106,9 @@ double BezierCurve::curvature(const double t, const Vec derivative) const {
 double BezierCurve::arc_length(const double a, const double b, const int N) {
     //Divide [a,b] into N subintervals of length h
     double h = (b - a)/N;
+    if (h < 0) {
+        //LOUT("Error in quadrature: h = " << h << std::endl);
+    }
     double length = 0; //sum up length
 
     // function evaluation at left, middle, and right integration point of subintervals
@@ -120,6 +125,10 @@ double BezierCurve::arc_length(const double a, const double b, const int N) {
 
         // Simpson rule
         length += h * (left + 4*middle + right) / 6;
+    }
+    if(length < -30) {
+        // only if more than 3 cm
+        LOUT("Error in quadrature formula, l = "<<length<<std::endl);
     }
     return length;
 }
@@ -139,7 +148,8 @@ DistanceParameters BezierCurve::seeded_projection(const Vec position, const int 
     double min_distance = std::numeric_limits<double>::max();
 
     int seeding_pts = (int) ceil(seeding_pts_per_meter * arc_length(min_N) / 1000);
-    double seeded_length = 1/seeding_pts;
+    //LOUT("\tSeeding points = " << seeding_pts << "\n");
+    double seeded_length = 1.0/seeding_pts;
 
     for (int i=0; i<seeding_pts; i++) {
         double seed_t = i * seeded_length;

@@ -5,10 +5,12 @@
 #include "../Elementary/Vec.h"
 #include "BezierCurve.h"
 #include "Segment.h"
+#include "TrafficLightBehaviour.h"
 
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <cstring>
 #include <vector>
 #include <map>
@@ -53,6 +55,15 @@ namespace DerWeg {
     int qf_min_N;
     Angle angle_threshold;
 
+    int precalculate_curvature_steps;
+    double precalculate_curvature_Ts;
+    double precalculate_curvature_seeding;
+
+    double newton_tolerance;
+    int newton_max_iter;
+    double v_max;
+    TrafficLightBehaviour tl_behaviour;
+
   public:
     TrajectoryGenerator () : seg_lookup(createMap()) {}
     ~TrajectoryGenerator () {;}
@@ -89,9 +100,60 @@ namespace DerWeg {
         std::vector<double> intersec_midpoint_temp;
         cfg.get("TrajectoryGenerator::intersection_midpoint", intersec_midpoint_temp);
         Vec intersec_midpoint(intersec_midpoint_temp[0], intersec_midpoint_temp[1]);
-        double newton_tolerance, newton_max_iter;
+
+        // Read parameters
         cfg.get("LateralControl::newton_tolerance", newton_tolerance);
         cfg.get("LateralControl::newton_max_iter", newton_max_iter);
+
+        cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
+        cfg.get("TrajectoryGenerator::sppm", seeding_pts_per_meter);
+        cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
+
+        cfg.get("TrajectoryGenerator::precalculate_curvature_steps", precalculate_curvature_steps);
+        cfg.get("TrajectoryGenerator::precalculate_curvature_Ts", precalculate_curvature_Ts);
+        cfg.get("TrajectoryGenerator::precalculate_curvature_seeding", precalculate_curvature_seeding);
+
+        double degree_angle;
+        cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
+        angle_threshold = Angle::deg_angle(degree_angle);
+
+        cfg.get("LongitudinalControl::v_max", v_max);
+
+        // Read driving commands
+        std::vector<char> cmds;
+        cfg.get("TrajectoryGenerator::driving_commands", cmds);
+        for (size_t i = 0; i < cmds.size(); i++){
+            switch (cmds[i]) {
+                case 's': commands.push_back(straight); break;
+                case 'l': commands.push_back(left); break;
+                case 'r': commands.push_back(right); break;
+                case 'o': commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+
+        std::vector<char> default_cmds;
+        cfg.get("TrajectoryGenerator::default_commands", default_cmds);
+        for (size_t i = 0; i < default_cmds.size(); i++){
+            switch (default_cmds[i]) {
+                case 's': default_commands.push_back(straight); break;
+                case 'l': default_commands.push_back(left); break;
+                case 'r': default_commands.push_back(right); break;
+                case 'o': default_commands.push_back(out); break;
+                default : EOUT("Unknown driving command");
+            }
+        }
+        if (default_commands.size() == 0) {
+            EOUT("No default command specified. Assume straight." << std::endl);
+            default_commands.push_back(straight);
+        }
+
+        TrafficLightData tl;
+        tl.state = none;
+        tl.position = Vec(0,0);
+        BBOARD->setTrafficLight(tl);
+
+        tl_behaviour = TrafficLightBehaviour(cfg);
 
         std::ifstream input_file(file_path);
         std::string line;
@@ -144,12 +206,11 @@ namespace DerWeg {
             else
                 EOUT("ERROR: something wrong with the segments file" << std::endl);
         }
-
         LOUT("Number of Segments: " << segments.size() << std::endl);
 
         for (std::map<int, Segment>::iterator iter = segments.begin(); iter != segments.end(); ++iter) {
             // get map value
-            Segment seg = iter->second;
+            Segment& seg = iter->second;
 
             // Find segment position
             SegmentPosition seg_pos = seg.find_segment_position(intersec_midpoint, seeding_pts_per_meter, qf_min_N);
@@ -159,45 +220,10 @@ namespace DerWeg {
             for (int i=0; i < seg.size(); i++) {
                 BezierCurve& curve = seg.get(i);
                 curve.behind_intersec = (i > seg_pos.curve_id);
-            }
-
-        }
-
-        std::vector<char> cmds;
-        cfg.get("TrajectoryGenerator::driving_commands", cmds);
-        for (size_t i = 0; i < cmds.size(); i++){
-            switch (cmds[i]) {
-                case 's': commands.push_back(straight); break;
-                case 'l': commands.push_back(left); break;
-                case 'r': commands.push_back(right); break;
-                case 'o': commands.push_back(out); break;
-                default : EOUT("Unknown driving command");
+                //LOUT("init_behind_intersec" << seg.get(i).behind_intersec<<"\n");
             }
         }
-
-        std::vector<char> default_cmds;
-        cfg.get("TrajectoryGenerator::default_commands", default_cmds);
-        for (size_t i = 0; i < default_cmds.size(); i++){
-            switch (default_cmds[i]) {
-                case 's': default_commands.push_back(straight); break;
-                case 'l': default_commands.push_back(left); break;
-                case 'r': default_commands.push_back(right); break;
-                case 'o': default_commands.push_back(out); break;
-                default : EOUT("Unknown driving command");
-            }
-        }
-        if (default_commands.size() == 0) {
-            EOUT("No default command specified. Assume straight." << std::endl);
-            default_commands.push_back(straight);
-        }
-
-        cfg.get("TrajectoryGenerator::max_seg_distance", distance_threshold);
-        cfg.get("TrajectoryGenerator::sppm", seeding_pts_per_meter);
-        cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
-
-        double degree_angle;
-        cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
-        angle_threshold = Angle::deg_angle(degree_angle);
+        LOUT("TrajectoryGenerator init() finished" << std::endl);
     }
 
     SegmentPosition find_start_position(const State state) {
@@ -213,7 +239,7 @@ namespace DerWeg {
             Segment seg = iter->second;
 
             // Find segment position
-            SegmentPosition seg_pos = seg.find_segment_position(state.rear_position, seeding_pts_per_meter, qf_min_N);
+            SegmentPosition seg_pos = seg.find_segment_position(state.control_position, seeding_pts_per_meter, qf_min_N);
             // get map key
             seg_pos.segment_id = iter->first;
 
@@ -314,7 +340,7 @@ namespace DerWeg {
             }
             //The following case should not happen, just for robustness!
             EOUT("Error! Correct segment not in valid_segments!" << std::endl);
-            return segments[found_segment_id].find_segment_position(state.rear_position,seeding_pts_per_meter,qf_min_N);
+            return segments[found_segment_id].find_segment_position(state.control_position,seeding_pts_per_meter,qf_min_N);
         } else {
         // position is shortly before a node -> just take any valid path which ends at the max destination node
         // if starting on the exit ramp, take any segment ending at node 5
@@ -344,11 +370,63 @@ namespace DerWeg {
         return seg_lookup[starting_node][next_command];
     }
 
-    void set_reference_trajectory() {
+    void set_reference_trajectory(double desired_velocity) {
         ReferenceTrajectory rt;
         rt.path = segments[segment_index].get(curve_index);
         rt.segment_id = segment_index;
+        rt.v_max = desired_velocity;
+        //LOUT("Set curve with behind intersec = " << rt.path.behind_intersec
+        //    << " or " << segments[segment_index].get(curve_index).behind_intersec << "\n");
         BBOARD->setReferenceTrajectory(rt);
+    }
+
+    void write_curvature(State state) {
+        Vec pos = state.control_position;
+
+        Segment& seg = segments[segment_index];
+        BezierCurve& bc = seg.get(curve_index);
+        double t = bc.project(pos, 0.5, newton_tolerance, newton_max_iter);
+
+        //evaluate bezier curve and derivatives at the projection parameter
+        Vec f = bc(t);
+        Vec df = bc.prime(t);
+
+        Vec diff = pos - f;
+        double distance = diff.length();
+        //If the point is right of df, let the distance have a negative sign
+        if (diff * df.rotate_quarter() < 0) {
+            distance *= -1;
+        }
+        Angle diff_angle = state.orientation - bc.orientation(df);
+
+        SegmentPosition seg_pos;
+        seg_pos.curve_id = curve_index;
+        seg_pos.curve_parameter = t;
+
+        double delta_s = max(state.velocity,0.1) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
+
+        vector<double> curvature = seg.precalculate_curvature(seg_pos, delta_s, precalculate_curvature_steps,
+                                                                precalculate_curvature_seeding, qf_min_N);
+
+        // Write calculations to txt file
+        ofstream datafile;
+        datafile.open("curvature");
+
+        stringstream stream;
+
+        stream << precalculate_curvature_Ts << endl
+                 << state.velocity << endl
+                 << distance/1000 << endl
+                 << diff_angle.get_rad_pi() << endl;
+        for (int i = 0; i < curvature.size(); i++) {
+            stream << curvature[i] * 1000 << endl;
+        }
+
+        //LOUT(stream.str());
+
+        datafile << stream.str();
+
+        datafile.close();
     }
 
     void execute() {
@@ -362,13 +440,13 @@ namespace DerWeg {
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 
-        set_reference_trajectory();
+        set_reference_trajectory(0);
 
         try{
             while (true) {
                 State state = BBOARD->getState();
 
-                if (segments[segment_index].get(curve_index).reached_end(state.rear_position)) {
+                if (segments[segment_index].get(curve_index).reached_end(state.control_position)) {
                     if (curve_index < segments[segment_index].size() - 1) {
                         curve_index++;
                     }
@@ -388,17 +466,51 @@ namespace DerWeg {
                             segment_index += 1;
                             commands.pop_front();
                         }
+                        // This avoids using segment 35, because this segment passes the intersection twice,
+                        // so curve.behind_intersec is not well defined and thus can lead to problems with traffic lights etc.
+                        // Solution: instead of driving segment 35, drive segment 31 and then segment 15
+                        // condition is true, is current segment ends with node 3 and the upcoming command is "out"
+                        else if (segment_index % 10 == 3 && commands.size() > 0 && commands.front() == out){
+                            commands.push_front(straight);
+                        }
 
                         LOUT("Start segment " << segment_index << std::endl);
                     }
 
-                    set_reference_trajectory();
-
                     LOUT("Curve index: " << curve_index << std::endl);
+                        //<< "Behind intersection = " << segments[segment_index].get(curve_index).behind_intersec << std::endl);
                 }
                 else {
                     // do nothing
                 }
+
+                // Write precalculated curvature to txt file
+                write_curvature(state);
+
+                // Check for traffic light and set behaviour accordingly
+                int tl_seg;
+                double v;
+                  if (segments[segment_index].get(curve_index).behind_intersec) {
+                    v = v_max;
+                  } else {
+                    tl_seg = segment_index;
+                    SegmentPosition seg_pos;
+                    seg_pos.curve_id = curve_index;
+                    seg_pos.segment_id = segment_index;
+                    seg_pos.curve_parameter = segments[segment_index].get(curve_index).project(
+                                                            state.control_position, 0.5, newton_tolerance, newton_max_iter);
+                    //LOUT("CTRL: TRAJ_GEN: t = " << seg_pos.curve_parameter << endl);
+                    seg_pos.min_distance = 0;
+
+                    TrafficLightData tl_data = BBOARD->getTrafficLight();
+                    //LOUT("tl state = " << tl_data.state << std::endl);
+                    v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity,
+                                                            segments[tl_seg], seg_pos);
+                    if (v < 0) {
+                        //LOUT("TrajGen v = " << v <<"\n");
+                    }
+                  }
+                set_reference_trajectory(v);
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();

@@ -341,9 +341,9 @@ namespace DerWeg {
             dEllipse.distance = distance;
 
             // Debugging depth information
-            //LOUT("Distance = "<<distance<<endl);
-            //LOUT("Distance ROI = " << depth(box_rect) << endl);
-            //LOUT("Confidence ROI = " << conf(box_rect) << endl);
+            LOUT("Distance = "<<distance<<endl);
+            LOUT("Distance ROI = " << depth(box_rect) << endl);
+            LOUT("Confidence ROI = " << conf(box_rect) << endl);
 
             Mat camera_coords = transformer.image_to_camera_coords(u, v, distance);
 

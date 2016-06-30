@@ -199,7 +199,7 @@ namespace DerWeg {
 
                     if (max(el_width, el_height) / min(el_width, el_height) > max_size_ratio) {
                         LOUT("Ellipse kicked because of maxsize/minsize ratio\n");
-                        detected_ellipses.erase(detected_ellipses.begin() + i);
+                        //detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
                               bbox_hw_ratio > max_bbox_hw_ratio) {
@@ -208,7 +208,9 @@ namespace DerWeg {
                     }
                     else if (bbox.height > max_ellipse_size ||
                               bbox.width > max_ellipse_size) {
-                        LOUT("Ellipse kicked because the overall size is too large\n");
+                        LOUT("Ellipse kicked because the overall size is too large\n"
+                             <<"bbox height = " << bbox.height << "\n"
+                             <<"bbox width = " << bbox.width << "\n");
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else {
@@ -231,6 +233,7 @@ namespace DerWeg {
     State state;
     DerWeg::StereoGPU stereoGPU;
     std::string windowname;
+    std::string windowname2;
     Mat left, right;
 
     EllipseDetector ellipse_detector;
@@ -245,8 +248,9 @@ namespace DerWeg {
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
-      stereoGPU ("/home/common/calib.txt"), windowname("Processed Image") {
+      stereoGPU ("/home/common/calib.txt"), windowname("Processed Image"), windowname2("Right Image") {
         cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+        cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
 
     /** Destruktor */
@@ -263,8 +267,6 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::height_tol", height_tol);
         cfg.get("TrafficLightDetection::light_diameter", light_diameter);
 
-        cfg.get("TrafficLightDetection::v0", v0);
-        cfg.get("TrafficLightDetection::focus_length", focus_length);
         cfg.get("TrafficLightDetection::base_length", base_length);
 
         vector<double> tmp;
@@ -273,6 +275,8 @@ namespace DerWeg {
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
+        v0 = projection_matrix.at<double>(1,2);
+        focus_length = projection_matrix.at<double>(0,0);
 
         transformer = CoordinateTransform(cfg, projection_matrix);
 
@@ -309,11 +313,12 @@ namespace DerWeg {
           ib = BBOARD->getImage();
           state = BBOARD->getState();
 
-          Mat image(ib.image);
-
           stereoGPU.runStereoMatching(ib.image, ib.image_right);
           stereoGPU.getRectifiedLeftImage(left);
           stereoGPU.getRectifiedRightImage(right);
+
+          Mat image(left);
+          Mat r_image(right);
 
 
           //==================================================================
@@ -338,9 +343,14 @@ namespace DerWeg {
             double disparity = 0;
             double h0 = camera_height;
             if (dEllipse.color == red) {
-                double approx_distance = (red_height - h0) * focus_length / (v - v0);
+                double approx_distance = (red_height - h0) * focus_length / (v0 - v);
                 double approx_disparity = focus_length * base_length / approx_distance;
                 double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
+
+                LOUT("Approx distance = " << approx_distance << "\n");
+                LOUT("Approx disparity = " << approx_disparity << "\n");
+
+                circle(r_image, Point(u-approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,255));
 
                 for (int j = ellipses_right.size() - 1; j >= 0; --j) {
                     if (ellipses_right[j].color == red &&
@@ -445,6 +455,7 @@ namespace DerWeg {
 
           // Show results of ellipse fitting
           cv::imshow (windowname.c_str(), image);
+          cv::imshow (windowname2.c_str(), r_image);
 
           int count_red_ellipses = 0, count_green_ellipses = 0;
 

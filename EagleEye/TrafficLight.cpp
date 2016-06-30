@@ -110,6 +110,8 @@ void TrafficLight::plot_estimate() const {
     // http://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/
 
     // Plot axes of covariance ellipse
+    LOUT(C_est << std::endl);
+
     Eigen::EigenSolver<Matrix2d> eigsolve(C_est, true);
     Vector2d eigvals = eigsolve.eigenvalues().real();
     Matrix2d eigvecs = eigsolve.eigenvectors().real();

@@ -140,9 +140,9 @@ namespace DerWeg {
                 Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
                                                            Size(2*dilate_size + 1, 2*dilate_size+1),
                                                            Point(-1, -1));
-                // für red dilate dann erode, da der Rotkreis so dünn ist ( = closing)
-                dilate(red_hue_range, red_hue_range, element_dilate);
+                // Opening
                 erode(red_hue_range, red_hue_range, element_erode);
+                dilate(red_hue_range, red_hue_range, element_dilate);
                 // für green nur erode, ansonsten werden die Blätter von Baum vergrößt
                 erode(green_hue_range, green_hue_range, element_erode);
 
@@ -451,7 +451,11 @@ namespace DerWeg {
                    continue;
             }
 
-          }
+          } // End of validation loop
+
+
+
+
 
           // Show results of ellipse fitting
           cv::imshow (windowname.c_str(), image);
@@ -468,7 +472,7 @@ namespace DerWeg {
             }
           }
 
-            LOUT("red: "<< count_red_ellipses << ", green: "<<count_green_ellipses<<"\n");
+          LOUT("Red ellipses : "<< count_red_ellipses << ", green ellipses: "<<count_green_ellipses<<"\n");
 
           TrafficLightState final_state;
 

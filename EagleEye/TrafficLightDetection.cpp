@@ -199,7 +199,7 @@ namespace DerWeg {
 
                     if (max(el_width, el_height) / min(el_width, el_height) > max_size_ratio) {
                         LOUT("Ellipse kicked because of maxsize/minsize ratio\n");
-                        //detected_ellipses.erase(detected_ellipses.begin() + i);
+                        detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
                               bbox_hw_ratio > max_bbox_hw_ratio) {

@@ -1,0 +1,8 @@
+
+uK = (double) (((((2 * ulL + 2 * urL) * m + 2 * vlL - 2 * vrL) * nrR + ((urL + urR) * m - vrL - vrR) * nlL + nrL * ((ulL - urR) * m + vlL + vrR)) * nlR - (((ulR - urL) * m + vlR + vrL) * nlL - nrL * ((ulL + ulR) * m + vlL + vlR)) * nrR) / m / (((nlL + nrL) * nrR + nlL * nrL) * nlR + nlL * nrL * nrR)) / 0.2e1;
+
+
+vK = ((((-urL - urR) * m + vrL + vrR) * nlR + ((ulR - urL) * m + vlR + vrL) * nrR) * nlL + nrL * (((ulL - urR) * m + vlL + vrR) * nlR + ((ulL + ulR) * m + vlL + vlR) * nrR)) / (((2 * nrL + 2 * nrR) * nlR + 2 * nrL * nrR) * nlL + 2 * nlR * nrL * nrR);
+
+
+disp = (((vlR - vrR + m * (ulR + urR)) * nrL + ((ulR - urL) * m + vlR + vrL) * nrR) * nlL - nlR * (nrL * ((ulL - urR) * m + vlL + vrR) + ((ulL + urL) * m + vlL - vrL) * nrR)) / m / (((nrL + nrR) * nlR + nrL * nrR) * nlL + nlR * nrL * nrR);

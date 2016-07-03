@@ -106,7 +106,7 @@ namespace DerWeg {
                 cfg.get("TrafficLightDetection::max_ellipse_size", max_ellipse_size);
             }
 
-            void extractEllipsesFromContour(EllipseVector& ellipse_vec, const vector<vector<Point> > & contours, const TrafficLightColor c) {
+            void extractEllipsesFromContour(EllipseVector& ellipse_vec, const vector<vector<Point> > & contours, const TrafficLightState c) {
                 for(size_t i = 0; i < contours.size(); i++){
                     int count = contours[i].size();
                     if( count < min_contour_count || count > max_contour_count)
@@ -317,7 +317,7 @@ namespace DerWeg {
     }
 
 
-    void findMatchingEllipses(DetectedEllipse& ellipse, double expected_height, const EllipseVector& ellipses_right, vector<int>& potentialMatchesIndices) {
+    void findMatchingEllipses(const DetectedEllipse& ellipse, double expected_height, const EllipseVector& ellipses_right, vector<int>& potentialMatchesIndices) {
         //ellipse center
         float u = ellipse.box.center.x;
         float v = ellipse.box.center.y;
@@ -345,7 +345,7 @@ namespace DerWeg {
     // Also deletes the matching ellipse out of right_ellipses!!
     double matchEllipse(const DetectedEllipse& ellipse, EllipseVector& right_ellipses) {
         // draw into image
-        ellipse(vis_left, dEllipse.box, Scalar(0,255,255));
+        cv::ellipse(vis_left, ellipse.box, Scalar(0,255,255));
 
         // Get all indices of ellipses in right image within tolerance window
         vector<int> potentialMatchesIndices;
@@ -374,6 +374,7 @@ namespace DerWeg {
         }
 
         if (arg_min >= 0) {
+            float u = ellipse.box.center.x;
             double disparity = u - right_ellipses[arg_min].box.center.x;
             right_ellipses.erase(right_ellipses.begin() + arg_min);
             return disparity;
@@ -387,7 +388,7 @@ namespace DerWeg {
     // returns index of ellipse that should be used
     // returns negative value if the traffic light state is none
     // (should not occur since this method is only called on ellipse vectors with nonvanishing size)
-    int processValidatedEllipses(const EllipseVector& const ellipses) {
+    int processValidatedEllipses(const EllipseVector& ellipses) {
 
         int count_red_ellipses = 0, count_green_ellipses = 0;
         for (unsigned int i=0; i < ellipses.size(); i++) {
@@ -437,16 +438,8 @@ namespace DerWeg {
           stereoGPU.getRectifiedLeftImage(left);
           stereoGPU.getRectifiedRightImage(right);
 
-          vis_left(left);
-          vis_right(right);
-
-
-          //==================================================================
-          // DETECTION
-
-          EllipseVector ellipses_left = ellipse_detector.detect(left);
-          EllipseVector ellipses_right = ellipse_detector.detect(right);
-          EllipseVector unmatched_left;
+          vis_left = left.clone();
+          vis_right = right.clone();
 
 
           //==================================================================
@@ -465,7 +458,15 @@ namespace DerWeg {
           // Get position and covariance of curren traffic light
           Vec tl_est_pos = tl.get_position();
           Vec tl_est_stddev = tl.get_stddev();
-          double stddev = max(tl_est_cov.x, tl_est_pos.y);
+          double stddev = max(tl_est_stddev.x, tl_est_stddev.y);
+
+
+          //==================================================================
+          // DETECTION
+
+          EllipseVector ellipses_left = ellipse_detector.detect(left);
+          EllipseVector ellipses_right = ellipse_detector.detect(right);
+          EllipseVector unmatched_left;
 
 
           //==================================================================
@@ -475,7 +476,7 @@ namespace DerWeg {
             DetectedEllipse& ellipse = ellipses_left[i];
 
             // draw into image
-            ellipse(image, ellipse.box, Scalar(0,255,255));
+            cv::ellipse(vis_left, ellipse.box, Scalar(0,255,255));
 
             double disparity = matchEllipse(ellipse, ellipses_right);
 
@@ -511,7 +512,7 @@ namespace DerWeg {
                    ellipses_left.erase(ellipses_left.begin() + i);
                    LOUT("RED Ellipse kicked out because of height tolerance\n");
                    continue;
-            } else if (dEllipse.color == green &&
+            } else if (ellipse.color == green &&
                     !( abs(height - green_height) < height_tol)
                 ) {
                    ellipses_left.erase(ellipses_left.begin() + i);

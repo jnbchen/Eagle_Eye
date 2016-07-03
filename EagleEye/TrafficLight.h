@@ -56,10 +56,11 @@ public:
 
     void observe_state(TrafficLightState signal);
 
-    void update_position(cv::Mat& position, double distance, State state);
+    void update_position(Vec position, double distance, State state);
     void set_position(std::vector<double> position);
     void set_covar(std::vector<double> covar);
     Vec get_position() const;
+    Vec get_stddev() const;
     void plot_estimate() const;
 
 };

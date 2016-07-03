@@ -56,6 +56,7 @@ namespace DerWeg {
             int erode_size, dilate_size;
 
             int min_contour_count, max_contour_count;
+            double max_fitting_error;
 
             double max_size_ratio;
             double min_bbox_hw_ratio, max_bbox_hw_ratio;
@@ -97,11 +98,45 @@ namespace DerWeg {
 
                 cfg.get("TrafficLightDetection::min_contour_count", min_contour_count);
                 cfg.get("TrafficLightDetection::max_contour_count", max_contour_count);
+                cfg.get("TrafficLightDetection::max_fitting_error", max_fitting_error);
 
                 cfg.get("TrafficLightDetection::max_size_ratio", max_size_ratio);
                 cfg.get("TrafficLightDetection::min_bbox_hw_ratio", min_bbox_hw_ratio);
                 cfg.get("TrafficLightDetection::max_bbox_hw_ratio", max_bbox_hw_ratio);
                 cfg.get("TrafficLightDetection::max_ellipse_size", max_ellipse_size);
+            }
+
+            void extractEllipsesFromContour(EllipseVector& ellipse_vec, const vector<vector<Point> > & contours, const TrafficLightColor c) {
+                for(size_t i = 0; i < contours.size(); i++){
+                    int count = contours[i].size();
+                    if( count < min_contour_count || count > max_contour_count)
+                    continue;
+
+                    Mat pointsf;
+                    Mat(contours[i]).convertTo(pointsf, CV_32F);
+                    RotatedRect box = fitEllipse(pointsf);
+
+                    double fitting_error = ellipseFittingError(box , contours[i]);
+                    LOUT("Ellipse fitting error = " << fitting_error << "\n");
+
+                    if (fitting_error < max_fitting_error) {
+                        // shift back the cutoff from region of interest
+                        box.center.y += roi.y;
+
+                        ellipse_vec.push_back(DetectedEllipse(box, c));
+                    }
+                }
+            }
+
+            double ellipseFittingError(RotatedRect box, const vector<Point>& contour) {
+                double err = 0;
+                for (size_t i=0; i < contour.size(); i++) {
+                    Point p = contour[i];
+                    double a = min(box.size.width, box.size.height)/2;
+                    double b = max(box.size.width, box.size.height)/2;
+                    err += abs( pow( (p.x - box.center.x)/a , 2) + pow( (p.y - box.center.y)/b , 2) - 1);
+                }
+                return err/contour.size();
             }
 
 
@@ -154,39 +189,13 @@ namespace DerWeg {
                 findContours(green_hue_range, contours_green, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 
 
-                // Filter the detected ellipses
+                // Fit ellipses from contours
                 EllipseVector detected_ellipses;
                 // red
-                for(size_t i = 0; i < contours_red.size(); i++){
-                  int count = contours_red[i].size();
-                  if( count < min_contour_count || count > max_contour_count)
-                    continue;
+                extractEllipsesFromContour(detected_ellipses, contours_red, red);
+                //green
+                extractEllipsesFromContour(detected_ellipses, contours_green, green);
 
-                  Mat pointsf;
-                  Mat(contours_red[i]).convertTo(pointsf, CV_32F);
-                  RotatedRect box = fitEllipse(pointsf);
-
-                  // shift back the cutoff from region of interest
-                  box.center.y += roi.y;
-
-                  detected_ellipses.push_back(DetectedEllipse(box, red));
-                }
-
-                // green
-                for(size_t i = 0; i < contours_green.size(); i++){
-                  int count = contours_green[i].size();
-                  if( count < min_contour_count || count > max_contour_count)
-                    continue;
-
-                  Mat pointsf;
-                  Mat(contours_green[i]).convertTo(pointsf, CV_32F);
-                  RotatedRect box = fitEllipse(pointsf);
-
-                  // shift back the cutoff from region of interest
-                  box.center.y += roi.y;
-
-                  detected_ellipses.push_back(DetectedEllipse(box, green));
-                }
 
                 LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
 
@@ -226,6 +235,11 @@ namespace DerWeg {
 
 
 
+
+
+
+
+
   /** TrafficLightDetection */
   class TrafficLightDetection : public KogmoThread {
   private:
@@ -234,7 +248,7 @@ namespace DerWeg {
     DerWeg::StereoGPU stereoGPU;
     std::string windowname;
     std::string windowname2;
-    Mat left, right;
+    Mat left, right, vis_left, vis_right;
 
     EllipseDetector ellipse_detector;
     CoordinateTransform transformer;
@@ -257,6 +271,7 @@ namespace DerWeg {
     ~TrafficLightDetection () {}
 
     void init(const ConfigReader& cfg) {
+
         LOUT("Exec TrafficLightDetection init()" << std::endl);
 
         ellipse_detector.init(cfg);
@@ -299,9 +314,114 @@ namespace DerWeg {
             traffic_lights[i].set_position(sub_vec);
             traffic_lights[i].set_covar(init_covariance);
         }
-
-
     }
+
+
+    void findMatchingEllipses(DetectedEllipse& ellipse, double expected_height, const EllipseVector& ellipses_right, vector<int>& potentialMatchesIndices) {
+        //ellipse center
+        float u = ellipse.box.center.x;
+        float v = ellipse.box.center.y;
+
+        double approx_distance = (expected_height - camera_height) * focus_length / (v0 - v);
+        double approx_disparity = focus_length * base_length / approx_distance;
+        double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
+
+        LOUT("Approx distance = " << approx_distance << "\n");
+        LOUT("Approx disparity = " << approx_disparity << "\n");
+        circle(vis_right, Point(u - approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,255));
+
+        for (int j = ellipses_right.size() - 1; j >= 0; --j) {
+            if (ellipses_right[j].color == ellipse.color &&
+                std::pow(u - approx_disparity - ellipses_right[j].box.center.x, 2) +
+                std::pow(v - ellipses_right[j].box.center.y, 2) <= tolerance) {
+                // Found matching ellipse in tolerance area
+                potentialMatchesIndices.push_back(j);
+            }
+        }
+    }
+
+    // Returns disparity
+    // returns 0 if no matching ellipse was found
+    // Also deletes the matching ellipse out of right_ellipses!!
+    double matchEllipse(const DetectedEllipse& ellipse, EllipseVector& right_ellipses) {
+        // draw into image
+        ellipse(vis_left, dEllipse.box, Scalar(0,255,255));
+
+        // Get all indices of ellipses in right image within tolerance window
+        vector<int> potentialMatchesIndices;
+        if (ellipse.color == red) {
+            findMatchingEllipses(ellipse, red_height, right_ellipses, potentialMatchesIndices);
+            findMatchingEllipses(ellipse, yellow_height, right_ellipses, potentialMatchesIndices);
+        } else if (ellipse.color == green) {
+            findMatchingEllipses(ellipse, green_height, right_ellipses, potentialMatchesIndices);
+        } else {
+            //Error!
+            EOUT("Unknown ellipse color " << ellipse.color << "\n");
+        }
+
+        // Find ellipse with the closest matching shape which is in a close row of the image
+        double min_shape_difference = 1000000000;
+        int arg_min = -1; // shape difference minimizing index in right_ellipses
+        for (int i=0; i<potentialMatchesIndices.size(); i++) {
+            DetectedEllipse& r_ellipse = right_ellipses[potentialMatchesIndices[i]];
+            double shape_diff = pow( (ellipse.box.center.y - r_ellipse.box.center.y), 2)
+                            + pow( (ellipse.box.boundingRect().height - r_ellipse.box.boundingRect().height), 2)
+                            + pow( (ellipse.box.boundingRect().width - r_ellipse.box.boundingRect().width), 2);
+            if (shape_diff < min_shape_difference || arg_min < 0) {
+                arg_min = potentialMatchesIndices[i];
+                min_shape_difference = shape_diff;
+            }
+        }
+
+        if (arg_min >= 0) {
+            double disparity = u - right_ellipses[arg_min].box.center.x;
+            right_ellipses.erase(right_ellipses.begin() + arg_min);
+            return disparity;
+        } else {
+            // if no potential matches were found, return 0
+            return 0;
+        }
+    }
+
+    // Decision logic if there are seen many ellipses
+    // returns index of ellipse that should be used
+    // returns negative value if the traffic light state is none
+    // (should not occur since this method is only called on ellipse vectors with nonvanishing size)
+    int processValidatedEllipses(const EllipseVector& const ellipses) {
+
+        int count_red_ellipses = 0, count_green_ellipses = 0;
+        for (unsigned int i=0; i < ellipses.size(); i++) {
+            //LOUT("ellipse " << i << " world coordinates: "<< detectedEllipses[i].world_coords << std::endl);
+            if (ellipses[i].color == red) {
+                count_red_ellipses++;
+            } else if (ellipses[i].color == green) {
+                count_green_ellipses++;
+            }
+        }
+        LOUT("Red ellipses : "<< count_red_ellipses << ", green ellipses: "<<count_green_ellipses<<"\n");
+
+        // Interpret color frequencies for final state decision
+        TrafficLightState final_state;
+        if (count_red_ellipses == 0 && count_green_ellipses == 0) {
+            final_state = none;
+            return -1;
+        } else if (count_red_ellipses == 0) {
+            final_state = green;
+        } else {
+            final_state = red;
+        }
+
+        for (unsigned int i=0; i<ellipses.size(); i++) {
+            if (ellipses[i].color == final_state) {
+                double u = ellipses[i].box.center.x;
+                LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
+                return i;
+            }
+        }
+        EOUT("Error in processValidatedEllipses/finding the correct ellipse \n");
+        return -1;
+
+    } // end processValidatedEllipses
 
 
     void execute () {
@@ -317,8 +437,8 @@ namespace DerWeg {
           stereoGPU.getRectifiedLeftImage(left);
           stereoGPU.getRectifiedRightImage(right);
 
-          Mat image(left);
-          Mat r_image(right);
+          vis_left(left);
+          vis_right(right);
 
 
           //==================================================================
@@ -326,165 +446,11 @@ namespace DerWeg {
 
           EllipseVector ellipses_left = ellipse_detector.detect(left);
           EllipseVector ellipses_right = ellipse_detector.detect(right);
-          EllipseVector detectedEllipses = ellipses_left;
+          EllipseVector unmatched_left;
 
 
-          for (int i = detectedEllipses.size() - 1; i >= 0; i--) {
-            DetectedEllipse& dEllipse = detectedEllipses[i];
-
-            //ellipse center
-            float u = dEllipse.box.center.x;
-            float v = dEllipse.box.center.y;
-
-            // draw into image
-            ellipse(image, dEllipse.box, Scalar(0,255,255));
-
-            //
-            double disparity = 0;
-            double h0 = camera_height;
-            if (dEllipse.color == red) {
-                double approx_distance = (red_height - h0) * focus_length / (v0 - v);
-                double approx_disparity = focus_length * base_length / approx_distance;
-                double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
-
-                LOUT("Approx distance = " << approx_distance << "\n");
-                LOUT("Approx disparity = " << approx_disparity << "\n");
-
-                circle(r_image, Point(u-approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,255));
-
-                for (int j = ellipses_right.size() - 1; j >= 0; --j) {
-                    if (ellipses_right[j].color == red &&
-                        std::pow(u - approx_disparity - ellipses_right[j].box.center.x, 2) +
-                        std::pow(v - ellipses_right[j].box.center.y, 2) <= tolerance) {
-                        // Found matching ellipse
-                        disparity = u - ellipses_right[j].box.center.x;
-                        ellipses_right.erase(ellipses_right.begin() + j);
-                        break;
-                    }
-                    else {
-                        // Ellipses not matching
-                        continue;
-                    }
-                }
-
-                if (disparity == 0) {
-                    double approx_distance = (yellow_height - h0) * focus_length / (v - v0);
-                    double approx_disparity = focus_length * base_length / approx_distance;
-                    double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
-
-                    for (int j = ellipses_right.size() - 1; j >= 0; --j) {
-                        if (ellipses_right[j].color == red &&
-                            std::pow(u - approx_disparity - ellipses_right[j].box.center.x, 2) +
-                            std::pow(v - ellipses_right[j].box.center.y, 2) <= tolerance) {
-                            // Found matching ellipse
-                            disparity = u - ellipses_right[j].box.center.x;
-                            ellipses_right.erase(ellipses_right.begin() + j);
-                            break;
-                        }
-                        else {
-                            // Ellipses not matching
-                            continue;
-                        }
-                    }
-                }
-
-            }
-            else if (dEllipse.color == green) {
-                double approx_distance = (green_height - h0) * focus_length / (v - v0);
-                double approx_disparity = focus_length * base_length / approx_distance;
-                double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
-
-                for (int j = ellipses_right.size() - 1; j >= 0; --j) {
-                    if (ellipses_right[j].color == green &&
-                        std::pow(u - approx_disparity - ellipses_right[j].box.center.x, 2) +
-                        std::pow(v - ellipses_right[j].box.center.y, 2) <= tolerance) {
-                        // Found matching ellipse
-                        disparity = u - ellipses_right[j].box.center.x;
-                        ellipses_right.erase(ellipses_right.begin() + j);
-                        break;
-                    }
-                    else {
-                        // Ellipses not matching
-                        continue;
-                    }
-                }
-
-            }
-            else {
-                // Error
-            }
-
-            if (disparity == 0) {
-                LOUT("Ellipse kicked because no matching ellipse was found\n");
-                detectedEllipses.erase(detectedEllipses.begin() + i);
-                continue;
-            }
-
-            // Distance in Millimetres
-            double distance = focus_length * base_length / disparity;
-            dEllipse.distance = distance;
-
-            // Debugging depth information
-            LOUT("Distance = "<<distance<<endl);
-
-            // Transform image to world coordinates
-            Mat camera_coords = transformer.image_to_camera_coords(u, v, distance);
-            Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
-            dEllipse.world_coords = world_coords;
-
-            //LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
-            //LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
-
-            // erase ellipses if their height does not match the expected height
-            double height = world_coords.at<double>(2,0);
-            if (dEllipse.color == red &&
-                    !( abs(height - red_height) < height_tol || abs(height - yellow_height) < height_tol )
-                ) {
-                   detectedEllipses.erase(detectedEllipses.begin() + i);
-                   LOUT("RED Ellipse kicked out because of height tolerance\n");
-                   continue;
-            } else if (dEllipse.color == green &&
-                    !( abs(height - green_height) < height_tol)
-                ) {
-                   detectedEllipses.erase(detectedEllipses.begin() + i);
-                   LOUT("GREEN Ellipse kicked out because of height tolerance\n");
-                   continue;
-            }
-
-          } // End of validation loop
-
-
-
-
-
-          // Show results of ellipse fitting
-          cv::imshow (windowname.c_str(), image);
-          cv::imshow (windowname2.c_str(), r_image);
-
-          int count_red_ellipses = 0, count_green_ellipses = 0;
-
-          for (unsigned int i=0; i < detectedEllipses.size(); i++) {
-            LOUT("ellipse " << i << " world coordinates: "<< detectedEllipses[i].world_coords << std::endl);
-            if (detectedEllipses[i].color == red) {
-                count_red_ellipses++;
-            } else if (detectedEllipses[i].color == green) {
-                count_green_ellipses++;
-            }
-          }
-
-          LOUT("Red ellipses : "<< count_red_ellipses << ", green ellipses: "<<count_green_ellipses<<"\n");
-
-          TrafficLightState final_state;
-
-          if (count_red_ellipses == 0 && count_green_ellipses == 0) {
-            final_state = none;
-          } else if (count_red_ellipses == 0) {
-            final_state = green;
-          } else {
-            final_state = red;
-          }
-
-          TrafficLightData tl_data;
+          //==================================================================
+          // Get the traffic light we see next
 
           ReferenceTrajectory rt = BBOARD->getReferenceTrajectory();
           int tl_number;
@@ -496,39 +462,138 @@ namespace DerWeg {
           //LOUT("tl_number = " << tl_number << std::endl);
           TrafficLight& tl = traffic_lights[tl_number];
 
+          // Get position and covariance of curren traffic light
+          Vec tl_est_pos = tl.get_position();
+          Vec tl_est_stddev = tl.get_stddev();
+          double stddev = max(tl_est_cov.x, tl_est_pos.y);
+
+
+          //==================================================================
+          // Matching and Validation by calculated height
+
+          for (int i = ellipses_left.size() - 1; i >= 0; i--) {
+            DetectedEllipse& ellipse = ellipses_left[i];
+
+            // draw into image
+            ellipse(image, ellipse.box, Scalar(0,255,255));
+
+            double disparity = matchEllipse(ellipse, ellipses_right);
+
+            if (disparity == 0) {
+                ellipses_left.erase(ellipses_left.begin() + i);
+                unmatched_left.push_back(ellipse);
+                continue;
+            }
+
+            //ellipse center
+            float u = ellipse.box.center.x;
+            float v = ellipse.box.center.y;
+
+            // Distance in Millimetres
+            double distance = focus_length * base_length / disparity;
+            ellipse.distance = distance;
+
+            // Transform image to world coordinates
+            Mat camera_coords = transformer.image_to_camera_coords(u, v, distance);
+            Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
+            ellipse.world_coords = world_coords;
+
+            // Debugging depth information
+            LOUT("Distance = "<<distance<<endl);
+            //LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
+            //LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
+
+            // erase ellipses if their height does not match the expected height
+            double height = world_coords.at<double>(2,0);
+            if (ellipse.color == red &&
+                    !( abs(height - red_height) < height_tol || abs(height - yellow_height) < height_tol )
+                ) {
+                   ellipses_left.erase(ellipses_left.begin() + i);
+                   LOUT("RED Ellipse kicked out because of height tolerance\n");
+                   continue;
+            } else if (dEllipse.color == green &&
+                    !( abs(height - green_height) < height_tol)
+                ) {
+                   ellipses_left.erase(ellipses_left.begin() + i);
+                   LOUT("GREEN Ellipse kicked out because of height tolerance\n");
+                   continue;
+            }
+
+            Vec ellipse_pos(ellipse.world_coords.at<double>(0,0), ellipse.world_coords.at<double>(1,0));
+
+            //TODO: Diese Bedingung verbessern, Kovarianzmatrix nutzen!
+            // Als parameter umschreiben
+            if( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 500 ) {
+                ellipses_left.erase(ellipses_left.begin() + i);
+               LOUT("Ellipse kicked out because of wrong position\n");
+               continue;
+            }
+
+          } // End of validation loop
+
+          // Show results of ellipse fitting
+          cv::imshow (windowname.c_str(), vis_left);
+          cv::imshow (windowname2.c_str(), vis_right);
+
+
+            // At this point there are three sets of ellipses:
+            // Left ellipses contains matched ellipses including distance and world coordinates
+            // Right ellipses contains the unmatched right ellipses
+            // unmatched left contains unmatched ellipses from the left image
+
+          //===================================================================
+          // Choose an ellipse for final state and position of observed traffic light
+          TrafficLightState final_state;
+
+          // If there is an ellipse which is in both images, use this one
+          if (ellipses_left.size() > 0) {
+            int ellipse_index = processValidatedEllipses(ellipses_left);
+            if (ellipse_index < 0) {
+                final_state = none;
+            } else {
+                final_state = ellipses_left[ellipse_index].color;
+                // update position estimate
+                Mat world_pos = ellipses_left[ellipse_index].world_coords;
+                Vec tl_pos = Vec(world_pos.at<double>(0,0),world_pos.at<double>(1,0));
+                double distance = ellipses_left[ellipse_index].distance;
+                traffic_lights[tl_number].update_position(tl_pos, distance, state);
+            }
+          }
+          // If there are only ellipses which occur in only either one of the images,
+          // use the so far known position of the traffic light
+          // But only if the covanriance is already small enough
+          //TODO als parameter
+          else if (unmatched_left.size() > 0 && (tl_est_pos - state.sg_position).length() < 1000 && stddev < 500 ) {
+            int ellipse_index = processValidatedEllipses(unmatched_left);
+            if (ellipse_index < 0) {
+                final_state = none;
+            } else {
+                final_state = unmatched_left[ellipse_index].color;
+            }
+          }
+          // TOdo als parameter
+          else if (ellipses_right.size() > 0 && (tl_est_pos - state.sg_position).length() < 1000 && stddev < 500 ) {
+            int ellipse_index = processValidatedEllipses(ellipses_right);
+            if (ellipse_index < 0) {
+                final_state = none;
+            } else {
+                final_state = ellipses_right[ellipse_index].color;
+            }
+          } else {
+            final_state = none;
+          }
+
+
+          //===================================================================
+          // Fill tl_data object and write it to blackboard
+
+          TrafficLightData tl_data;
           //LOUT("Final state = " << final_state << std::endl);
           tl.observe_state(final_state);
+
           tl_data.state = tl.getState();
           //LOUT("Final state copied = " << tl_data.state << std::endl);
-
-
-          if (tl_data.state != none) {
-            Mat tl_pos;
-            double distance = 0;
-            bool found_correct_ellipse = false;
-            for (unsigned int i=0; i<detectedEllipses.size(); i++) {
-                if (detectedEllipses[i].color == tl_data.state) {
-                    tl_pos = detectedEllipses[i].world_coords;
-                    distance = detectedEllipses[i].distance;
-                    found_correct_ellipse = true;
-
-                    double u = detectedEllipses[i].box.center.x;
-                    LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
-                    break;
-                }
-            }
-            if (found_correct_ellipse) {
-                LOUT("tl_pos = "<<tl_pos <<"\n");
-
-                traffic_lights[tl_number].update_position(tl_pos, distance, state);
-                tl_data.position = traffic_lights[tl_number].get_position();
-            } else {
-                LOUT("Error in tl_data.state/finding the correct ellipse \n");
-            }
-
-          } else {
-            tl_data.position = Vec(0,0);
-          }
+          tl_data.position = traffic_lights[tl_number].get_position();
 
           //LOUT("Write tl_data to blackboard, state = " << tl_data.state <<std::endl);
           BBOARD->setTrafficLight(tl_data);
@@ -545,7 +610,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(50));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

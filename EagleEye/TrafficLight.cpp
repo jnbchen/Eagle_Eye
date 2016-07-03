@@ -58,9 +58,9 @@ void TrafficLight::observe_state(TrafficLightState signal) {
     }
 }
 
-void TrafficLight::update_position(cv::Mat& measurement, double distance, State car_state) {
+void TrafficLight::update_position(Vec measurement, double distance, State car_state) {
     //LOUT("measurement = " << measurement << "\n");
-    Vector2d mean_measure(measurement.at<double>(0,0), measurement.at<double>(1,0));
+    Vector2d mean_measure(measurement.x, measurement.y);
 
     // Set up measurement covariance
     Matrix2d C_measure;
@@ -103,6 +103,12 @@ void TrafficLight::set_covar(std::vector<double> covar) {
 
 Vec TrafficLight::get_position() const {
     return Vec(mean_est(0), mean_est(1));
+}
+
+Vec TrafficLight::get_stddev() const {
+    Eigen::EigenSolver<Matrix2d> eigsolve(C_est, true);
+    Vector2d eigvals = eigsolve.eigenvalues().real();
+    return Vec(std::sqrt(eigvals(0)), std::sqrt(eigvals(1)));
 }
 
 void TrafficLight::plot_estimate() const {

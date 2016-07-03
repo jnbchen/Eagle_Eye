@@ -6,6 +6,8 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <fstream>
 
 using namespace std;
 
@@ -34,6 +36,8 @@ namespace DerWeg {
         double precontrol_k;
         double stanley_k0, stanley_k1;
         double axis_distance;
+        // Determines whether Stanley controller is used, or matlab QP
+        bool use_stanley;
 
         double v_max;
         double v_min;
@@ -57,6 +61,7 @@ namespace DerWeg {
         cfg.get("LateralControl::stanley_k0", stanley_k0);
         cfg.get("LateralControl::stanley_k1", stanley_k1);
         cfg.get("LateralControl::axis_distance", axis_distance);
+        cfg.get("LateralControl::use_stanley", use_stanley);
 
         cfg.get("LongitudinalControl::v_max", v_max);
         cfg.get("LongitudinalControl::v_min", v_min);
@@ -66,102 +71,119 @@ namespace DerWeg {
         virtual_min_kappa = a_lateral_max / pow(v_max, 2);
 	}
 
-        void execute () {
-          try{
-            while (true) {
+    // reads first line of "steering" file and assumes it to be a double
+	double read_steering(){
+        string line;
+        ifstream file ("steering");
+        double delta = 0;
+        if (file.is_open()) {
+            getline (file,line);
+            delta = stod(line);
+            file.close();
+        }
+        return delta;
+	}
 
-              //If path changed set estimate for newton algo to zero, else use the previous result
-              if (bc != BBOARD->getReferenceTrajectory().path) {
-                  //LOUT("New curve detected, by LateralControl" << endl);
-                bc = BBOARD->getReferenceTrajectory().path;
-                lastProjectionParameter = 0;
-              }
+    void execute () {
+      try{
+        while (true) {
 
-              ControllerInput input = calculate_curve_data(BBOARD->getState());
+          //If path changed set estimate for newton algo to zero, else use the previous result
+          if (bc != BBOARD->getReferenceTrajectory().path) {
+              //LOUT("New curve detected, by LateralControl" << endl);
+            bc = BBOARD->getReferenceTrajectory().path;
+            lastProjectionParameter = 0;
+          }
 
+          //get current steering angle and velocity
+          Velocity dv = BBOARD->getDesiredVelocity();
 
-              //get current steering angle and velocity
-              Velocity dv = BBOARD->getDesiredVelocity();
-
-
+          ControllerInput input = calculate_curve_data(BBOARD->getState());
+          // Lateral control ======================================================
+          double delta;
+          if (use_stanley) {
               //Stanley-Controller here
               double u = precontrol_k*input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
-              double delta = atan(axis_distance * u);
-              // set steering angle
-              dv.steer = Angle::rad_angle(delta);
+              delta = atan(axis_distance * u);
+          } else {
+              // Assume delta to be a rad angle
+              delta = read_steering();
+          }
+          // set steering angle
+          dv.steer = Angle::rad_angle(delta);
 
 
-              //Velocity control
-              double max_velocity;
-              if (!manual_velocity) {
-                  // calculate maximal velocity from curvature
-                  double kappa = max(virtual_min_kappa, abs(input.curvature * 1000));
-                  // multiply with 1000, because the curvature has units 1/mm
+          //Velocity control
+          double max_velocity;
+          if (!manual_velocity) {
+              // calculate maximal velocity from curvature
+              double kappa = max(virtual_min_kappa, abs(input.curvature * 1000));
+              // multiply with 1000, because the curvature has units 1/mm
 
-                  // get maximal velocity for the current curvature to not exceed given lateral acceleration
-                  max_velocity = max(v_min, pow(a_lateral_max / kappa, 0.5));
-              } else {
-                  // if velocity is set manually, use last velocity from blackboard
-                  max_velocity = dv.velocity;
-                  //LOUT("max_v = "<<max_velocity<<std::endl);
-              }
+              // get maximal velocity for the current curvature to not exceed given lateral acceleration
+              max_velocity = max(v_min, pow(a_lateral_max / kappa, 0.5));
+          } else {
+              // if velocity is set manually, use last velocity from blackboard
+              max_velocity = dv.velocity;
+              //LOUT("max_v = "<<max_velocity<<std::endl);
+          }
 
-              double v_max_ref =  BBOARD->getReferenceTrajectory().v_max;
-              // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-              dv.velocity = max(0.0, min(max_velocity, v_max_ref));
+          double v_max_ref =  BBOARD->getReferenceTrajectory().v_max;
+          // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
+          dv.velocity = max(0.0, min(max_velocity, v_max_ref));
 
-              //LOUT("max_velocity = " << max_velocity << endl);
-              //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
-              //LOUT("dv.velocity = " << dv.velocity<<endl);
-              if (v_max_ref < 0) {
-                LOUT("v_max_ref = " << v_max_ref << endl);
-              }
+          //LOUT("max_velocity = " << max_velocity << endl);
+          //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
+          //LOUT("dv.velocity = " << dv.velocity<<endl);
+          if (v_max_ref < 0) {
+            LOUT("v_max_ref = " << v_max_ref << endl);
+          }
 
-              // set steering angle and velocity
-              BBOARD->setDesiredVelocity(dv);
+          // set steering angle and velocity
+          BBOARD->setDesiredVelocity(dv);
 
-              boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-              boost::this_thread::interruption_point();
-            }
-          }catch(boost::thread_interrupted&){;}
+          boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+          boost::this_thread::interruption_point();
+        }
+      }catch(boost::thread_interrupted&){;}
+    }
+
+    /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
+    and the curvature of the curve. Those values are needed for the controller. */
+    ControllerInput calculate_curve_data(const State& state)  {
+        Vec pos = state.control_position;
+
+        stringstream pos_point;
+        pos_point << "thick black dot " << pos.x << " " << pos.y;
+        BBOARD->addPlotCommand(pos_point.str());
+
+        lastProjectionParameter = bc.project(pos, lastProjectionParameter,
+                                             newton_tolerance, newton_max_iter);
+        //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
+
+        //evaluate bezier curve and derivatives at the projection parameter
+        Vec f = bc(lastProjectionParameter);
+
+        stringstream project_point;
+        project_point << "thick green dot " << f.x << " " << f.y;
+        BBOARD->addPlotCommand(project_point.str());
+
+        Vec df = bc.prime(lastProjectionParameter);
+        //Vec ddf = bc.double_prime(lastProjectionParameter);
+
+        //Calculate distance form current position to curve
+        //The difference vector is normal to the tangent in the projection point
+        //We use this to assign a sign to the distance:
+        //The distance is positive, if the actual position is left of the curve
+        // and negative if it's right of the curve (regarding moving direction)
+        Vec diff = pos - f;
+        double distance = diff.length();
+        //If the point is right of df, let the distance have a negative sign
+        if (diff * df.rotate_quarter() < 0) {
+            distance *= -1;
         }
 
-        /* Calculates the distance from the current position to the bezier curve, the angle of the vehicle with respect to the curve,
-        and the curvature of the curve. Those values are needed for the controller. */
-        ControllerInput calculate_curve_data(const State& state)  {
-            Vec pos = state.control_position;
-
-            stringstream pos_point;
-            pos_point << "thick black dot " << pos.x << " " << pos.y;
-            BBOARD->addPlotCommand(pos_point.str());
-
-            lastProjectionParameter = bc.project(pos, lastProjectionParameter,
-                                                 newton_tolerance, newton_max_iter);
-            //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
-
-            //evaluate bezier curve and derivatives at the projection parameter
-            Vec f = bc(lastProjectionParameter);
-
-            stringstream project_point;
-            project_point << "thick green dot " << f.x << " " << f.y;
-            BBOARD->addPlotCommand(project_point.str());
-
-            Vec df = bc.prime(lastProjectionParameter);
-            //Vec ddf = bc.double_prime(lastProjectionParameter);
-
-            //Calculate distance form current position to curve
-            //The difference vector is normal to the tangent in the projection point
-            //We use this to assign a sign to the distance:
-            //The distance is positive, if the actual position is left of the curve
-            // and negative if it's right of the curve (regarding moving direction)
-            Vec diff = pos - f;
-            double distance = diff.length();
-            //If the point is right of df, let the distance have a negative sign
-            if (diff * df.rotate_quarter() < 0) {
-                distance *= -1;
-            }
-
-            //Calculate difference angle between vehicle and curve
+        //Calculate difference angle between vehicle and curve
 //            double phi;
 //            if (df.x != 0 && abs(df.y/df.x) < 1) {
 //                //atan2 takes the direction into account
@@ -170,23 +192,23 @@ namespace DerWeg {
 //                //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
 //                phi = M_PI/2 + atan2(-df.x, df.y);
 //            }
-            Angle diff_angle = state.orientation - bc.orientation(df);
+        Angle diff_angle = state.orientation - bc.orientation(df);
 
-            //Calculate the curvature of the bezier curve
+        //Calculate the curvature of the bezier curve
 //            double curvature_numerator = ddf.y * df.x - ddf.x * df.y;
 //            double curvature_denominator = pow(df.squared_length(), 3.0/2);
 //            double curvature = curvature_numerator / curvature_denominator;
-            double curvature = bc.curvature(lastProjectionParameter, df);
+        double curvature = bc.curvature(lastProjectionParameter, df);
 
-            /*
-            LOUT("Distance: " << distance << endl);
-            LOUT("Diff_Angle: " << diff_angle.get_deg_180() << endl);
-            LOUT("Curvature: " << curvature << endl);
-            LOUT("Position: " << state.position.x << ", " << state.position.y << endl);
-            */
+        /*
+        LOUT("Distance: " << distance << endl);
+        LOUT("Diff_Angle: " << diff_angle.get_deg_180() << endl);
+        LOUT("Curvature: " << curvature << endl);
+        LOUT("Position: " << state.position.x << ", " << state.position.y << endl);
+        */
 
-            return ControllerInput(distance, diff_angle, curvature);
-        }
+        return ControllerInput(distance, diff_angle, curvature);
+    }
 
   };
 

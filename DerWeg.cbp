@@ -51,6 +51,7 @@
 		<Unit filename="Blackboard/Blackboard.h" />
 		<Unit filename="EagleEye/BezierCurve.cpp" />
 		<Unit filename="EagleEye/BezierCurve.h" />
+		<Unit filename="EagleEye/ConeDetection.cpp" />
 		<Unit filename="EagleEye/DataObjects.cpp" />
 		<Unit filename="EagleEye/DataObjects.h" />
 		<Unit filename="EagleEye/ImageProcessingFunctions.h" />

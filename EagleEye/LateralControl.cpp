@@ -71,14 +71,44 @@ namespace DerWeg {
         virtual_min_kappa = a_lateral_max / pow(v_max, 2);
 	}
 
+	double convertToDouble(const std::string& s)
+    {
+        std::istringstream i(s);
+        double x;
+        if (!(i >> x))
+            LOUT("Error String Conversion\n");
+        return x;
+    }
+
+    int convertToInt(const std::string& s)
+    {
+        std::istringstream i(s);
+        int x;
+        if (!(i >> x))
+            LOUT("Error String Conversion\n");
+        return x;
+    }
+
     // reads first line of "steering" file and assumes it to be a double
 	double read_steering(){
-        string line;
-        ifstream file ("steering");
+        std::string line;
+        ifstream file ("steering.txt");
         double delta = 0;
         if (file.is_open()) {
             getline (file,line);
-            delta = stod(line);
+
+            LOUT(line << "\n");
+
+            //LOUT(stod(string(" -100.01   \t\n")) << "\n");
+
+            //delta = stod(line);
+
+            //line = std::string("25.01");
+            //LOUT(convertToDouble(line) << "\n");
+
+            delta = convertToDouble(line);
+            LOUT(delta << "\n");
+
             file.close();
         }
         return delta;
@@ -145,7 +175,7 @@ namespace DerWeg {
           // set steering angle and velocity
           BBOARD->setDesiredVelocity(dv);
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(50));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

@@ -410,14 +410,16 @@ namespace DerWeg {
 
         // Write calculations to txt file
         ofstream datafile;
-        datafile.open("curvature");
+        datafile.open("curvature.txt");
 
         stringstream stream;
 
         stream << precalculate_curvature_Ts << endl
-                 << state.velocity << endl
+                 //<< state.velocity << endl
                  << distance/1000 << endl
-                 << diff_angle.get_rad_pi() << endl;
+                 << state.orientation.get_rad_pi() << endl
+                 << 0.5 * tan(state.steer.get_rad_pi()) << endl
+                 << (diff_angle + state.orientation).get_rad_pi() << endl;
         for (int i = 0; i < curvature.size(); i++) {
             stream << curvature[i] * 1000 << endl;
         }

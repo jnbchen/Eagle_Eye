@@ -112,6 +112,9 @@ namespace DerWeg {
           // set steering angle
           dv.steer = Angle::rad_angle(delta);
 
+          if (abs(dv.steer.get_deg_180()) > 28) {
+            LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
+          }
 
           //Velocity control
           double max_velocity;

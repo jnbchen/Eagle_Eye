@@ -142,6 +142,7 @@ namespace DerWeg {
 
             EllipseVector detect(const cv::Mat& im_input) {
 
+                LOUT("SIZE = " << im_input.rows<<", "<<im_input.cols<<"\n");
                 // Region of Interest
                 Mat im_roi = im_input(roi);
 
@@ -611,7 +612,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

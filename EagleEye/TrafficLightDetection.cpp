@@ -36,6 +36,8 @@ namespace DerWeg {
 
     class EllipseDetector {
         private:
+            std::string windowname;
+
             Rect roi;
 
             int median_filter_size;
@@ -65,6 +67,8 @@ namespace DerWeg {
 
         public:
             void init(const ConfigReader& cfg) {
+                windowname = "Preprocessing";
+                cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
 
                 int roi_border_top, roi_border_bot, roi_width;
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
@@ -117,7 +121,7 @@ namespace DerWeg {
                     RotatedRect box = fitEllipse(pointsf);
 
                     double fitting_error = ellipseFittingError(box , contours[i]);
-                    LOUT("Ellipse fitting error = " << fitting_error << "\n");
+                    //LOUT("Ellipse fitting error = " << fitting_error << "\n");
 
                     if (fitting_error < max_fitting_error) {
                         // shift back the cutoff from region of interest
@@ -142,7 +146,6 @@ namespace DerWeg {
 
             EllipseVector detect(const cv::Mat& im_input) {
 
-                LOUT("SIZE = " << im_input.rows<<", "<<im_input.cols<<"\n");
                 // Region of Interest
                 Mat im_roi = im_input(roi);
 
@@ -183,6 +186,12 @@ namespace DerWeg {
                 erode(green_hue_range, green_hue_range, element_erode);
 
 
+
+                // Show filter results
+                cv::imshow (windowname.c_str(), red_hue_range);
+
+
+
                 // Get contour points (changes input image)
                 vector<vector<Point> > contours_red;
                 vector<vector<Point> > contours_green;
@@ -197,8 +206,6 @@ namespace DerWeg {
                 //green
                 extractEllipsesFromContour(detected_ellipses, contours_green, green);
 
-
-                LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
 
                 // Sort out ellipses with uncorrect size ratio and too large height
                 for(int i = detected_ellipses.size() - 1; i >= 0; --i) {
@@ -229,6 +236,10 @@ namespace DerWeg {
                     }
                 }
 
+
+                LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
+
+
                 return detected_ellipses;
           }
     };
@@ -254,6 +265,8 @@ namespace DerWeg {
     EllipseDetector ellipse_detector;
     CoordinateTransform transformer;
 
+    double max_shape_diff;
+
     double red_height, yellow_height, green_height, height_tol, light_diameter;
     double camera_height, v0, focus_length, base_length;
 
@@ -277,6 +290,7 @@ namespace DerWeg {
 
         ellipse_detector.init(cfg);
 
+        cfg.get("TrafficLightDetection::max_shape_diff", max_shape_diff);
         cfg.get("TrafficLightDetection::red_height", red_height);
         cfg.get("TrafficLightDetection::yellow_height", yellow_height);
         cfg.get("TrafficLightDetection::green_height", green_height);
@@ -327,9 +341,14 @@ namespace DerWeg {
         double approx_disparity = focus_length * base_length / approx_distance;
         double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
 
+        if (approx_distance < 0 ) {
+            return;
+        }
+
         LOUT("Approx distance = " << approx_distance << "\n");
         LOUT("Approx disparity = " << approx_disparity << "\n");
-        circle(vis_right, Point(u - approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,255));
+        circle(vis_right, Point(u - approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,0));
+
 
         for (int j = ellipses_right.size() - 1; j >= 0; --j) {
             if (ellipses_right[j].color == ellipse.color &&
@@ -374,7 +393,9 @@ namespace DerWeg {
             }
         }
 
-        if (arg_min >= 0) {
+        LOUT("Shape difference "<< min_shape_difference << "\n");
+
+        if (arg_min >= 0 && min_shape_difference < max_shape_diff) {
             float u = ellipse.box.center.x;
             double disparity = u - right_ellipses[arg_min].box.center.x;
             right_ellipses.erase(right_ellipses.begin() + arg_min);
@@ -431,6 +452,8 @@ namespace DerWeg {
         BBOARD->waitForReferenceTrajectory();
       try{
         while (true) {
+          LOUT("TL DETECTION EXECUTE LOOP \n");
+
           BBOARD->waitForImage();
           ib = BBOARD->getImage();
           state = BBOARD->getState();
@@ -525,7 +548,8 @@ namespace DerWeg {
 
             //TODO: Diese Bedingung verbessern, Kovarianzmatrix nutzen!
             // Als parameter umschreiben
-            if( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 500 ) {
+            if( ( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 500 )
+               || ellipse_pos.x < 0 || ellipse_pos.y < 0 || ellipse_pos.x > 12000 || ellipse_pos.y > 6000 ) {
                 ellipses_left.erase(ellipses_left.begin() + i);
                LOUT("Ellipse kicked out because of wrong position\n");
                continue;

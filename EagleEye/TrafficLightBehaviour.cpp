@@ -115,7 +115,7 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
     process_state(tlight, current_velocity);
 
     if (mode == drive_on) {
-        //LOUT("Current vel" << current_velocity << "\n");
+        //LOUT("Current vel " << current_velocity << "\n");
         return min(v_max, current_velocity + 0.3);
     } else if (mode == stop) {
         // All calculations are based on the assumption of braking with constant deceleration

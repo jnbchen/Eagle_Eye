@@ -504,7 +504,7 @@ namespace DerWeg {
 
                     TrafficLightData tl_data = BBOARD->getTrafficLight();
                     //LOUT("tl state = " << tl_data.state << std::endl);
-                    v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity,
+                    v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity_tire,
                                                             segments[tl_seg], seg_pos);
                     if (v < 0) {
                         //LOUT("TrajGen v = " << v <<"\n");

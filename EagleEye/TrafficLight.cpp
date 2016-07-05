@@ -64,8 +64,8 @@ void TrafficLight::update_position(Vec measurement, double distance, State car_s
 
     // Set up measurement covariance
     Matrix2d C_measure;
-    C_measure(0, 0) = pow(distance, 2) * covarcoeff_x;
-    C_measure(1, 1) = distance * covarcoeff_y;
+    C_measure(0, 0) = max(1e-8, pow(distance, 2) * covarcoeff_x);
+    C_measure(1, 1) = max(1e-8, distance * covarcoeff_y);
     C_measure(0, 1) = 0;
     C_measure(1, 0) = 0;
 
@@ -87,6 +87,8 @@ void TrafficLight::update_position(Vec measurement, double distance, State car_s
     mean_est = C_measure * (C_inv * mean_est) +
                       C_est * (C_inv * mean_measure);
     C_est = C_measure * (C_inv * C_est);
+    C_est(0, 0) = max(1e-8, C_est(0, 0));
+    C_est(1, 1) = max(1e-8, C_est(1, 1));
 }
 
 void TrafficLight::set_position(std::vector<double> position) {

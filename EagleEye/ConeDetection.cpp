@@ -22,7 +22,7 @@ namespace DerWeg {
   /** ConeDetection */
   class ConeDetection : public KogmoThread {
   private:
-    ImageBuffer ib;
+    RectImages rect_images;
     State state;
 
     DerWeg::StereoGPU stereoGPU;
@@ -472,22 +472,16 @@ namespace DerWeg {
 
     void execute () {
         LOUT("Enter ConeDetection execute()\n");
-        BBOARD->waitForReferenceTrajectory();
       try{
         while (true) {
-            BBOARD->waitForImage();
-            ib = BBOARD->getImage();
-            state = BBOARD->getState();
+            BBOARD->waitForRectImages();
+            rect_images = BBOARD->getRectImages();
 
-            stereoGPU.runStereoMatching(ib.image, ib.image_right);
-            stereoGPU.getRectifiedLeftImage(left);
-            stereoGPU.getRectifiedRightImage(right);
+            left = rect_images.images.image;
+            right = rect_images.images.image_right;
+            state = rect_images.state;
 
             /*
-            vis_left = left.clone();
-            vis_right = right.clone();
-
-
             // Region of Interest
             Rect roi(0, 0, left.rows, left.cols);
             Mat im_roi = left(roi);
@@ -562,7 +556,7 @@ namespace DerWeg {
             show_res(imgDiff,imgDiffR,out2,out2R,"window_Stereo");
 
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
             boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

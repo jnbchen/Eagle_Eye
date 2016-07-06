@@ -194,6 +194,7 @@ bool Blackboard::waitForReferenceTrajectory (boost::posix_time::time_duration ti
   return condReferenceTrajectory.timed_wait(lock, timeout);
 }
 
+
 // TrafficLightData
 TrafficLightData Blackboard::getTrafficLight() {
     boost::unique_lock<boost::mutex> lock (bbmutex);
@@ -204,26 +205,24 @@ void Blackboard::setTrafficLight(const TrafficLightData & tl){
   traffic_light=tl;
   condTrafficLight.notify_all();
 }
-
 bool Blackboard::waitForTrafficLight(boost::posix_time::time_duration timeout){
   boost::unique_lock<boost::mutex> lock (bbmutex);
   return condTrafficLight.timed_wait(lock, timeout);
 }
 
 
-/*
-// DrivingMode
-DrivingMode Blackboard::getDrivingMode () {
-  boost::unique_lock<boost::mutex> lock (bbmutex);
-  return driving_mode;
+// RectImages
+RectImages Blackboard::getRectImages() {
+    boost::unique_lock<boost::mutex> lock (bbmutex);
+    return rect_images;
 }
-void Blackboard::setDrivingMode (const DrivingMode& dm) {
+void Blackboard::setRectImages(const RectImages & ri){
   boost::unique_lock<boost::mutex> lock (bbmutex);
-  driving_mode=dm;
-  condDrivingMode.notify_all();
+  rect_images=ri;
+  condRectImages.notify_all();
 }
-bool Blackboard::waitForDrivingMode (boost::posix_time::time_duration timeout) {
+bool Blackboard::waitForRectImages(boost::posix_time::time_duration timeout){
   boost::unique_lock<boost::mutex> lock (bbmutex);
-  return condDrivingMode.timed_wait(lock, timeout);
+  return condRectImages.timed_wait(lock, timeout);
 }
-*/
+

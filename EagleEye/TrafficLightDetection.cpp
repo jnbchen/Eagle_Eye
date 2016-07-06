@@ -255,9 +255,13 @@ namespace DerWeg {
   /** TrafficLightDetection */
   class TrafficLightDetection : public KogmoThread {
   private:
-    ImageBuffer ib;
+    RectImages rect_images;
     State state;
+    ReferenceTrajectory rt;
+
+    // needed to get the projection matrix
     DerWeg::StereoGPU stereoGPU;
+
     std::string windowname;
     std::string windowname2;
     Mat left, right, vis_left, vis_right;
@@ -276,9 +280,10 @@ namespace DerWeg {
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
-      stereoGPU ("/home/common/calib.txt"), windowname("Processed Image"), windowname2("Right Image") {
-        cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
-        cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
+        stereoGPU("/home/common/calib.txt"),  // needed to get the projection matrix
+        windowname("Processed Image"), windowname2("Right Image") {
+            cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+            cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
 
     /** Destruktor */
@@ -382,7 +387,7 @@ namespace DerWeg {
         // Find ellipse with the closest matching shape which is in a close row of the image
         double min_shape_difference = 1000000000;
         int arg_min = -1; // shape difference minimizing index in right_ellipses
-        for (int i=0; i<potentialMatchesIndices.size(); i++) {
+        for (size_t i=0; i<potentialMatchesIndices.size(); i++) {
             DetectedEllipse& r_ellipse = right_ellipses[potentialMatchesIndices[i]];
             double shape_diff = pow( (ellipse.box.center.y - r_ellipse.box.center.y), 2)
                             + pow( (ellipse.box.boundingRect().height - r_ellipse.box.boundingRect().height), 2)
@@ -454,13 +459,13 @@ namespace DerWeg {
         while (true) {
           LOUT("TL DETECTION EXECUTE LOOP \n");
 
-          BBOARD->waitForImage();
-          ib = BBOARD->getImage();
-          state = BBOARD->getState();
+          BBOARD->waitForRectImages();
+          rect_images = BBOARD->getRectImages();
 
-          stereoGPU.runStereoMatching(ib.image, ib.image_right);
-          stereoGPU.getRectifiedLeftImage(left);
-          stereoGPU.getRectifiedRightImage(right);
+          left = rect_images.images.image;
+          right = rect_images.images.image_right;
+          state = rect_images.state;
+          rt = rect_images.reference_trajectory;
 
           vis_left = left.clone();
           vis_right = right.clone();
@@ -469,7 +474,6 @@ namespace DerWeg {
           //==================================================================
           // Get the traffic light we see next
 
-          ReferenceTrajectory rt = BBOARD->getReferenceTrajectory();
           int tl_number;
           if (rt.path.behind_intersec) {
             tl_number = (rt.segment_id % 10);

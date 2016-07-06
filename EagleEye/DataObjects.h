@@ -5,6 +5,8 @@
 #include "../Elementary/Angle.h"
 #include "../Elementary/Vec.h"
 #include "../Elementary/Timestamp.h"
+#include "../Elementary/ImageBuffer.h"
+
 #include "BezierCurve.h"
 
 
@@ -43,22 +45,22 @@ namespace DerWeg {
     bool operator!= (const ReferenceTrajectory&) const throw ();
   };
 
+
+  /** Struct to describe the position and state of traffic lights */
   struct TrafficLightData {
     TrafficLightState state;
     Vec position;
   };
 
 
-  /** struct to describe the driving mode */
-  /*
-  struct DrivingMode {
-    char current_mode;  ///< current dirivng mode (strait, right, left, out)
-    char next_mode;  ///< next dirivng mode in time (strait, right, left, out)
-
-    bool operator== (const DrivingMode&) const throw ();
-    bool operator!= (const DrivingMode&) const throw ();
+  /** Struct to bundle relevant data for input to image processing modules */
+  struct RectImages {
+      ImageBuffer images;
+      State state;
+      ReferenceTrajectory reference_trajectory;
   };
-*/
+
+
 
 
 } // namespace DerWeg

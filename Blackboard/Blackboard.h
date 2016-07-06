@@ -39,8 +39,8 @@ class Blackboard {
 
     boost::condition_variable condState;           ///< condition variable to signal change of state
     boost::condition_variable condReferenceTrajectory;  ///< condition variable to signal change of reference trajectory
-    //boost::condition_variable condDrivingMode;     ///< condition variable to signal change of driving mode
     boost::condition_variable condTrafficLight;
+    boost::condition_variable condRectImages;
 
     bool exitProgram;                          ///< attribute indicating when the program should be stopped (stopProgram=true)
 
@@ -55,6 +55,7 @@ class Blackboard {
     ReferenceTrajectory reference_trajectory;  ///< the present bezier curve for Control
     //DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
     TrafficLightData traffic_light;             ///< object containing the state and position of the traffic light currently seen
+    RectImages rect_images;                    ///< object containing rectified left/right images and the associated state and reference trajectory
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -115,12 +116,10 @@ class Blackboard {
     void setTrafficLight(const TrafficLightData &);
     bool waitForTrafficLight(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
 
-/*
-    // DrivingMode
-    DrivingMode getDrivingMode ();                    ///< get the driving_mode from StateMachine
-    void setDrivingMode (const DrivingMode&);         ///< set the driving_mode from StateMachine
-    bool waitForDrivingMode (boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));                ///< waits until a new driving_mode has been read from StateMachine and return true (or until timeout and return false)
-*/
+    RectImages getRectImages();
+    void setRectImages(const RectImages &);
+    bool waitForRectImages(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
+
   };
 
 #define BBOARD DerWeg::Blackboard::getInstance()    // macro to simplify accessing the blackboard

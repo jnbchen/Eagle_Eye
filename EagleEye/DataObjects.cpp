@@ -22,13 +22,3 @@ bool ReferenceTrajectory::operator== (const ReferenceTrajectory& rt) const throw
 bool ReferenceTrajectory::operator!= (const ReferenceTrajectory& rt) const throw () {
   return path != rt.path;
 }
-
-/*
-// DrivingMode
-bool DrivingMode::operator== (const DrivingMode& dm) const throw () {
-  return current_mode==dm.current_mode && next_mode==dm.next_mode;
-}
-bool DrivingMode::operator!= (const DrivingMode& dm) const throw () {
-  return current_mode!=dm.current_mode || next_mode!=dm.next_mode;
-}
-*/

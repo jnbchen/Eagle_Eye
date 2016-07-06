@@ -16,6 +16,9 @@ namespace DerWeg {
 
             DerWeg::StereoGPU stereoGPU;
 
+            cv::Mat rect_left;
+            cv::Mat rect_right;
+
         public:
             Rectifier () : stereoGPU("/home/common/calib.txt") {}
 
@@ -24,27 +27,28 @@ namespace DerWeg {
             void execute () {
                 try{
                     while (true) {
-                        BBOARD->waitForImage();
 
-                        ib = BBOARD->getImage();
-                        state = BBOARD->getState();
-                        rt = BBOARD->getReferenceTrajectory();
+                        if (!stereoGPU.isRunning()) {
+                            BBOARD->waitForImage();
 
-                        cv::Mat rect_left;
-                        cv::Mat rect_right;
-                        stereoGPU.runStereoMatching(ib.image, ib.image_right);
-                        stereoGPU.getRectifiedLeftImage(rect_left);
-                        stereoGPU.getRectifiedRightImage(rect_right);
+                            ib = BBOARD->getImage();
+                            state = BBOARD->getState();
+                            rt = BBOARD->getReferenceTrajectory();
 
-                        RectImages rect_imgs;
-                        rect_imgs.images.image = rect_left;
-                        rect_imgs.images.image_right = rect_right;
-                        rect_imgs.state = state;
-                        rect_imgs.reference_trajectory = rt;
+                            stereoGPU.runStereoMatching(ib.image, ib.image_right);
+                            stereoGPU.getRectifiedLeftImage(rect_left);
+                            stereoGPU.getRectifiedRightImage(rect_right);
 
-                        BBOARD->setRectImages(rect_imgs);
+                            RectImages rect_imgs;
+                            rect_imgs.images.image = rect_left;
+                            rect_imgs.images.image_right = rect_right;
+                            rect_imgs.state = state;
+                            rect_imgs.reference_trajectory = rt;
 
-                        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+                            BBOARD->setRectImages(rect_imgs);
+                        }
+
+                        //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                         boost::this_thread::interruption_point();
                     }
                 } catch(boost::thread_interrupted&){;}

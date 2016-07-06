@@ -25,7 +25,9 @@ namespace DerWeg {
     RectImages rect_images;
     State state;
 
+    // needed to get the projection matrix
     DerWeg::StereoGPU stereoGPU;
+
     std::string windowname_l;
     std::string windowname_r;
     Mat left, right, vis_left, vis_right;
@@ -556,7 +558,7 @@ namespace DerWeg {
             show_res(imgDiff,imgDiffR,out2,out2R,"window_Stereo");
 
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
             boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

@@ -41,6 +41,8 @@ class Blackboard {
     boost::condition_variable condReferenceTrajectory;  ///< condition variable to signal change of reference trajectory
     boost::condition_variable condTrafficLight;
     boost::condition_variable condRectImages;
+    boost::condition_variable condPylonMap;
+    boost::condition_variable condPylonMeasurements;
 
     bool exitProgram;                          ///< attribute indicating when the program should be stopped (stopProgram=true)
 
@@ -56,6 +58,8 @@ class Blackboard {
     //DrivingMode driving_mode;                  ///< the driving mode from the StateMachine for TrajectoryGeneration
     TrafficLightData traffic_light;             ///< object containing the state and position of the traffic light currently seen
     RectImages rect_images;                    ///< object containing rectified left/right images and the associated state and reference trajectory
+    PylonMap pylon_map;
+    PylonMeasurements pylon_measurements;
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -119,6 +123,15 @@ class Blackboard {
     RectImages getRectImages();
     void setRectImages(const RectImages &);
     bool waitForRectImages(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
+
+    PylonMap getPylonMap();
+    void setPylonMap(const PylonMap &);
+    bool waitForPylonMap(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
+
+    PylonMeasurements getPylonMeasurements();
+    void setPylonMeasurements(const PylonMeasurements &);
+    bool waitForPylonMeasurements(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
+    void addPylonMeasurement(const Vec&);
 
   };
 

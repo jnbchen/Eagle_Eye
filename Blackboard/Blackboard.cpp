@@ -226,3 +226,42 @@ bool Blackboard::waitForRectImages(boost::posix_time::time_duration timeout){
   return condRectImages.timed_wait(lock, timeout);
 }
 
+
+// PylonMap
+PylonMap Blackboard::getPylonMap() {
+    boost::unique_lock<boost::mutex> lock (bbmutex);
+    return pylon_map;
+}
+void Blackboard::setPylonMap(const PylonMap & pm){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  pylon_map=pm;
+  condPylonMap.notify_all();
+}
+bool Blackboard::waitForPylonMap(boost::posix_time::time_duration timeout){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condPylonMap.timed_wait(lock, timeout);
+}
+
+
+// PylonMeasurements
+PylonMeasurements Blackboard::getPylonMeasurements() {
+    boost::unique_lock<boost::mutex> lock (bbmutex);
+    PylonMeasurements temp(pylon_measurements);
+    pylon_measurements.measurements.clear();
+    return temp;
+}
+void Blackboard::setPylonMeasurements(const PylonMeasurements & pm){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  pylon_measurements=pm;
+  condPylonMeasurements.notify_all();
+}
+bool Blackboard::waitForPylonMeasurements(boost::posix_time::time_duration timeout){
+  boost::unique_lock<boost::mutex> lock (bbmutex);
+  return condPylonMeasurements.timed_wait(lock, timeout);
+}
+void Blackboard::addPylonMeasurement(const Vec& pos) {
+    boost::unique_lock<boost::mutex> lock (bbmutex);
+    pylon_measurements.measurements.push_back(pos);
+    condPylonMeasurements.notify_all();
+}
+

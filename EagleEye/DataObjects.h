@@ -61,6 +61,22 @@ namespace DerWeg {
   };
 
 
+  /** Structs to transfer cone map to path finding module */
+  struct Circle {
+      Vec position;
+      double radius;
+  };
+
+  struct PylonMap {
+      std::vector<Circle> circles;
+  };
+
+
+  struct PylonMeasurements {
+      std::vector<Vec> measurements;
+  };
+
+
 
 
 } // namespace DerWeg

@@ -38,7 +38,7 @@ namespace DerWeg {
                 file_name << path << timeString << ".txt";
                 logfile.open(file_name.str());
 
-                logfile << "x" << ' ' << "y" << std::endl;
+                logfile << "# x y" << std::endl;
             }
 
             void deinit () {

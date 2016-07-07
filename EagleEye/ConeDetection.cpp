@@ -106,6 +106,50 @@ namespace DerWeg {
         v_search_end = 258;
     }
 
+    /*
+    Mat getThresholded(const Mat& input) {
+        // Region of Interest
+        Rect roi(0, 0, inout.rows, input.cols);
+        Mat im_roi = input(roi);
+
+
+        // Blur and HSV
+        int median_filter_size = 3;
+        medianBlur(im_roi, im_roi, median_filter_size);
+        Mat im_hsv;
+        cvtColor(im_roi, im_hsv, COLOR_BGR2HSV);
+
+
+        // Color thresholing
+        Mat hue_range;
+        int hue_low = 0
+        int hue_high = 20;
+        int sat_low = 25;
+        int sat_high = 255;
+        int val_low = 90;
+        int val_high = 255;
+
+        inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
+                cv::Scalar(hue_high, sat_high, val_high), hue_range);
+
+
+        // Opening/Closing
+        int erode_size = 2;
+        int dilate_size = 2;
+        Mat element_erode = getStructuringElement(MORPH_ELLIPSE,
+                                                  Size(2*erode_size + 1, 2*erode_size+1),
+                                                  Point(-1, -1));
+        Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
+                                                   Size(2*dilate_size + 1, 2*dilate_size+1),
+                                                   Point(-1, -1));
+        // Opening
+        erode(hue_range, hue_range, element_erode);
+        dilate(hue_range, hue_range, element_dilate);
+
+        return hue_range;
+    }
+    */
+
 
     //======function to show results=========================================================
     void show_res(const cv::Mat& ch012, const cv::Mat& ch0, const cv::Mat& ch1, const cv::Mat& ch2, const std::string windowname){
@@ -482,46 +526,6 @@ namespace DerWeg {
             left = rect_images.images.image;
             right = rect_images.images.image_right;
             state = rect_images.state;
-
-            /*
-            // Region of Interest
-            Rect roi(0, 0, left.rows, left.cols);
-            Mat im_roi = left(roi);
-
-
-            // Blur and HSV
-            int median_filter_size = 3;
-            medianBlur(im_roi, im_roi, median_filter_size);
-            Mat im_hsv;
-            cvtColor(im_roi, im_hsv, COLOR_BGR2HSV);
-
-
-            // Color thresholing
-            Mat hue_range;
-            int hue_low, hue_high;
-            int sat_low, sat_high;
-            int val_low, val_high;
-
-            inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
-                    cv::Scalar(hue_high, sat_high, val_high), hue_range);
-
-
-            // Opening/Closing
-            int erode_size = 3;
-            int dilate_size = 3;
-            Mat element_erode = getStructuringElement(MORPH_ELLIPSE,
-                                                      Size(2*erode_size + 1, 2*erode_size+1),
-                                                      Point(-1, -1));
-            Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
-                                                       Size(2*dilate_size + 1, 2*dilate_size+1),
-                                                       Point(-1, -1));
-            // Opening
-            erode(hue_range, hue_range, element_erode);
-            dilate(hue_range, hue_range, element_dilate);
-
-            imshow("Thresholded image", hue_range);
-            */
-
 
             //initialize output channels (needed to define size equal to img size)
             out0 =cv::Mat::zeros(img[0].size(),img[0].type());

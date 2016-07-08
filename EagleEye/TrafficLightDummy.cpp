@@ -46,7 +46,13 @@ namespace DerWeg {
             while (true) {
                 counter = (counter + 1) % counts_per_cycle;
                 TrafficLightData tl_data;
-                tl_data.position = position;
+
+                double radius = 200;
+                double t = 2*M_PI * counter / counts_per_cycle;
+                double x = radius * std::cos(t);
+                double y = radius * std::sin(t);
+
+                tl_data.position = position + Vec(x, y);
 
                 // Plot measured position as red dot in AnicarViewer
                 std::stringstream pos;
@@ -60,7 +66,7 @@ namespace DerWeg {
 
                 if (passed_tl) {
                     //LOUT("BLUE\n");
-                    pos << "think blue dot ";
+                    pos << "thick blue dot ";
                     tl_data.state = none;
                 } else if(counter < red_percentage * counts_per_cycle) {
                     //LOUT("RED\n");
@@ -75,7 +81,7 @@ namespace DerWeg {
                 //LOUT("Write tl_data to blackboard, state = " << tl_data.state <<std::endl);
                 BBOARD->setTrafficLight(tl_data);
 
-                pos<< tl_data.position.x << " " << tl_data.position.y << std::endl;
+                pos << tl_data.position.x << " " << tl_data.position.y << std::endl;
                 BBOARD->addPlotCommand(pos.str());
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(wait_ms));

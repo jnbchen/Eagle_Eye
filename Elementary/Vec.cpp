@@ -190,6 +190,10 @@ Angle Vec::angle (const Vec v) const throw () {
   return Angle::rad_angle ( -y*v.x+x*v.y >= 0 ? phi : -phi);  // Skalarprodukt mit Orthogonalvektor
 }
 
+bool Vec::inbetween(const Vec v1, const Vec v2) const throw () {
+  return (*this) * (v1.rotate_quarter()) >= 0 && (*this) * (v2.rotate_three_quarters()) >= 0;
+}
+
 Vec Vec::unit_vector (Angle a) throw () {
   return Vec (cos(a.get_rad()), sin(a.get_rad()));
 }

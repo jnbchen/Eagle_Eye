@@ -56,7 +56,9 @@
 		<Unit filename="EagleEye/DataObjects.h" />
 		<Unit filename="EagleEye/ImageProcessingFunctions.h" />
 		<Unit filename="EagleEye/LateralControl.cpp" />
-		<Unit filename="EagleEye/PylonLogging.cpp" />
+		<Unit filename="EagleEye/PathPlanning.cpp" />
+		<Unit filename="EagleEye/PathPlanning.h" />
+		<Unit filename="EagleEye/PathPlanningTestingModule.cpp" />
 		<Unit filename="EagleEye/Rectifier.cpp" />
 		<Unit filename="EagleEye/SaveBlackboard.cpp" />
 		<Unit filename="EagleEye/SaveCoordinates.cpp" />

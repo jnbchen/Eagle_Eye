@@ -72,7 +72,7 @@ void TrafficLight::update_position(Vec measurement, double distance, State car_s
     // Rotate measurement covariance matrix
     double x = mean_measure(0) - car_state.sg_position.x;
     double y = mean_measure(1) - car_state.sg_position.y;
-    double alpha = car_state.orientation.get_rad_pi() + std::atan2(y, x);
+    double alpha = std::atan2(y, x);
     double alpha_sin = std::sin(alpha);
     double alpha_cos = std::cos(alpha);
     Matrix2d R;

@@ -74,7 +74,7 @@ namespace DerWeg {
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
                 cfg.get("TrafficLightDetection::roi_border_bot", roi_border_bot);
                 cfg.get("TrafficLightDetection::roi_width", roi_width);
-                roi = Rect(0, roi_border_top, roi_width, roi_border_bot);
+                roi = Rect(0, roi_border_top, roi_width, roi_border_bot - roi_border_top);
 
                 cfg.get("TrafficLightDetection::median_filter_size", median_filter_size);
 
@@ -145,6 +145,8 @@ namespace DerWeg {
 
 
             EllipseVector detect(const cv::Mat& im_input) {
+                LOUT("im_input.cols = " << im_input.cols << "\n");
+                LOUT("im_input.rows = " << im_input.rows << "\n");
 
                 // Region of Interest
                 Mat im_roi = im_input(roi);
@@ -184,7 +186,6 @@ namespace DerWeg {
                 dilate(red_hue_range, red_hue_range, element_dilate);
                 // für green nur erode, ansonsten werden die Blätter von Baum vergrößt
                 erode(green_hue_range, green_hue_range, element_erode);
-
 
 
                 // Show filter results

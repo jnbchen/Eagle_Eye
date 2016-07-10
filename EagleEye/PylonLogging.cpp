@@ -19,6 +19,8 @@ namespace DerWeg {
             std::ofstream logfile;
             std::string path;
 
+            std::stringstream anicar_viewer;
+
         public:
             PylonLogging () : path("../data/PylonLogs/") {}
             ~PylonLogging () {}
@@ -53,9 +55,12 @@ namespace DerWeg {
                         for (size_t i = 0; i < pm.measurements.size(); ++i) {
                             Vec& pos = pm.measurements[i];
                             logfile << pos.x << " " << pos.y << std::endl;
+
+                            anicar_viewer << "thin darkRed plus" << pos.x << " " << pos.y << "\n";
+                            BBOARD->addPlotCommand(anicar_viewer.str());
                         }
 
-                        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+                        boost::this_thread::sleep(boost::posix_time::milliseconds(20));
                         boost::this_thread::interruption_point();
                     }
                 }

@@ -17,6 +17,11 @@ PathPlanning::PathPlanning(const ConfigReader& cfg){
 
 Velocity PathPlanning::findPath(vector<Circle> obst) {
     counter = 0;
+    simulated_states.clear();
+    for(int i=0; i<=max_depth; i++) {
+        simulated_states.push_back(vector< pair< Vec, Angle> >()); // add empty vectors
+    }
+
     obstacles = obst;
     for (unsigned int i=0; i<obstacles.size(); i++) {
         // Plot obstacles in AnicarViewer
@@ -37,10 +42,26 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     treeSearch(s, 0, maximizing_velocity);
 
     LOUT("Simulated states: " << counter << "\n");
+    for(unsigned int i=0; i< simulated_states.size(); i++){
+        LOUT("   Level "<<i<<" sim states: "<<simulated_states[i].size()<<std::endl);
+    }
     return maximizing_velocity;
 }
 
 double PathPlanning::treeSearch(const State state, const int depth, Velocity& maximizing)  {
+    // If a similar state has already been simulated, dont do it again!
+    for (int i=0; i < simulated_states[depth].size();  i++) {
+        const Vec& pos = simulated_states[depth][i].first;
+        const Angle& angle = simulated_states[depth][i].second;
+        if ( (pos - state.sg_position).length() > cutoff_distance || abs( (angle - state.orientation).get_deg_180() ) > cutoff_angle ) {
+            // In this case the state was already simulated, so cut this branch off
+            return - 2 * collision_penalty;
+        }
+    }
+
+    // If there is no similar point already simulated, simulate this state:
+    simulated_states[depth].push_back(pair< Vec, Angle>(state.sg_position, state.orientation) );
+
     //LOUT("Start tree search on level " << depth << std::endl);
     vector<Velocity> velocities = getVelocities(state);
     vector<double> values;

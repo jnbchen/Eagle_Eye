@@ -38,8 +38,8 @@ private:
     // State here consists of a Vec (Stargazer position) and an Angle (orientation)
     vector< vector< pair< Vec, Angle> > > simulated_states;
 
-    double cutoff_distance;
-    double cutoff_angle;
+    double cutoff_distance; // millimetres
+    double cutoff_angle; // degree
 
     int counter;
 

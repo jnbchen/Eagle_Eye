@@ -20,3 +20,5 @@ Ui_*.h
 /image_precessing_tests/*.png
 
 DerWeg.layout
+
+.metadata/*

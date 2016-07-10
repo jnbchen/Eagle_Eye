@@ -16,6 +16,7 @@ using namespace std;
 
 namespace DerWeg{
 
+/*
 float median(const Mat& mat){
     std::vector<float> array;
     if (mat.isContinuous()) {
@@ -40,6 +41,7 @@ float median(const Mat& mat){
     float median = *middle;
     return median;
 }
+*/
 
 class CoordinateTransform {
 private:

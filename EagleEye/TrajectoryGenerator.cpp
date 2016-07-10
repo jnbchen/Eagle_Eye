@@ -403,7 +403,9 @@ namespace DerWeg {
         seg_pos.curve_id = curve_index;
         seg_pos.curve_parameter = t;
 
-        double delta_s = max(state.velocity,0.1) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
+        float min_vel = 0.1;
+
+        double delta_s = max(state.velocity_tire, min_vel) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
 
         vector<double> curvature = seg.precalculate_curvature(seg_pos, delta_s, precalculate_curvature_steps,
                                                                 precalculate_curvature_seeding, qf_min_N);

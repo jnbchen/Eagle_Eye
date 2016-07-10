@@ -361,7 +361,7 @@ void visualizeDispExpectation(int beg, int end, int i){
 //calculate cone position in vehicle fixed coordinate system from estimated apex column and disparity
 void determinePosition(const EdgeData & EDl){
   // f/x=disp/b => x=f*b/disp
-  double x = pixel2meter(f,b,EDl.apex_disp);
+  double x = pixel2meter(f,b,EDl.apex_disp) * 1000;
   // u/y=disp/b
   double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
   //std::cout<<"found cone at x="<<x<<" y="<<y<<std::endl;
@@ -979,14 +979,13 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
             imgZero=cv::Mat::zeros(img[0].size(),img[0].type());
             //show_res(imgZero,imgDiff,imgDiffR,imgZero, "window_diff");
 
+
             // detect cones
-            detect('L');
-            show_res(imgDiff,out0,out1,out2,"window_result");
-
-            detect('R');
-            show_res(imgDiffR,out0R,out1R,out2R,"window_resultR");
-
-            show_res(imgDiff,imgDiffR,out2,out2R,"window_Stereo");
+            //detect('L');
+            //show_res(imgDiff,out0,out1,out2,"window_result");
+            //detect('R');
+            //show_res(imgDiffR,out0R,out1R,out2R,"window_resultR");
+            //show_res(imgDiff,imgDiffR,out2,out2R,"window_Stereo");
 
             out0 =cv::Mat::zeros(img[0].size(),img[0].type());
             out1 =cv::Mat::zeros(img[0].size(),img[0].type());
@@ -994,13 +993,14 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
             out0R =cv::Mat::zeros(img[0].size(),img[0].type());
             out1R =cv::Mat::zeros(img[0].size(),img[0].type());
             out2R =cv::Mat::zeros(img[0].size(),img[0].type());
+
             detect('S');
             //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
-            show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
-            show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
+            //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
+            //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
             show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
 
-            cv::imshow("MAP", outMAP);
+            //cv::imshow("MAP", outMAP);
 
 
 

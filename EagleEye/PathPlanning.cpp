@@ -11,16 +11,37 @@ PathPlanning::PathPlanning(const ConfigReader& cfg){
     cfg.get("PathPlanning::max_depth", max_depth);
     cfg.get("LateralControl::axis_distance", axis_distance);
     cfg.get("PathPlanning::car_circle_radius", car_circle_radius);
+    cfg.get("PathPlanning::cutoff_distance", cutoff_distance);
+    cfg.get("PathPlanning::cutoff_angle", cutoff_angle);
 }
 
 Velocity PathPlanning::findPath(vector<Circle> obst) {
+    counter = 0;
     obstacles = obst;
+    for (unsigned int i=0; i<obstacles.size(); i++) {
+        // Plot obstacles in AnicarViewer
+        std::stringstream pos;
+        pos << "think red dot "
+            << obstacles[i].center.x << " " << obstacles[i].center.y << std::endl;
+        BBOARD->addPlotCommand(pos.str());
+    }
+
+    LOUT("Start Path Planning \n");
+
     Velocity maximizing_velocity;
-    treeSearch(BBOARD->getState(), 0, maximizing_velocity);
+    State s = BBOARD->getState();
+    // Ausprobieren ob man dadurch Verbesserungen erzielen kann:
+    //Velocity desired = BBOARD->getDesiredVelocity();
+    //s.velocity = desired.velocity;
+    //s.steer = desired.steer;
+    treeSearch(s, 0, maximizing_velocity);
+
+    LOUT("Simulated states: " << counter << "\n");
     return maximizing_velocity;
 }
 
-double PathPlanning::treeSearch(const State state, const int depth, Velocity& maximizing) const {
+double PathPlanning::treeSearch(const State state, const int depth, Velocity& maximizing)  {
+    //LOUT("Start tree search on level " << depth << std::endl);
     vector<Velocity> velocities = getVelocities(state);
     vector<double> values;
 
@@ -60,7 +81,7 @@ vector<Velocity> PathPlanning::getVelocities(const State state) const {
     return result;
 }
 
-double PathPlanning::simulatePath(State& state) const {
+double PathPlanning::simulatePath(State& state)  {
     int _direction_flag;
     if (state.steer.get_rad_pi() == 0) {
         _direction_flag = 0;
@@ -71,6 +92,7 @@ double PathPlanning::simulatePath(State& state) const {
     }
     const int direction_flag = _direction_flag;
 
+    counter += 1;
     // Plot state position in AnicarViewer
     std::stringstream pos;
     pos << "think blue dot "

@@ -29,8 +29,19 @@ private:
     double collision_penalty;
 
     double axis_distance;
-
+    // radius of the circles covering the car
     double car_circle_radius;
+
+    // Object containing all states already simulated, so they dont have to be simulated again
+    // First index for the depth
+    // Second index for the state
+    // State here consists of a Vec (Stargazer position) and an Angle (orientation)
+    vector< vector< pair< Vec, Angle> > > simulated_states;
+
+    double cutoff_distance;
+    double cutoff_angle;
+
+    int counter;
 
 public:
     // Empty default constructor
@@ -41,11 +52,11 @@ public:
     Velocity findPath(vector<Circle> obst);
 
 private:
-    double treeSearch(const State state, const int depth, Velocity& minimizing) const;
+    double treeSearch(const State state, const int depth, Velocity& minimizing) ;
 
     vector<Velocity> getVelocities(const State state) const;
 
-    double simulatePath(State& state) const;
+    double simulatePath(State& state) ;
 
     // ICM - Momentanpol
     // vehicle point: point on the vehicle for which collision should be checked

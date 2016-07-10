@@ -67,7 +67,7 @@ namespace DerWeg {
     Vec s_rotate (const Angle) throw ();           ///< Rotation von this
 
     // Spiegelungen:
-    Vec mirror (const Vec) const throw ();         ///< Spiegelung an einer Achse mit gegebener Richtung wenn ||Arg1|| > 0, ansonsten Punktspiegelung 
+    Vec mirror (const Vec) const throw ();         ///< Spiegelung an einer Achse mit gegebener Richtung wenn ||Arg1|| > 0, ansonsten Punktspiegelung
     Vec mirror_x () const throw ();                ///< Spiegelung an x-Achse
     Vec mirror_y () const throw ();                ///< Spiegelung an y-Achse
     Vec mirror_eighth () const throw ();           ///< Spiegelung an 1. Winkelhalbierender
@@ -85,6 +85,10 @@ namespace DerWeg {
     /** Winkel zwischen zwei Vektoren (nan bei Nullvektor), gemessen vom
      *  Objekt zum uebergebenen Argument (mathematisch positiv) [0,2pi)*/
     Angle angle (const Vec) const throw ();
+
+    /** Gibt an, ob der Vektor zwischen zwei anderen Vektoren liegt (im mathematisch positiven Sinn)
+    * Das heißt, ob er links vom ersten Argument liegt und rechts vom zweiten*/
+    bool inbetween(const Vec v1, const Vec v2) const throw ();
 
     /** liefert einen Vektor der Laenge 1 in gegebener Richtung */
     static Vec unit_vector (Angle) throw ();

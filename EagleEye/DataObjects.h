@@ -20,6 +20,7 @@ namespace DerWeg {
   /** struct to describe present dynamic state of Anicar from localization with StateEstimator*/
   struct State {
     Vec sg_position;       ///< the position (x,y) in mm of the stargazer
+    Vec rear_position;   ///< the position (x,y) in mm of the rear axis center
     Vec control_position; ///< the position (x,y) in mm at which the car is controlled (-> which has to stay on the curve)
     double stddev;      ///< an approximation to the standard deviation of position in mm
     Angle orientation;  ///< the orientation
@@ -63,9 +64,16 @@ namespace DerWeg {
 
   /** Structs to transfer cone map to path finding module */
   struct Circle {
-      Vec position;
-      double radius;
-  };
+    Vec center;
+    double radius;
+
+    Circle(Vec c, double r) : center(c), radius(r) {};
+
+    double distance(const Circle c) const {
+        return (this->center - c.center).length() - this->radius - c.radius;
+    }
+
+};
 
   struct PylonMap {
       std::vector<Circle> circles;

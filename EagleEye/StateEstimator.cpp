@@ -30,7 +30,8 @@ namespace DerWeg {
 
             state.sg_position = pose.position;
             //Calculate position of rear axis center
-            state.control_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
+            state.rear_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
+            state.control_position = state.rear_position;
             state.stddev = pose.stddev;
             state.orientation = pose.orientation;
             state.velocity = pose.velocity;

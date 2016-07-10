@@ -7,16 +7,12 @@
 
 #include "DataObjects.h"
 #include "../Elementary/Vec.h"
+#include "../Elementary/Angle.h"
 #include "../Vehicle/vehicle.h"
 
 using namespace std;
 
 namespace DerWeg{
-
-struct Circle {
-    Vec center;
-    double radius;
-};
 
 
 class PathPlanning {
@@ -25,26 +21,40 @@ private:
     int max_depth;
     // All seen obstacles modeled as circles
     vector<Circle> obstacles;
-    // How long a is Velocity applied in seconds
-    double time_step_duration;
-    // How many steps until a new velocity is set
-    int constant_steps;
 
+    // How long a is Velocity applied in seconds for path segment simulation
+    double dt;
+
+    // Big number to penalize collisions with
     double collision_penalty;
 
+    double axis_distance;
+
+    double car_circle_radius;
+
 public:
+    // Empty default constructor
+    PathPlanning() {}
+
+    PathPlanning(const ConfigReader& cfg);
+
     Velocity findPath(vector<Circle> obst);
 
 private:
-    Velocity treeSearch(State state, int depth, Velocity& minimizing);
+    double treeSearch(const State state, const int depth, Velocity& minimizing) const;
 
-    vector<Velocity> getVelocities(State state);
+    vector<Velocity> getVelocities(const State state) const;
 
-    vector<State> simulatePath(Velocity v, double dt);
+    double simulatePath(State& state) const;
 
-    bool collisionCheck(State state)
+    // ICM - Momentanpol
+    // vehicle point: point on the vehicle for which collision should be checked
+    // vehicle point end: end point of the given vehicle point after the circular path segment
+    // Direction flag: 1 in left curve, -1 in right curve, 0 in straight movement
+    double calculateDistance(const Vec& ICM, const Circle& obstacle, const Circle& vehicle_point,
+                            const Circle& vehicle_point_end, const int direction_flag) const;
 
-    double stateValue(State state);
+    vector<Circle> getCarCircles(const State state) const;
 
 };
 

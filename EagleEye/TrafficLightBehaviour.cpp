@@ -114,6 +114,8 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
     calculate_curve_distances(tlight, tl_seg, current_pos);
     process_state(tlight, current_velocity);
 
+    LOUT("Halt point distance = " << halt_point_distance << "\n");
+
     if (mode == drive_on) {
         //LOUT("Current vel " << current_velocity << "\n");
         return min(v_max, current_velocity + 0.3);
@@ -131,7 +133,7 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
         double emergency_brake_deceleration = std::pow(current_velocity, 2) / (2 * halt_point_distance);
         double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
         double v = std::pow(2 * max_deceleration * halt_point_distance, 0.5);
-        //LOUT("case stop, v = " << v << "\n");
+        LOUT("case stop, v = " << v << "\n");
         return v;
     } else {
         //LOUT("Case else v_max = " << v_max <<"\n");

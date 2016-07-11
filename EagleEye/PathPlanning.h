@@ -40,6 +40,7 @@ private:
 
     double cutoff_distance; // millimetres
     double cutoff_angle; // degree
+    double min_sim_velocity;
 
     int counter;
 

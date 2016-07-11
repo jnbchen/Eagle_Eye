@@ -13,6 +13,7 @@ PathPlanning::PathPlanning(const ConfigReader& cfg){
     cfg.get("PathPlanning::car_circle_radius", car_circle_radius);
     cfg.get("PathPlanning::cutoff_distance", cutoff_distance);
     cfg.get("PathPlanning::cutoff_angle", cutoff_angle);
+    cfg.get("PathPlanning::min_sim_velocity", min_sim_velocity);
 }
 
 Velocity PathPlanning::findPath(vector<Circle> obst) {
@@ -49,13 +50,15 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
 }
 
 double PathPlanning::treeSearch(const State state, const int depth, Velocity& maximizing)  {
-    // If a similar state has already been simulated, dont do it again!
-    for (int i=0; i < simulated_states[depth].size();  i++) {
-        const Vec& pos = simulated_states[depth][i].first;
-        const Angle& angle = simulated_states[depth][i].second;
-        if ( (pos - state.sg_position).length() > cutoff_distance || abs( (angle - state.orientation).get_deg_180() ) > cutoff_angle ) {
-            // In this case the state was already simulated, so cut this branch off
-            return - 2 * collision_penalty;
+    if (depth > 1) {
+        // If a similar state has already been simulated, dont do it again!
+        for (int i=0; i < simulated_states[depth].size();  i++) {
+            const Vec& pos = simulated_states[depth][i].first;
+            const Angle& angle = simulated_states[depth][i].second;
+            if ( (pos - state.sg_position).length() < cutoff_distance && abs( (angle - state.orientation).get_deg_180() ) < cutoff_angle ) {
+                // In this case the state was already simulated, so cut this branch off
+                return - 2 * collision_penalty;
+            }
         }
     }
 

@@ -52,7 +52,7 @@ namespace DerWeg {
                 double x = radius * std::cos(t);
                 double y = radius * std::sin(t);
 
-                tl_data.position = position + Vec(x, y);
+                tl_data.position = position;// + Vec(x, y);
 
                 // Plot measured position as red dot in AnicarViewer
                 std::stringstream pos;

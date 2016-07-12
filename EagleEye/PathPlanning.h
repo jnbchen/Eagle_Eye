@@ -55,7 +55,7 @@ public:
 private:
     double treeSearch(const State state, const int depth, Velocity& minimizing) ;
 
-    vector<Velocity> getVelocities(const State state) const;
+    vector<Velocity> getVelocities(const State state, const int depth) const;
 
     double simulatePath(State& state) ;
 

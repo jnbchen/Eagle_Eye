@@ -55,7 +55,7 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
         for (int i=0; i < simulated_states[depth].size();  i++) {
             const Vec& pos = simulated_states[depth][i].first;
             const Angle& angle = simulated_states[depth][i].second;
-            if ( (pos - state.sg_position).length() < cutoff_distance && abs( (angle - state.orientation).get_deg_180() ) < cutoff_angle ) {
+            if (depth > 1 && (pos - state.sg_position).length() < cutoff_distance && abs( (angle - state.orientation).get_deg_180() ) < cutoff_angle ) {
                 // In this case the state was already simulated, so cut this branch off
                 return - 2 * collision_penalty;
             }
@@ -66,7 +66,7 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
     simulated_states[depth].push_back(pair< Vec, Angle>(state.sg_position, state.orientation) );
 
     //LOUT("Start tree search on level " << depth << std::endl);
-    vector<Velocity> velocities = getVelocities(state);
+    vector<Velocity> velocities = getVelocities(state, depth);
     vector<double> values;
 
     for (unsigned int i=0; i<velocities.size(); i++) {
@@ -90,11 +90,19 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
     return values[arg_max];
 }
 
-vector<Velocity> PathPlanning::getVelocities(const State state) const {
+vector<Velocity> PathPlanning::getVelocities(const State state, const int depth) const {
     vector<Velocity> result;
     double delta = state.steer.get_deg_180();
+    vector<double> diff_delta;
     for (int i = -2; i <= 2; i++) {
-        double new_delta = delta + i * 5;
+        diff_delta.push_back(5 * i);
+    }
+    if (depth == 0) {
+        diff_delta.push_back(2.5);
+        diff_delta.push_back(-2.5);
+    }
+    for (int i=0; i<diff_delta.size(); i++) {
+        double new_delta = delta + diff_delta[i];
         if (abs(new_delta) < 30) {
             Velocity v;
             v.velocity = state.velocity;

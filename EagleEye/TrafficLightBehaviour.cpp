@@ -20,6 +20,7 @@ TrafficLightBehaviour::TrafficLightBehaviour(const ConfigReader& cfg) {
     cfg.get("TrafficLightBehaviour::tl_max_distance_to_curve", tl_max_distance_to_curve);
     cfg.get("TrafficLightBehaviour::stopping_distance", stopping_distance);
     cfg.get("TrafficLightBehaviour::halt_point_radius", halt_point_radius);
+    cfg.get("TrafficLightBehaviour::distance_of_no_return", distance_of_no_return);
     cfg.get("TrafficLightBehaviour::default_deceleration", default_deceleration);
     cfg.get("LongitudinalControl::v_max", v_max);
     default_acceleration = default_deceleration;
@@ -83,11 +84,13 @@ void TrafficLightBehaviour::process_state(const TrafficLightData& tlight, double
         // The formulas are simple physics (integration)
 
         // puffer distance to drive on and pass traffic light before it switches from yellow to red
-        double puffer_drive = current_velocity * yellow_phase - tl_projected_distance;
+        double puffer_drive = current_velocity * yellow_phase - (tl_projected_distance - distance_of_no_return);
         // puffer distance to break before stop line with the default deceleration
-        double puffer_brake = std::pow(current_velocity, 2) / (2 * default_deceleration) - halt_point_distance;
+        double puffer_brake = halt_point_distance - std::pow(current_velocity, 2) / (2 * default_deceleration);
         //pass traffic light before it goes to red only if this has a larger puffer distance
         // and a positive buffer
+        //LOUT("Drive puffer "<<puffer_drive<<"\n");
+        //LOUT("Brake puffer "<<puffer_brake<<"\n");
         if (puffer_drive > 0 && puffer_drive > puffer_brake) {
             mode = drive_on;
         } else {
@@ -114,7 +117,7 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
     calculate_curve_distances(tlight, tl_seg, current_pos);
     process_state(tlight, current_velocity);
 
-    LOUT("Halt point distance = " << halt_point_distance << "\n");
+    //LOUT("Halt point distance = " << halt_point_distance << "\n");
 
     if (mode == drive_on) {
         //LOUT("Current vel " << current_velocity << "\n");
@@ -130,10 +133,10 @@ double TrafficLightBehaviour::calculate_max_velocity(const TrafficLightData& tli
             // filters all negative halt point distances, and zero (prevents division by zero)
             return 0;
         }
-        double emergency_brake_deceleration = std::pow(current_velocity, 2) / (2 * halt_point_distance);
-        double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
-        double v = std::pow(2 * max_deceleration * halt_point_distance, 0.5);
-        LOUT("case stop, v = " << v << "\n");
+        //double emergency_brake_deceleration = std::pow(current_velocity, 2) / (2 * halt_point_distance);
+        //double max_deceleration = std::max(emergency_brake_deceleration, default_deceleration);
+        double v = std::pow(2 * default_deceleration * halt_point_distance, 0.5);
+        //LOUT("case stop, v = " << v << "\n");
         return v;
     } else {
         //LOUT("Case else v_max = " << v_max <<"\n");

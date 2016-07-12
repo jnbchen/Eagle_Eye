@@ -259,9 +259,9 @@ bool Blackboard::waitForPylonMeasurements(boost::posix_time::time_duration timeo
   boost::unique_lock<boost::mutex> lock (bbmutex);
   return condPylonMeasurements.timed_wait(lock, timeout);
 }
-void Blackboard::addPylonMeasurement(const Vec& pos) {
+void Blackboard::addPylonMeasurement(const PylonMeasurement& pm) {
     boost::unique_lock<boost::mutex> lock (bbmutex);
-    pylon_measurements.measurements.push_back(pos);
+    pylon_measurements.measurements.push_back(pm);
     condPylonMeasurements.notify_all();
 }
 

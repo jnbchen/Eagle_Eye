@@ -115,6 +115,7 @@ namespace DerWeg {
 
 
         CoordinateTransform transformer;
+        size_t frame_counter;
 
 
   public:
@@ -193,6 +194,8 @@ namespace DerWeg {
         f = projection_matrix.at<double>(0,0);
 
         transformer = CoordinateTransform(cfg, projection_matrix);
+
+        frame_counter = 0;
     }
 
     /*
@@ -369,7 +372,14 @@ void determinePosition(const EdgeData & EDl){
   cv::Mat camera_coords = transformer.image_to_camera_coords(EDl.apex_u, EDl.apex_v, x);
   cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
 
-  BBOARD->addPylonMeasurement(Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0)));
+  PylonMeasurement pm;
+  pm.position = Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
+  pm.distance = x;
+  Vec diff = pm.position - state.sg_position;
+  pm.view_angle = std::atan2(diff.y, diff.x);
+  pm.frame_number = frame_counter;
+
+  BBOARD->addPylonMeasurement(pm);
 
   //visualize:
   cv::circle(outMAP,cv::Point(250-100*y,500-100*x),15,255,1,8); //img, center, radius, color, thickness
@@ -1002,7 +1012,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
 
             //cv::imshow("MAP", outMAP);
 
-
+            frame_counter++;
 
             boost::this_thread::sleep(boost::posix_time::milliseconds(20));
             boost::this_thread::interruption_point();

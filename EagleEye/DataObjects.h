@@ -80,8 +80,15 @@ namespace DerWeg {
   };
 
 
+  struct PylonMeasurement {
+      Vec position;
+      double distance;
+      double view_angle;
+      size_t frame_number;
+  };
+
   struct PylonMeasurements {
-      std::vector<Vec> measurements;
+      std::vector<PylonMeasurement> measurements;
   };
 
 

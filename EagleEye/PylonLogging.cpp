@@ -38,7 +38,7 @@ namespace DerWeg {
                 file_name << path << timeString << ".txt";
                 logfile.open(file_name.str());
 
-                logfile << "# x y" << std::endl;
+                logfile << "# x y d a f" << std::endl;
             }
 
             void deinit () {
@@ -51,11 +51,16 @@ namespace DerWeg {
                         PylonMeasurements pm = BBOARD->getPylonMeasurements();
 
                         for (size_t i = 0; i < pm.measurements.size(); ++i) {
-                            Vec& pos = pm.measurements[i];
-                            logfile << pos.x << " " << pos.y << std::endl;
+                            logfile << pm.measurements[i].position.x << " "
+                                    << pm.measurements[i].position.y << " "
+                                    << pm.measurements[i].distance << " "
+                                    << pm.measurements[i].view_angle << " "
+                                    << pm.measurements[i].frame_number << std::endl;
 
                             std::stringstream anicar_viewer;
-                            anicar_viewer << "darkRed plus " << pos.x << " " << pos.y << "\n";
+                            anicar_viewer << "darkRed plus "
+                                          << pm.measurements[i].position.x << " "
+                                          << pm.measurements[i].position.y << "\n";
                             BBOARD->addPlotCommand(anicar_viewer.str());
                         }
 

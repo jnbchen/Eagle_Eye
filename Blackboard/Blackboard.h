@@ -131,7 +131,7 @@ class Blackboard {
     PylonMeasurements getPylonMeasurements();
     void setPylonMeasurements(const PylonMeasurements &);
     bool waitForPylonMeasurements(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
-    void addPylonMeasurement(const Vec&);
+    void addPylonMeasurement(const PylonMeasurement&);
 
   };
 

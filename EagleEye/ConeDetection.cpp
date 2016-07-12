@@ -117,6 +117,11 @@ namespace DerWeg {
         CoordinateTransform transformer;
         size_t frame_counter;
 
+        // parameters for sanity check on cone positions
+        double min_height_tol, max_height_tol;
+        double min_x_value, max_x_value;
+        double min_y_value, max_y_value;
+
 
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
@@ -196,6 +201,17 @@ namespace DerWeg {
         transformer = CoordinateTransform(cfg, projection_matrix);
 
         frame_counter = 0;
+
+        double min_height_tol, max_height_tol;
+        double min_x_value, max_x_value;
+        double min_y_value, max_y_value;
+
+        cfg.get("ConeDetection::min_height_tol", min_height_tol);
+        cfg.get("ConeDetection::max_height_tol", max_height_tol);
+        cfg.get("ConeDetection::min_x_value", min_x_value);
+        cfg.get("ConeDetection::max_x_value", max_x_value);
+        cfg.get("ConeDetection::min_y_value", min_y_value);
+        cfg.get("ConeDetection::max_y_value", max_y_value);
     }
 
     /*
@@ -364,30 +380,45 @@ void visualizeDispExpectation(int beg, int end, int i){
 //calculate cone position in vehicle fixed coordinate system from estimated apex column and disparity
 void determinePosition(const EdgeData & EDl){
   // f/x=disp/b => x=f*b/disp
-  double x = pixel2meter(f,b,EDl.apex_disp) * 1000;
+  double distance = pixel2meter(f,b,EDl.apex_disp) * 1000;
   // u/y=disp/b
-  double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
-  //std::cout<<"found cone at x="<<x<<" y="<<y<<std::endl;
 
-  cv::Mat camera_coords = transformer.image_to_camera_coords(EDl.apex_u, EDl.apex_v, x);
-  cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
+  if (distance < 0) {
+      EOUT("Drop cone measurement: distance can not be negative");
+  }
+  else {
+      double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
+      //std::cout<<"found cone at x="<<x<<" y="<<y<<std::endl;
 
-  PylonMeasurement pm;
-  pm.position = Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
-  pm.distance = x;
-  Vec diff = pm.position - state.sg_position;
-  pm.view_angle = std::atan2(diff.y, diff.x);
-  pm.frame_number = frame_counter;
+      cv::Mat camera_coords = transformer.image_to_camera_coords(EDl.apex_u, EDl.apex_v, distance);
+      cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
 
-  BBOARD->addPylonMeasurement(pm);
+      if (world_coords.at<double>(2,0) < min_height_tol || world_coords.at<double>(2,0) > max_height_tol) {
+          EOUT("Drop cone measurement: peak height out of bounds");
+      }
+      else if (world_coords.at<double>(0,0) < min_x_value || world_coords.at<double>(0,0) > max_x_value ||
+          world_coords.at<double>(1,0) < min_y_value || world_coords.at<double>(1,0) > max_y_value) {
+          EOUT("Drop cone measurement: position not within area");
+      }
+      else {
+          PylonMeasurement pm;
+          pm.position = Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
+          pm.distance = distance;
+          Vec diff = pm.position - state.sg_position;
+          pm.view_angle = std::atan2(diff.y, diff.x);
+          pm.frame_number = frame_counter;
 
-  //visualize:
-  cv::circle(outMAP,cv::Point(250-100*y,500-100*x),15,255,1,8); //img, center, radius, color, thickness
-  std::stringstream coordinate_sstream;
-  coordinate_sstream<<x<<"|"<<y;
-  std::string coordinate_string;
-  coordinate_sstream>>coordinate_string;
-  cv::putText(outMAP,coordinate_string, cv::Point(250-100*y,500-100*x),cv::FONT_HERSHEY_SIMPLEX,0.5,255,1,8);
+          BBOARD->addPylonMeasurement(pm);
+
+          //visualize:
+          cv::circle(outMAP,cv::Point(250-100*y,500-100*distance),15,255,1,8); //img, center, radius, color, thickness
+          std::stringstream coordinate_sstream;
+          coordinate_sstream<<distance<<"|"<<y;
+          std::string coordinate_string;
+          coordinate_sstream>>coordinate_string;
+          cv::putText(outMAP,coordinate_string, cv::Point(250-100*y,500-100*distance),cv::FONT_HERSHEY_SIMPLEX,0.5,255,1,8);
+      }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -57,7 +57,7 @@ private:
 
     vector<Velocity> getVelocities(const State state, const int depth) const;
 
-    double simulatePath(State& state) ;
+    double simulatePath(State& state, const int depth) ;
 
     // ICM - Momentanpol
     // vehicle point: point on the vehicle for which collision should be checked

@@ -70,11 +70,14 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
     vector<double> values;
 
     for (unsigned int i=0; i<velocities.size(); i++) {
+        //TODO:
+        // Hier erst lenkwinkel ausrechnen um Änderungen zu bestrafen!
+
         // This copy of state will be modified within Path simulation to get the end state
         State state_copy = state;
         state_copy.velocity = velocities[i].velocity;
         state_copy.steer = velocities[i].steer;
-        double distance = simulatePath(state_copy);
+        double distance = simulatePath(state_copy, depth);
         if (distance > 0 && depth < max_depth) {
             values.push_back(distance + treeSearch(state_copy, depth + 1, velocities[i]));
         } else if (distance > 0) {
@@ -94,8 +97,11 @@ vector<Velocity> PathPlanning::getVelocities(const State state, const int depth)
     vector<Velocity> result;
     double delta = state.steer.get_deg_180();
     vector<double> diff_delta;
-    for (int i = -2; i <= 2; i++) {
+    for (int i = 0; i <= 2; i++) {
         diff_delta.push_back(5 * i);
+    }
+    for (int i = 1; i <= 2; i++) {
+        diff_delta.push_back(- 5 * i);
     }
     if (depth == 0) {
         diff_delta.push_back(2.5);
@@ -113,7 +119,7 @@ vector<Velocity> PathPlanning::getVelocities(const State state, const int depth)
     return result;
 }
 
-double PathPlanning::simulatePath(State& state)  {
+double PathPlanning::simulatePath(State& state, const int depth)  {
     int _direction_flag;
     if (state.steer.get_rad_pi() == 0) {
         _direction_flag = 0;
@@ -126,15 +132,18 @@ double PathPlanning::simulatePath(State& state)  {
 
     counter += 1;
     // Plot state position in AnicarViewer
-    std::stringstream pos;
-    pos << "think blue dot "
-        << state.sg_position.x << " " << state.sg_position.y << std::endl;
-    BBOARD->addPlotCommand(pos.str());
+    // only one of xxx states, otherwise communication breaks down
+    if (depth < 3 || counter % (depth * 10) == 0) {
+        std::stringstream pos;
+        pos << "think blue dot "
+            << state.sg_position.x << " " << state.sg_position.y << std::endl;
+        BBOARD->addPlotCommand(pos.str());
+    }
 
     // All calculations in millimetres and global coordinate system
 
     // driven distance within this motion step in millimetres
-    double distance = state.velocity * dt * 1000;
+    double distance = max(state.velocity, min_sim_velocity) * dt * 1000;
 
     // Get circles covering car
     vector<Circle> car_circles = getCarCircles(state);

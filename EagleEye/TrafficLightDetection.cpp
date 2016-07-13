@@ -117,10 +117,9 @@ namespace DerWeg {
                     if( count < min_contour_count || count > max_contour_count)
                     continue;
 
-                    //Mat pointsf;
-                    //Mat(contours[i]).convertTo(pointsf, CV_32F);
-                    //RotatedRect box = fitEllipse(pointsf);
-                    RotatedRect box = fitEllipse(contours[i]);
+                    Mat pointsf;
+                    Mat(contours[i]).convertTo(pointsf, CV_32F);
+                    RotatedRect box = fitEllipse(pointsf);
 
                     double fitting_error = ellipseFittingError(box , contours[i]);
                     //LOUT("Ellipse fitting error = " << fitting_error << "\n");
@@ -648,7 +647,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(200));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

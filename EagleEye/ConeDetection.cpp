@@ -202,10 +202,6 @@ namespace DerWeg {
 
         frame_counter = 0;
 
-        double min_height_tol, max_height_tol;
-        double min_x_value, max_x_value;
-        double min_y_value, max_y_value;
-
         cfg.get("ConeDetection::min_height_tol", min_height_tol);
         cfg.get("ConeDetection::max_height_tol", max_height_tol);
         cfg.get("ConeDetection::min_x_value", min_x_value);
@@ -384,7 +380,7 @@ void determinePosition(const EdgeData & EDl){
   // u/y=disp/b
 
   if (distance < 0) {
-      EOUT("Drop cone measurement: distance can not be negative");
+      EOUT("Drop cone measurement: distance can not be negative\n");
   }
   else {
       double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
@@ -394,11 +390,16 @@ void determinePosition(const EdgeData & EDl){
       cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
 
       if (world_coords.at<double>(2,0) < min_height_tol || world_coords.at<double>(2,0) > max_height_tol) {
-          EOUT("Drop cone measurement: peak height out of bounds");
+          LOUT("min_height_tol = " << min_height_tol << "\n");
+          LOUT("max_height_tol = " << max_height_tol << "\n");
+          LOUT("height = " << world_coords.at<double>(2,0) << "\n");
+
+
+          EOUT("Drop cone measurement: peak height out of bounds\n");
       }
       else if (world_coords.at<double>(0,0) < min_x_value || world_coords.at<double>(0,0) > max_x_value ||
           world_coords.at<double>(1,0) < min_y_value || world_coords.at<double>(1,0) > max_y_value) {
-          EOUT("Drop cone measurement: position not within area");
+          EOUT("Drop cone measurement: position not within area\n");
       }
       else {
           PylonMeasurement pm;

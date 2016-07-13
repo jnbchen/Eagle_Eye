@@ -190,6 +190,7 @@ namespace DerWeg {
 
                 // Show filter results
                 cv::imshow (windowname.c_str(), red_hue_range);
+                cv::imshow ("green_thresholding", green_hue_range);
 
 
 

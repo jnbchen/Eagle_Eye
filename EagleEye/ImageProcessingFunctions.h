@@ -98,7 +98,7 @@ public:
         // z coordinate doesn't change in this transformation
         result.at<double>(0,0) = world.x;
         result.at<double>(1,0) = world.y;
-        LOUT("result = " << result << "\n");
+        //LOUT("result = " << result << "\n");
         return result;
     }
 

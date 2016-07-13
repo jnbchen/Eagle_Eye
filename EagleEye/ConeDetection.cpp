@@ -390,11 +390,6 @@ void determinePosition(const EdgeData & EDl){
       cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
 
       if (world_coords.at<double>(2,0) < min_height_tol || world_coords.at<double>(2,0) > max_height_tol) {
-          LOUT("min_height_tol = " << min_height_tol << "\n");
-          LOUT("max_height_tol = " << max_height_tol << "\n");
-          LOUT("height = " << world_coords.at<double>(2,0) << "\n");
-
-
           EOUT("Drop cone measurement: peak height out of bounds\n");
       }
       else if (world_coords.at<double>(0,0) < min_x_value || world_coords.at<double>(0,0) > max_x_value ||

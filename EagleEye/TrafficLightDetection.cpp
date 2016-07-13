@@ -117,9 +117,10 @@ namespace DerWeg {
                     if( count < min_contour_count || count > max_contour_count)
                     continue;
 
-                    Mat pointsf;
-                    Mat(contours[i]).convertTo(pointsf, CV_32F);
-                    RotatedRect box = fitEllipse(pointsf);
+                    //Mat pointsf;
+                    //Mat(contours[i]).convertTo(pointsf, CV_32F);
+                    //RotatedRect box = fitEllipse(pointsf);
+                    RotatedRect box = fitEllipse(contours[i]);
 
                     double fitting_error = ellipseFittingError(box , contours[i]);
                     //LOUT("Ellipse fitting error = " << fitting_error << "\n");

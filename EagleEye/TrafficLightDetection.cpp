@@ -36,7 +36,7 @@ namespace DerWeg {
 
     class EllipseDetector {
         private:
-            std::string windowname;
+            //std::string windowname;
 
             Rect roi;
 
@@ -67,8 +67,8 @@ namespace DerWeg {
 
         public:
             void init(const ConfigReader& cfg) {
-                windowname = "Preprocessing";
-                cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+                //windowname = "Preprocessing";
+                //cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
 
                 int roi_border_top, roi_border_bot, roi_border_left, roi_border_right;
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
@@ -191,7 +191,7 @@ namespace DerWeg {
 
 
                 // Show filter results
-                cv::imshow (windowname.c_str(), red_hue_range);
+                cv::imshow ("Red_thresholding", red_hue_range);
                 cv::imshow ("green_thresholding", green_hue_range);
 
 
@@ -219,7 +219,8 @@ namespace DerWeg {
                     double bbox_hw_ratio = (double)bbox.height / bbox.width;
 
                     if (max(el_width, el_height) / min(el_width, el_height) > max_size_ratio) {
-                        LOUT("Ellipse kicked because of maxsize/minsize ratio\n");
+                        LOUT("Ellipse kicked because of maxsize/minsize ratio" << endl
+                             << "ratio = " << max(el_width, el_height) / min(el_width, el_height) << endl);
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
@@ -285,7 +286,7 @@ namespace DerWeg {
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
         stereoGPU("/home/common/calib.txt"),  // needed to get the projection matrix
-        windowname("Processed Image"), windowname2("Right Image") {
+        windowname("Processed_Image"), windowname2("Right Image") {
             cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
             cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
@@ -646,7 +647,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

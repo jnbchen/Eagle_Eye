@@ -47,14 +47,14 @@ namespace DerWeg {
 
         std::string windowname_l;
         std::string windowname_r;
-        Mat left, right, vis_left, vis_right;
+        Mat left, right;
+        Mat left_binary, right_binary;
+        Mat left_edges, right_edges;
 
         cv::Mat img[3], imgR[3];                       //arrays with H,S,V(maybe normalized V) channels of left and right stereo image
         cv::Mat out0, out1, out2, out0R,out1R,out2R, outMAP;   //output channels
 
         //current values, overwritten each loop
-        char current_camera;                            //left 'L' or right 'R' camera image
-
         int height;                                     // height of region of interest for edge search
         int width;                                      // cone top side width, depending on row number
         double u, v;                                    // coordinates of the last estimated cone apex
@@ -210,50 +210,6 @@ namespace DerWeg {
         cfg.get("ConeDetection::max_y_value", max_y_value);
     }
 
-    /*
-    Mat getThresholded(const Mat& input) {
-        // Region of Interest
-        Rect roi(0, 0, inout.rows, input.cols);
-        Mat im_roi = input(roi);
-
-
-        // Blur and HSV
-        int median_filter_size = 3;
-        medianBlur(im_roi, im_roi, median_filter_size);
-        Mat im_hsv;
-        cvtColor(im_roi, im_hsv, COLOR_BGR2HSV);
-
-
-        // Color thresholing
-        Mat hue_range;
-        int hue_low = 0
-        int hue_high = 20;
-        int sat_low = 25;
-        int sat_high = 255;
-        int val_low = 90;
-        int val_high = 255;
-
-        inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
-                cv::Scalar(hue_high, sat_high, val_high), hue_range);
-
-
-        // Opening/Closing
-        int erode_size = 2;
-        int dilate_size = 2;
-        Mat element_erode = getStructuringElement(MORPH_ELLIPSE,
-                                                  Size(2*erode_size + 1, 2*erode_size+1),
-                                                  Point(-1, -1));
-        Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
-                                                   Size(2*dilate_size + 1, 2*dilate_size+1),
-                                                   Point(-1, -1));
-        // Opening
-        erode(hue_range, hue_range, element_erode);
-        dilate(hue_range, hue_range, element_dilate);
-
-        return hue_range;
-    }
-    */
-
 //======function to show results=========================================================
 
 void show_res(const cv::Mat& ch012, const cv::Mat& ch0, const cv::Mat& ch1, const cv::Mat& ch2, const std::string windowname){
@@ -267,27 +223,6 @@ void show_res(const cv::Mat& ch012, const cv::Mat& ch0, const cv::Mat& ch1, cons
     cv::imshow(windowname, img_to_show);
 }
 
-//======function to test wheather pixel is orange (only used for searching top sides, not for edge detection)=====
-
-bool isOrange(int H, int S, int V){
-    return ( H<=Hmax && S>=Smin && V>=Vmin);
-}
-
-
-//=====function to create image with isOrange function (only for visualization)========
-void test_isOrange (cv::Mat& img_out, const cv::Mat (& img_in) [3]){
-    img_out=cv::Mat::zeros(img_in[0].size(),img_in[0].type());
-    for (int i=0; i<img_in[0].rows;i++) {
-        const uchar* H_in=img_in[0].ptr<uchar>(i);
-        const uchar* S_in=img_in[1].ptr<uchar>(i);
-        const uchar* V_in=img_in[2].ptr<uchar>(i);
-        uchar* D_out=img_out.ptr<uchar>(i);
-        for (int j=0; j<img_in[0].cols;j++) {
-            *D_out=255*isOrange(H_in[j],S_in[j],V_in[j]);
-            D_out++; // move pointer forwards
-        }
-    }
-}
 
 //======function to test wheather a possible cone top side in this place would be hidden by a previously detected cone
 
@@ -356,25 +291,6 @@ double pixel2meter(int pixel, double ref_world, int ref_image) {
 }
 
 
-//========== visualize where cone in the right camera image is expected to be
-void visualizeDispExpectation(int beg, int end, int i) {
-    if (current_camera=='L') {
-
-        uchar* output2R=out2R.ptr<uchar>(i);            //pointer to i-th row of third out-channel
-
-        int disp=meter2pixel(b,h,v0-i);          //expected disparity
-
-        int j0=beg-disp;
-        if (j0>0) {
-            output2R+=j0;
-            for (int j=j0; j<beg;j++) {
-                *output2R=255;
-                output2R++;
-            }
-        }
-    }
-}
-
 //calculate cone position in vehicle fixed coordinate system from estimated apex column and disparity
 void determinePosition(const EdgeData & EDl){
     // f/x=disp/b => x=f*b/disp
@@ -412,9 +328,7 @@ void determinePosition(const EdgeData & EDl){
             cv::circle(outMAP,cv::Point(250-100*y,500-100*distance),15,255,1,8); //img, center, radius, color, thickness
             std::stringstream coordinate_sstream;
             coordinate_sstream<<distance<<"|"<<y;
-            std::string coordinate_string;
-            coordinate_sstream>>coordinate_string;
-            cv::putText(outMAP,coordinate_string, cv::Point(250-100*y,500-100*distance),cv::FONT_HERSHEY_SIMPLEX,0.5,255,1,8);
+            cv::putText(outMAP,coordinate_sstream.str(), cv::Point(250-100*y,500-100*distance),cv::FONT_HERSHEY_SIMPLEX,0.5,255,1,8);
         }
     }
 }
@@ -472,16 +386,7 @@ void estimateApexStereo(EdgeData& EDl, EdgeData& EDr, EdgeData& EDlR, EdgeData& 
 
 //=====core function =======================================================================
 
-void detect (char camera){
-
-    std::vector<cv::Point3d> peak_image_positions;
-
-    if (camera=='S') {
-        current_camera='L';
-    }
-    else {
-        current_camera=camera; //set global variable to current camera left (L) or right(R)
-    }
+void detect () {
 
     //------local variables---------------------------------------------------------------
     int beg, end;                                 // begin and end of current truncated cone top side
@@ -489,15 +394,17 @@ void detect (char camera){
     int width_min;                                // width minus tolerance
     int width_max;                                // width plus tolerance
     std::vector<int> hidden_beg, hidden_end, hidden_row;     //vectors with left point of cone top side, with corresponding right point and with the row number of the detected cone top side
-    EdgeData EDl, EDr, EDlR,EDrR; // e.g. right edge (r) in right camera (R)
+    EdgeData EDl, EDr, EDlR, EDrR; // e.g. right edge (r) in right camera (R)
     bool valid_right_cone;
 
     int n_min; // min number of edge pixels to accept edge
     int accepted_v_diff; //accepted difference between v-coordinate of apex estimation
 
+    /*
     const uchar* currentH;
     const uchar* currentS;
     const uchar* currentV;  //pointer to i-th row of ...-channel
+    */
     uchar* output0;
     uchar* output1;
     uchar* output2;
@@ -505,121 +412,107 @@ void detect (char camera){
     // plot horizont
     cv::line(out2, cv::Point(0,v0),cv::Point(img[0].cols,v0),100); //PLOT line in channel 2
 
+
     //------iterate through rows----------------------------------------------------------
     for (int i=v_search_beg; i<v_search_end;i++) {
 
+        //set pointers to i-th row
+        const uchar* current = left_binary.ptr<uchar>(i); //pointer to i-th row of binary image
+        /*
+        currentH=img[0].ptr<uchar>(i); //pointer to i-th row of H-channel
+        currentS=img[1].ptr<uchar>(i); //pointer to i-th row of S-channel
+        currentV=img[2].ptr<uchar>(i); //pointer to i-th row of V-channel
+        */
+        output0=out0.ptr<uchar>(i);            //pointer to i-th row of first out-channel
+        output1=out1.ptr<uchar>(i);            //pointer to i-th row of second out-channel
+        output2=out2.ptr<uchar>(i);            //pointer to i-th row of third out-channel
 
-    //set pointers to i-th row
-    if(camera=='L' || camera=='S'){
-      currentH=img[0].ptr<uchar>(i); //pointer to i-th row of H-channel
-      currentS=img[1].ptr<uchar>(i); //pointer to i-th row of S-channel
-      currentV=img[2].ptr<uchar>(i); //pointer to i-th row of V-channel
-      output0=out0.ptr<uchar>(i);            //pointer to i-th row of first out-channel
-      output1=out1.ptr<uchar>(i);            //pointer to i-th row of second out-channel
-      output2=out2.ptr<uchar>(i);            //pointer to i-th row of third out-channel
-    }
-    else{
-      currentH=imgR[0].ptr<uchar>(i); //pointer to i-th row of H-channel
-      currentS=imgR[1].ptr<uchar>(i); //pointer to i-th row of S-channel
-      currentV=imgR[2].ptr<uchar>(i); //pointer to i-th row of V-channel
-      output0=out0R.ptr<uchar>(i);            //pointer to i-th row of first out-channel
-      output1=out1R.ptr<uchar>(i);            //pointer to i-th row of second out-channel
-      output2=out2R.ptr<uchar>(i);            //pointer to i-th row of third out-channel
-    }
+        //optional: left rand not to scan (because not in right stereo image available, or because of edges from rectification)
+        u_search_beg=30;
+        output0+=u_search_beg;                       //move pointer to column
+        output1+=u_search_beg;
+        output2+=u_search_beg;
 
+        //initialize beg and end counter
+        beg=-2;                            // -2 means that no cone begin was detected, and there must be a non-orange pixel in front of a valid cone (in order to have no cone begin next to the left rand or next to a hidden region
+        end=-2;                            // no active cone
 
-    //optional: left rand not to scan (because not in right stereo image available, or because of edges from rectification)
-    u_search_beg=30;
-    output0+=u_search_beg;                       //move pointer to column
-    output1+=u_search_beg;
-    output2+=u_search_beg;
+        //evaluate row-dependent parameters
+        width = meter2pixel(w, h, v0 - i);  // width of top side if truncated cone top side  would be in this row.
+        width_min = width_min_prop_to_width * width + width_min_const;
+        width_max = width_max_prop_to_width * width + width_max_const; //width_max=1.3*width+2;
+        delta = delta_prop_to_width * width;        //critical distance to last orange pixel
 
-    //initialize beg and end counter
-    beg=-2;                            // -2 means that no cone begin was detected, and there must be a non-orange pixel in front of a valid cone (in order to have no cone begin next to the left rand or next to a hidden region
-    end=-2;                            // no active cone
-
-    //evaluate row-dependent parameters
-    width=meter2pixel(w,h,v0-i);  // width of top side if truncated cone top side  would be in this row.
-    width_min= width_min_prop_to_width*width+width_min_const;
-    width_max=width_max_prop_to_width*width+width_max_const; //width_max=1.3*width+2;
-    delta= delta_prop_to_width*width;        //critical distance to last orange pixel
-
-    height=meter2pixel(H,h,v0-i); //// height of region of interest, dependent on row, global variable !!!
+        height=meter2pixel(H,h,v0-i); //// height of region of interest, dependent on row, global variable !!!
 
 
-    //----iterate through columns---------------------------------------------------------------------
-    for (int j=u_search_beg; j<img[0].cols-1; j++){
+        //----iterate through columns---------------------------------------------------------------------
+        for (int j=u_search_beg; j<img[0].cols-1; j++) {
 
-        if (isHidden(j,i,hidden_beg,hidden_end,hidden_row)) {
-            //PLOT hidden regions in Channel 0
-            *output0+=100;
-        }
-
-        //......either pixel is orange...................................................................
-        if (isOrange(currentH[j],currentS[j],currentV[j])) {
-
-            //either  new cone
-            if(beg==-1){
-                beg=j;
-                end=j;
-            }
-            //or not relevant: cone with top side here would be hidden by already detected cone
-            else if (isHidden(j,i,hidden_beg,hidden_end,hidden_row)) {
-                beg=-2;
-                end=-2;
-            }
-            //no active cone, and there was no non-orange pixel between the left rand or a hidden region and the current pixel => nothing to do
-            else if(beg==-2 || end==-2){
-                // do nothing
-            }
-            //or  pixel belongs to current cone
-            else{
-                end=j;
+            if (isHidden(j,i,hidden_beg,hidden_end,hidden_row)) {
+                //PLOT hidden regions in Channel 0
+                *output0+=100;
             }
 
-            //PLOT all orange Pixels in ROI in Channel 1
-            *output1=100;
-        }
-        //........or pixel is not orange...............................................................
-        else {
+            //......either pixel is orange...................................................................
+            if (current[j] != 0) {
 
-            //******* critical distance to last orange pixel  => cone finished **************************
-            if (j-end==delta) {
+                //either  new cone
+                if(beg==-1){
+                    beg=j;
+                    end=j;
+                }
+                //or not relevant: cone with top side here would be hidden by already detected cone
+                else if (isHidden(j,i,hidden_beg,hidden_end,hidden_row)) {
+                    beg=-2;
+                    end=-2;
+                }
+                //no active cone, and there was no non-orange pixel between the left rand or a hidden region and the current pixel => nothing to do
+                else if(beg==-2 || end==-2){
+                    // do nothing
+                }
+                //or  pixel belongs to current cone
+                else{
+                    end=j;
+                }
 
-                //::::::::::::: either suitable width of detected cone => VALID CONE DETECTED:::::::::::::::
-                if (end-beg>=width_min && end-beg<=width_max && beg!=u_search_beg) {
+                //PLOT all orange Pixels in ROI in Channel 1
+                *output1=100;
+            }
+            //........or pixel is not orange...............................................................
+            else {
 
-                    //plot line from cone begin to cone end
-                    for (int z=beg; z<=end; z++) {
-                        *(output1-j+z)+=150;
-                    }
+                //******* critical distance to last orange pixel  => cone finished **************************
+                if (j-end==delta) {
 
-                    // define hidden region
-                    hidden_beg.push_back(beg-10);  //10
-                    hidden_end.push_back(end+10);
-                    hidden_row.push_back(i);
+                    // Check if area under detected top consists at least of 80% orange pixels
+                    cv::Rect roi(beg, i, end - beg, height * 0.6);
 
-                    EDl.start=beg;
-                    EDr.start=end;
+                    //::::::::::::: either suitable width of detected cone => VALID CONE DETECTED:::::::::::::::
+                    if (end-beg >= width_min && end - beg <= width_max && beg != u_search_beg &&
+                        countNonZero(left_binary(roi)) >= 0.8 * roi.width * roi.height) {
 
-                    //detect edges
-                    detectEdge(i,-1,current_camera, EDl);      //detect left edge
-                    detectEdge(i,+1,current_camera, EDr);      //detect right edge
-
-
-                    n_min= n_min_prop_to_height *height + n_min_const ; //min. number of edge pixels to accept as valid edge
-
-                    if (EDl.n>n_min && EDr.n>n_min) {
-
-                        //estimate cone apex from left or right camera image
-                        if (camera!='S') {
-                            estimateApexMono(current_camera,EDl,EDr);
-                            // visualize expected disparity
-                            visualizeDispExpectation(beg, end, i);
+                        //plot line from cone begin to cone end
+                        for (int z=beg; z<=end; z++) {
+                            *(output1-j+z)+=150;
                         }
 
-                        //if camera mode is 'S' (Stereo): estimate cone apex and disparity from both images
-                        if (camera=='S') {
+                        // define hidden region
+                        hidden_beg.push_back(beg-10);  //10
+                        hidden_end.push_back(end+10);
+                        hidden_row.push_back(i);
+
+                        EDl.start=beg;
+                        EDr.start=end;
+
+                        //detect edges
+                        detectEdge(i,-1,'L', EDl);      //detect left edge
+                        detectEdge(i,+1,'L', EDr);      //detect right edge
+
+
+                        n_min= n_min_prop_to_height *height + n_min_const ; //min. number of edge pixels to accept as valid edge
+
+                        if (EDl.n>n_min && EDr.n>n_min) {
 
                             // search for cone in right stereo image based on the current result in left camera image
                             valid_right_cone=0;
@@ -656,44 +549,40 @@ void detect (char camera){
                             }
 
                         }
+                        // else{
+                        // 	std::cout<<"not enough edge pixel found in left image: n_min= "<<n_min<< " [left cam,  left flank]: "<< EDl.n<<" [left cam, right flank]: "<<EDr.n<<std::endl;
+                        // }
 
                     }
-                    // else{
-                    // 	std::cout<<"not enough edge pixel found in left image: n_min= "<<n_min<< " [left cam,  left flank]: "<< EDl.n<<" [left cam, right flank]: "<<EDr.n<<std::endl;
-                    // }
 
+                    //::::::::::: or no suitable width  ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+                    //   => nothing to do
+
+
+                    //cone finished => reset beg and end counter to not active (-1)
+                    beg=-1;
+                    end=-1;
+                }
+
+                //*************else:  critical distance to last orange pixel not reached *********************
+                // non-orange pixel detected => can remove "-2" blocker, because there has been a non orange pixel after the rand or hidden region.
+                if (beg==-2 || end==-2) {
+                    beg=-1;
+                    end=-1;
                 }
 
 
-                //::::::::::: or no suitable width  ::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-                //   => nothing to do
-
-
-                //cone finished => reset beg and end counter to not active (-1)
-                beg=-1;
-                end=-1;
             }
 
-            //*************else:  critical distance to last orange pixel not reached *********************
-            // non-orange pixel detected => can remove "-2" blocker, because there has been a non orange pixel after the rand or hidden region.
-            if (beg==-2 || end==-2) {
-                beg=-1;
-                end=-1;
+            //plot width
+            if (j==200) {
+                *output1=100;
+                *(output1-width)=100;
             }
 
-
-
-        }
-
-        //plot width
-        if (j==200) {
-            *output1=100;
-            *(output1-width)=100;
-        }
-
-        output0++; //move pointer to next column
-        output1++;
-        output2++;
+            output0++; //move pointer to next column
+            output1++;
+            output2++;
         }
     }
 }
@@ -704,9 +593,10 @@ void detect (char camera){
 
 //======== function to detect edge in region of interest defined by corner coordinates (row,col) of the cone =====================
 
-void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res){     //left edge (col=beg) => left_right=-1 <->  right edge (col=end) => left_right=1
+void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
+    //left edge (col=beg) => left_right=-1 <->  right edge (col=end) => left_right=1
 
-    int col= EdgeData_res.start; //set column number: start point of edge (=begin or end point of cone top side)
+    int col = EdgeData_res.start; //set column number: start point of edge (=begin or end point of cone top side)
 
     //initialize counter
     EdgeData_res.sum_u=0;
@@ -714,9 +604,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res){     
     EdgeData_res.n=0;
 
     //declare pointers
-    const uchar* EdgeH;
-    const uchar* EdgeS;
-    const uchar* EdgeV;
+    const uchar* Edge;
     uchar* EdgeOut;
 
 
@@ -724,36 +612,30 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res){     
     for (int iE=row; iE<std::min(img[0].rows, row+height);iE++) {
 
         if(cam=='L'){
-            EdgeH=img[0].ptr<uchar>(iE); //pointer to i-th row
-            EdgeS=img[1].ptr<uchar>(iE);
-            EdgeV=img[2].ptr<uchar>(iE);
+            Edge = left_edges.ptr<uchar>(iE); //pointer to i-th row
             EdgeOut=out0.ptr<uchar>(iE);
         }
         else{
-            EdgeH=imgR[0].ptr<uchar>(iE); //pointer to i-th row
-            EdgeS=imgR[1].ptr<uchar>(iE);
-            EdgeV=imgR[2].ptr<uchar>(iE);
+            Edge = right_edges.ptr<uchar>(iE); //pointer to i-th row
             EdgeOut=out0R.ptr<uchar>(iE);   //define channel where to plot ROI and detected pixels is channel 0
         }
 
+        //ROI center: column number dependent on row number ( line starting in col (col=left or right cone top side vertex)).
+        int jEdge = col + left_right * (iE - row) / m_cone;
 
-        int jEdge=col+left_right*(iE-row)*1/m_cone;      //ROI center: column number dependent on row number ( line starting in col (col=left or right cone top side vertex)).
-
-        int jE0=std::max(1,jEdge-ROI_half_width);        //where to begin (a few  points in front of the ROI center)
-        EdgeOut+=jE0;                                    //move pointer from first column in the current row to ROI begin
+        //where to begin (a few  points in front of the ROI center)
+        int jE0 = std::max(1, jEdge - ROI_half_width);
+        //move pointer from first column in the current row to ROI begin
+        EdgeOut+=jE0;
 
         //--------------iterate through columns------------------------------------------
-        for (int jE=jE0; jE<std::min(jEdge+ROI_half_width, img[0].cols-20); jE++) { //consider filter mask width in what to choose as minimum column number
+        for (int jE = jE0; jE < std::min(jEdge + ROI_half_width, img[0].cols - 20); jE++) { //consider filter mask width in what to choose as minimum column number
             //std::cout<<"jE "<<jE<<std::endl;
 
-            *EdgeOut+=50;                                  //PLOT all considered pixels (=region of interest) in Edge Channel
+            //PLOT all considered pixels (=region of interest) in Edge Channel
+            *EdgeOut+=50;
 
-            if( //left edge and filter mask [-2,1] with threshold 40
-            (left_right==-1 &&
-             std::max(0, diff_to_Orange(EdgeH[jE],EdgeS[jE],EdgeV[jE]) - 2*diff_to_Orange(EdgeH[jE-1],EdgeS[jE-1],EdgeV[jE-1])) >40) ||
-            //or right edge and filter mask [1,-2] with threshold 40
-            (left_right==+1 &&
-             std::max(0, diff_to_Orange(EdgeH[jE],EdgeS[jE],EdgeV[jE]) - 2*diff_to_Orange(EdgeH[jE+1],EdgeS[jE+1],EdgeV[jE+1])) >40)) {
+            if (Edge[jE] != 0) {
                 EdgeData_res.sum_u+=jE;
                 EdgeData_res.sum_v+=iE;
                 EdgeData_res.n++;
@@ -777,11 +659,13 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res){     
 /////////////////////////////////////////////////////////////////////////
 
 //========== search in right stereo image for corresponding cone
-void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, bool & valid_right_cone) {
+void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, bool & valid_right_cone) {
     //search only in current row; begin in beg-disp-tolerance (see visualizeDispExpectation() ), search for orange region with suitable with (see detect() )
+    /*
     const uchar* currentH; //pointer to i-th row of H-channel
     const uchar* currentS; //pointer to i-th row of S-channel
     const uchar* currentV; //pointer to i-th row of V-channel
+    */
     //uchar* output2R;            //pointer to i-th row of third out-channel
     uchar* output1R;            //pointer to i-th row of third out-channel
     uchar* output0R;            //pointer to i-th row of third out-channel
@@ -807,9 +691,12 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
     int v_cur=i-2;
 
     while (done==0 && v_cur-i<tol_height) {
+        const uchar* current=right_binary.ptr<uchar>(v_cur); //pointer to i-th row of H-channel
+        /*
         currentH=imgR[0].ptr<uchar>(v_cur); //pointer to i-th row of H-channel
         currentS=imgR[1].ptr<uchar>(v_cur); //pointer to i-th row of S-channel
         currentV=imgR[2].ptr<uchar>(v_cur); //pointer to i-th row of V-channel
+        */
         //output2R=out2R.ptr<uchar>(v_cur);            //pointer to i-th row of third out-channel
         output1R=out1R.ptr<uchar>(v_cur);            //pointer to i-th row of third out-channel
         output0R=out0R.ptr<uchar>(v_cur);            //pointer to i-th row of third out-channel
@@ -829,16 +716,16 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
             *(output0R+j_r)+=100;  //PLOT
 
             //right
-            if (isOrange(currentH[j_r],currentS[j_r],currentV[j_r])) {
+            if (current[j_r] != 0) {
 
                 // either inner point ->  first search for left flank of cone, save as beg_r
                 if (beg_r==-3) {
-                    while (1) {
+                    while (true) {
                         //*(output1R+j_l)+=100; //PLOT
 
                         //std::cout<<"begr "<<beg_r<<" j_l "<<j_l<<std::endl;
 
-                        if (isOrange(currentH[j_l],currentS[j_l],currentV[j_l])) {
+                        if (current[j_l] != 0) {
                             beg_r=j_l;
                         }
                         else if (beg_r-j_l > delta) {
@@ -863,7 +750,8 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
                 else {
                     end_r=j_r;
                 }
-                //*(output1R+j_r)=100;                                                  //PLOT all orange Pixels in ROI in Channel 2R
+                //PLOT all orange Pixels in ROI in Channel 2R
+                //*(output1R+j_r)=100;
             }
 
             //........or pixel is not orange...............................................................
@@ -906,7 +794,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
                 j_l=j0-j_rel;
                 *(output1R+j_l)+=100;  //PLOT
 
-                if (isOrange(currentH[j_l],currentS[j_l],currentV[j_l])) {
+                if (current[j_l] != 0) {
                     //either new cone
                     if (beg_l==-1) {
                         beg_l=j_l;
@@ -964,6 +852,90 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
     }
 }
 
+/////////////////////////////////////////////////////////////////////////
+
+
+void get_binary(cv::Mat& input, cv::Mat& output) {
+
+    // Parameter TODO: transfer to configfile
+    int roi_x0 = 0;
+    int roi_y0 = 0;
+    int roi_width = input.cols;
+    int roi_height = input.rows;
+
+    int median_filter_size = 3;
+
+    int hue_low = 0;
+    int hue_high = 20;
+    int sat_low = 25;
+    int sat_high = 255;
+    int val_low = 90;
+    int val_high = 255;
+
+    int erode_size = 2;
+    int dilate_size = 2;
+
+
+    // Region of Interest
+    cv::Rect roi(roi_x0, roi_y0, roi_width, roi_height);
+    cv::Mat im_roi = input(roi);
+
+    // Blur and HSV
+    cv::medianBlur(im_roi, im_roi, median_filter_size);
+    cv::Mat im_hsv;
+    cv::cvtColor(im_roi, im_hsv, COLOR_BGR2HSV);
+
+
+    // Color thresholding
+    cv::Mat hue_range;
+    cv::inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
+            cv::Scalar(hue_high, sat_high, val_high), hue_range);
+
+    // Opening/Closing operator
+    Mat element_erode = getStructuringElement(MORPH_ELLIPSE,
+                                              Size(2*erode_size + 1, 2*erode_size+1),
+                                              Point(-1, -1));
+    Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
+                                               Size(2*dilate_size + 1, 2*dilate_size+1),
+                                               Point(-1, -1));
+    // Opening
+    erode(hue_range, hue_range, element_erode);
+    dilate(hue_range, hue_range, element_dilate);
+
+    output = hue_range;
+}
+
+
+void get_binary_edges(cv::Mat input, cv::Mat& output) {
+    std::vector<std::vector<Point2i> > contours;
+    cv::findContours(input, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    cv::drawContours(input, contours, -1, Scalar(255, 255, 255));
+    cv::imshow("Binary edges", input); // Only for testing
+    output = input;
+}
+
+
+void get_grey_edges(cv::Mat& input, cv::Mat& output) {
+    double sigma = 0.33;
+    int median = 128;
+    int lower = std::max(0.0, (1.0 - sigma) * median);
+    int upper = std::min(255.0, (1.0 + sigma) * median);
+
+    cv::Mat grey;
+    cv::cvtColor(input, grey, CV_BGR2GRAY);
+    cv::Canny(grey, output, lower, upper, 3, true);
+
+    cv::imshow("Grey edges", output);
+}
+
+void get_edges(cv::Mat& input, cv::Mat& binary_input, cv::Mat& output) {
+    cv::Mat binary_edges, grey_edges;
+    get_binary_edges(binary_input, binary_edges);
+    get_grey_edges(input, grey_edges);
+    output = cv::max(binary_edges, grey_edges);
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -978,6 +950,13 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
                 right = rect_images.images.image_right;
                 state = rect_images.state;
 
+                get_binary(left, left_binary);
+                get_binary(right, right_binary);
+
+                get_edges(left, left_binary, left_edges);
+                get_edges(right, right_binary, right_edges);
+
+                /*
                 //initialize output channels (needed to define size equal to img size)
                 out0 =cv::Mat::zeros(img[0].size(),img[0].type());
                 out1 =cv::Mat::zeros(img[0].size(),img[0].type());
@@ -985,22 +964,20 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
                 out0R =cv::Mat::zeros(img[0].size(),img[0].type());
                 out1R =cv::Mat::zeros(img[0].size(),img[0].type());
                 out2R =cv::Mat::zeros(img[0].size(),img[0].type());
-
-                Mat img0 = left;
-                Mat img0R = right;
-
+                */
 
                 //convert to HSV and split channels => create global img and imgR Mat-arrays
                 cv::Mat imgHSV;
-                cv::cvtColor(img0,imgHSV,CV_BGR2HSV);
-                cv::split(imgHSV,img);
-                cv::cvtColor(img0R,imgHSV,CV_BGR2HSV);
-                cv::split(imgHSV,imgR);
+                cv::cvtColor(left, imgHSV, CV_BGR2HSV);
+                cv::split(imgHSV, img);
+                cv::cvtColor(right, imgHSV, CV_BGR2HSV);
+                cv::split(imgHSV, imgR);
 
                 cv::Mat imgDiff, imgDiffR, imgZero;
                 test_diff_to_Orange(imgDiff,img);
                 test_diff_to_Orange(imgDiffR,imgR);
-                imgZero=cv::Mat::zeros(img[0].size(),img[0].type());
+
+                //imgZero=cv::Mat::zeros(img[0].size(),img[0].type());
                 //show_res(imgZero,imgDiff,imgDiffR,imgZero, "window_diff");
 
 
@@ -1018,7 +995,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData & EDrR, 
                 out1R =cv::Mat::zeros(img[0].size(),img[0].type());
                 out2R =cv::Mat::zeros(img[0].size(),img[0].type());
 
-                detect('S');
+                detect();
                 //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
                 //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");

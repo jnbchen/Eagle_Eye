@@ -49,15 +49,16 @@ private:
     // the z-coordinate of the stargazer is moved to the ground
     Mat left_cam_to_stargazer;
     Mat image_to_camera;
+    Mat camera_to_image;
 
 public:
 
     CoordinateTransform() {}
 
     CoordinateTransform(const ConfigReader& cfg, Mat projection_matrix) {
-        image_to_camera = projection_matrix(Rect(0, 0, 3, 3)).clone();
-        //LOUT("image_to_camera = " << std::endl << " " << image_to_camera << std::endl);
-        image_to_camera = image_to_camera.inv();
+        camera_to_image = projection_matrix(Rect(0, 0, 3, 3)).clone();
+        //LOUT("camera_to_image = " << std::endl << " " << camera_to_image << std::endl);
+        image_to_camera = camera_to_image.inv();
 
         left_cam_to_stargazer = Mat(3, 1, CV_64FC1);
         vector<float> temp_offset;
@@ -67,7 +68,7 @@ public:
         left_cam_to_stargazer.at<double>(2,0) = temp_offset[2];
     }
 
-    Mat image_to_camera_coords(double u, double v, double distance) {
+    Mat image_to_camera_coords(double u, double v, double distance) const {
         Mat scaled_image_coords(3, 1, CV_64FC1);
         scaled_image_coords.at<double>(0,0) = distance * u;
         scaled_image_coords.at<double>(1,0) = distance * v;
@@ -81,7 +82,20 @@ public:
         return image_to_camera_coords(u, v, 1);
     }
 
-    Mat camera_to_world_coords(Mat cam_coords, const State state) {
+    // Return u, v as a pair
+    pair<double,double> camera_to_image_coords(const Mat camera_coords) const {
+        Mat image = camera_to_image * camera_coords;
+        if (image.at<double>(2,0) == 0) {
+            return pair<double,double>(0,0);
+        } else {
+            pair<double,double> result;
+            result.first = image.at<double>(0,0) / image.at<double>(2,0);
+            result.second = image.at<double>(1,0) / image.at<double>(2,0);
+            return result;
+        }
+    }
+
+    Mat camera_to_world_coords(const Mat cam_coords, const State state) const {
         Mat result = cam_coords.clone();
         //rotate camera coordinate system
         result.at<double>(0,0) =   cam_coords.at<double>(2,0);
@@ -100,6 +114,25 @@ public:
         result.at<double>(1,0) = world.y;
         //LOUT("result = " << result << "\n");
         return result;
+    }
+
+    // Reverse Transformation
+    Mat world_to_camera_coords(const Mat world_coords, const State state) const {
+        Mat tmp = world_coords.clone();
+
+        Vec world_pos(tmp.at<double>(0,0), tmp.at<double>(1,0));
+        Vec vehicle_coords = (world_pos - state.sg_position).rotate(- state.orientation);
+
+        tmp.at<double>(0,0) = vehicle_coords.x;
+        tmp.at<double>(1,0) = vehicle_coords.y;
+
+        tmp += left_cam_to_stargazer;
+
+        Mat cam_coords = tmp.clone();
+        cam_coords.at<double>(0,0) = - tmp.at<double>(1,0);
+        cam_coords.at<double>(1,0) = - tmp.at<double>(2,0);
+        cam_coords.at<double>(2,0) =   tmp.at<double>(0,0);
+        return cam_coords;
     }
 
 };

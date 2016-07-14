@@ -854,17 +854,9 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
 
 /////////////////////////////////////////////////////////////////////////
 
-
 void get_binary(cv::Mat& input, cv::Mat& output) {
 
     // Parameter TODO: transfer to configfile
-    int roi_x0 = 0;
-    int roi_y0 = 0;
-    int roi_width = input.cols;
-    int roi_height = input.rows;
-
-    int median_filter_size = 3;
-
     int hue_low = 0;
     int hue_high = 20;
     int sat_low = 25;
@@ -872,35 +864,32 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
     int val_low = 90;
     int val_high = 255;
 
-    int erode_size = 2;
-    int dilate_size = 2;
+    int opening_size = 3;
 
-
+    /*
     // Region of Interest
+    int roi_x0 = 0;
+    int roi_y0 = 0;
+    int roi_width = input.cols;
+    int roi_height = input.rows;
     cv::Rect roi(roi_x0, roi_y0, roi_width, roi_height);
     cv::Mat im_roi = input(roi);
+    */
 
-    // Blur and HSV
-    cv::medianBlur(im_roi, im_roi, median_filter_size);
+    // HSV
     cv::Mat im_hsv;
-    cv::cvtColor(im_roi, im_hsv, COLOR_BGR2HSV);
-
+    cv::cvtColor(input, im_hsv, COLOR_BGR2HSV);
 
     // Color thresholding
     cv::Mat hue_range;
     cv::inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
             cv::Scalar(hue_high, sat_high, val_high), hue_range);
 
-    // Opening/Closing operator
-    Mat element_erode = getStructuringElement(MORPH_ELLIPSE,
-                                              Size(2*erode_size + 1, 2*erode_size+1),
-                                              Point(-1, -1));
-    Mat element_dilate = getStructuringElement(MORPH_ELLIPSE,
-                                               Size(2*dilate_size + 1, 2*dilate_size+1),
-                                               Point(-1, -1));
     // Opening
-    erode(hue_range, hue_range, element_erode);
-    dilate(hue_range, hue_range, element_dilate);
+    Mat opening_kernel = getStructuringElement(MORPH_ELLIPSE,
+                                               Size(opening_size, opening_size),
+                                               Point(-1, -1));
+    morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
 
     output = hue_range;
 }
@@ -909,33 +898,68 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
 void get_binary_edges(cv::Mat input, cv::Mat& output) {
     std::vector<std::vector<Point2i> > contours;
     cv::findContours(input, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    cv::drawContours(input, contours, -1, Scalar(255, 255, 255));
-    cv::imshow("Binary edges", input); // Only for testing
-    output = input;
+    cv::drawContours(output, contours, -1, Scalar(255, 255, 255));
+    cv::imshow("Binary edges", output); // Only for testing
 }
 
 
 void get_grey_edges(cv::Mat& input, cv::Mat& output) {
     double sigma = 0.33;
-    int median = 128;
-    int lower = std::max(0.0, (1.0 - sigma) * median);
-    int upper = std::min(255.0, (1.0 + sigma) * median);
 
     cv::Mat grey;
     cv::cvtColor(input, grey, CV_BGR2GRAY);
-    cv::Canny(grey, output, lower, upper, 3, true);
+    cv::GaussianBlur(grey, grey, Size(3, 3), 0);
 
-    cv::imshow("Grey edges", output);
+    int med = median(grey);
+    int lower = std::max(0.0, (1.0 - sigma) * med);
+    int upper = std::min(255.0, (1.0 + sigma) * med);
+
+    cv::Canny(grey, output, lower, upper, 3, true);
+    cv::imshow("Grey edges", output); // Only for testing
 }
+
 
 void get_edges(cv::Mat& input, cv::Mat& binary_input, cv::Mat& output) {
     cv::Mat binary_edges, grey_edges;
     get_binary_edges(binary_input, binary_edges);
     get_grey_edges(input, grey_edges);
-    output = cv::max(binary_edges, grey_edges);
+
+    // Extra dilated binary
+    Mat extra_dilated;
+    Mat dilate_kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+    cv::morphologyEx(binary_input, extra_dilated, MORPH_DILATE, dilate_kernel);
+
+    cv::multiply(extra_dilated, grey_edges, grey_edges);
+    cv::max(binary_edges, grey_edges, output);
 }
 
 
+// From here: https://gist.github.com/heisters/9cd68181397fbd35031b
+// calculates the median value of a single channel
+// based on https://github.com/arnaudgelas/OpenCVExamples/blob/master/cvMat/Statistics/Median/Median.cpp
+int median( cv::Mat& channel )
+{
+    double m = (channel.rows*channel.cols) / 2;
+    int bin = 0;
+    double med = -1.0;
+
+    int histSize = 256;
+    float range[] = { 0, 256 };
+    const float* histRange = { range };
+    bool uniform = true;
+    bool accumulate = false;
+    cv::Mat hist;
+    cv::calcHist( &channel, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange, uniform, accumulate );
+
+    for ( int i = 0; i < histSize && med < 0.0; ++i )
+    {
+        bin += cvRound( hist.at< float >( i ) );
+        if ( bin > m && med < 0.0 )
+            med = i;
+    }
+
+    return med;
+}
 
 /////////////////////////////////////////////////////////////////////////
 

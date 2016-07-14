@@ -33,7 +33,7 @@ void ConeDetection::searchRightImage(int beg, int end, int i, EdgeData &EDlR, Ed
   bool done=0;
   int v_cur=i-2;
 
-  while(done==0 && v_cur-i<7){
+  while(done==0 && v_cur-i<20){
     currentH=imgR[0].ptr<uchar>(v_cur); //pointer to i-th row of H-channel
     currentS=imgR[1].ptr<uchar>(v_cur); //pointer to i-th row of S-channel
     currentV=imgR[2].ptr<uchar>(v_cur); //pointer to i-th row of V-channel

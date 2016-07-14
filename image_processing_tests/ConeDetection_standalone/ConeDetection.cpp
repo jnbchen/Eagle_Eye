@@ -7,13 +7,13 @@ void ConeDetection::init(){
   Hmax=20; Smin=25;Vmin=90;     // HSV values for thresholding in function isOrange()
   Hdes=7; Sdes=185; Vdes=240;   // HSV values of perfect cone color, used to compute difference image
 
-  u0=332; //???
-  v0=260;          // image row of camera horizont (estimated from images)
-  f=574.3259;   // focal length in pixel
-  b=0.1473;     // distance between cameras
-  h=0.056;      // distance cone top side to camera horizont
-  w=0.033;      // width of cone top side
-  H=0.35;//0.3;        // distance cone top side to ground 
+ 
+  u0=319;//332; //???
+  v0=250;//260;          // image row of camera horizont (estimated from images)
+  b=0.1427;//0.1473;     // distance between cameras
+  h=0.0529;//0.056;      // distance cone top side to camera horizont
+  w=0.032;//0.033;      // width of cone top side
+  H=0.3;//0.35;//0.3;        // distance cone top side to ground
 
  
   m_cone=5.35;   //slope of cone flanks
@@ -105,7 +105,7 @@ bool ConeDetection::isHidden(int u, int v, std::vector<int> beg,  std::vector<in
 
 int ConeDetection::diff_to_Orange(int H, int S, int V){
   if (H<30 && V>20 && S>20){
-    return (   255- std::min( 255 , abs(H-Hdes) +  abs( S-Sdes ) + abs(V-Vdes)   )       );
+    return (   255- std::min( 255 , std::abs(H-Hdes) +  std::abs( S-Sdes ) + std::abs(V-Vdes)   )       );
   }
   return 0;
 }

@@ -15,16 +15,13 @@ void ConeDetection::execute (int argc, char** argv){
     cv::imshow("window0",img0);
 
     //create corresponding right image filename with suffix _right
-    std::stringstream filename_stream;
-    filename_stream<< argv[i];
-    std::string filenameR;
-    getline(filename_stream, filenameR, '.'); //read filename until dot
-    std::stringstream filenameR_stream;
-    filenameR_stream<<filenameR<<"_right.png"; //add suffix to filename
-    filenameR_stream>>filenameR; //overwrite string filenameR
+	    std::string filename = argv[i];
+	    std::string filenameR = filename.substr(0, filename.length()-4);
+	    std::stringstream filenameR_stream;
+	    filenameR_stream<<filenameR<<"_right.png"; //add suffix to filename
 
-    //read right image
-    cv::Mat img0R=cv::imread(filenameR,1);
+	    //read right image
+	    cv::Mat img0R=cv::imread(filenameR_stream.str(),1);
     cv::imshow("window0R",img0R);
 
     //convert to HSV and split channels => create global img and imgR Mat-arrays
@@ -83,6 +80,9 @@ void ConeDetection::execute (int argc, char** argv){
     show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
     show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
     show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
+
+//cv::imshow("diff_Test_left_img", imgDiff);
+//cv::imshow("diff_Test_right_img", imgDiffR);
 
     cv::imshow("MAP", outMAP);
 

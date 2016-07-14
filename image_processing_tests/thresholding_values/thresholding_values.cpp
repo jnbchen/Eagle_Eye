@@ -1,4 +1,4 @@
-//erfordert:    g++ `pkg-config --cflags opencv` thresholding_values.cpp -L/usr/local/lib -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_calib3d
+//erfordert:    g++ `pkg-config --cflags opencv` thresholding_values.cpp -L/usr/local/lib -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_calib3d
 
 //Aufruf z.B. mit ./a.out PATHNAME/*rect.png
 //=> Code wird fuer alle Bilder ausgefuehrt, die auf rect.png enden
@@ -70,15 +70,14 @@ int main (int argc, char** argv){
     img0 = cv::imread(argv[i],1); //read image
     cv::imshow("window0",img0);
 
-    //read corresponding right image
-    std::stringstream filename;
-    filename<<argv[i]; 
-    std::string filenameR;
-    getline(filename, filenameR,'.'); //read filename until dot
-    std::stringstream filename_right;
-    filename_right<<filenameR<<"_right.png"; //add suffix to filename
-    filename_right>>filenameR; //save as string
-    cv::Mat img0R = cv::imread(filenameR,1);
+    //create corresponding right image filename with suffix _right
+    std::string filename = argv[i];
+    std::string filenameR = filename.substr(0, filename.length()-4);
+    std::stringstream filenameR_stream;
+    filenameR_stream<<filenameR<<"_right.png"; //add suffix to filename
+
+    //read right image
+    cv::Mat img0R=cv::imread(filenameR_stream.str(),1);
     cv::imshow("window0R",img0R);
 
     //convert left image to HSV

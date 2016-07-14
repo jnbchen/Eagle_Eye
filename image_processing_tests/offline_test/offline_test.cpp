@@ -1,7 +1,3 @@
-#include "../Elementary/KogmoThread.h"
-#include "../Elementary/PluginFactory.h"
-#include "../Blackboard/Blackboard.h"
-#include "toast2/stereo/kogmolabor.h"
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -10,16 +6,13 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "../Elementary/Angle.h"
-#include "../Elementary/Vec.h"
-#include "ImageProcessingFunctions.h"
+
 
 
 
 using namespace cv;
 using namespace std;
 
-namespace DerWeg {
 
     struct EdgeData{
         double sum_v;       //sum of all v-coordinates of one edge
@@ -37,13 +30,11 @@ namespace DerWeg {
 
 
   /** ConeDetection */
-  class ConeDetection : public KogmoThread {
+  class ConeDetection {
   private:
-        RectImages rect_images;
-        State state;
+
 
         // needed to get the projection matrix
-        DerWeg::StereoGPU stereoGPU;
 
         std::string windowname_l;
         std::string windowname_r;
@@ -114,19 +105,10 @@ namespace DerWeg {
         int ROI_half_width;
 
 
-        CoordinateTransform transformer;
-        size_t frame_counter;
-
-        // parameters for sanity check on cone positions
-        double min_height_tol, max_height_tol;
-        double min_x_value, max_x_value;
-        double min_y_value, max_y_value;
-
 
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
     ConeDetection () :
-      stereoGPU ("/home/common/calib.txt"),
       windowname_l("Left Rectified Image"),
       windowname_r("Right Rectified Image") {
         cvNamedWindow (windowname_l.c_str(), CV_WINDOW_AUTOSIZE);
@@ -136,11 +118,11 @@ namespace DerWeg {
     /** Destruktor */
     ~ConeDetection () {}
 
-    void init(const ConfigReader& cfg) {
-        LOUT("Exec ConeDetection init()" << std::endl);
+    void init() {
 
         Hmax=20; Smin=25;Vmin=90;     // HSV values for thresholding in function isOrange()
         Hdes=7; Sdes=185; Vdes=240;   // HSV values of perfect cone color, used to compute difference image
+
 
         u0=332; //???
         v0=250;//260;          // image row of camera horizont (estimated from images)
@@ -148,6 +130,12 @@ namespace DerWeg {
         h=0.0529;//0.056;      // distance cone top side to camera horizont
         w=0.032;//0.033;      // width of cone top side
         H=0.3;//0.35;//0.3;        // distance cone top side to ground
+        /*u0=332; //???
+        v0=250;          // image row of camera horizont (estimated from images)
+        b=0.1473;     // distance between cameras
+        h=0.056;      // distance cone top side to camera horizont
+        w=0.033;      // width of cone top side
+        H=0.35;//0.3;        // distance cone top side to ground*/
 
         m_cone=5.35;   //slope of cone flanks
 
@@ -194,20 +182,6 @@ namespace DerWeg {
         //half width of region of interest for edge detection
         ROI_half_width=7;  //(int)(5+0.5*width);
 
-        Mat projection_matrix;
-        stereoGPU.getProjectionMatrix(projection_matrix);
-        f = projection_matrix.at<double>(0,0);
-
-        transformer = CoordinateTransform(cfg, projection_matrix);
-
-        frame_counter = 0;
-
-        cfg.get("ConeDetection::min_height_tol", min_height_tol);
-        cfg.get("ConeDetection::max_height_tol", max_height_tol);
-        cfg.get("ConeDetection::min_x_value", min_x_value);
-        cfg.get("ConeDetection::max_x_value", max_x_value);
-        cfg.get("ConeDetection::min_y_value", min_y_value);
-        cfg.get("ConeDetection::max_y_value", max_y_value);
     }
 
 //======function to show results=========================================================
@@ -283,54 +257,11 @@ void test_diff_to_Orange_threshold (cv::Mat& img_out, const cv::Mat (& img_in) [
 
 int meter2pixel(double length, double ref_world, int ref_image) {
     //e.g. ref_world = height over horizont, ref_image=v0-v with row number v, and image horizont v0
-    return std::round(length *ref_image/ref_world);
+    return std::floor(length *ref_image/ref_world + 0.5);
 }
 
 double pixel2meter(int pixel, double ref_world, int ref_image) {
     return pixel * ref_world/ref_image;
-}
-
-
-//calculate cone position in vehicle fixed coordinate system from estimated apex column and disparity
-void determinePosition(const EdgeData & EDl){
-    // f/x=disp/b => x=f*b/disp
-    double distance = pixel2meter(f,b,EDl.apex_disp) * 1000;
-    // u/y=disp/b
-
-    if (distance < 0) {
-        EOUT("Drop cone measurement: distance can not be negative\n");
-    }
-    else {
-        double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
-        //std::cout<<"found cone at x="<<x<<" y="<<y<<std::endl;
-
-        cv::Mat camera_coords = transformer.image_to_camera_coords(EDl.apex_u, EDl.apex_v, distance);
-        cv::Mat world_coords = transformer.camera_to_world_coords(camera_coords, state);
-
-        if (world_coords.at<double>(2,0) < min_height_tol || world_coords.at<double>(2,0) > max_height_tol) {
-            EOUT("Drop cone measurement: peak height out of bounds\n");
-        }
-        else if (world_coords.at<double>(0,0) < min_x_value || world_coords.at<double>(0,0) > max_x_value ||
-            world_coords.at<double>(1,0) < min_y_value || world_coords.at<double>(1,0) > max_y_value) {
-            EOUT("Drop cone measurement: position not within area\n");
-        }
-        else {
-            PylonMeasurement pm;
-            pm.position = Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
-            pm.distance = distance;
-            Vec diff = pm.position - state.sg_position;
-            pm.view_angle = std::atan2(diff.y, diff.x);
-            pm.frame_number = frame_counter;
-
-            BBOARD->addPylonMeasurement(pm);
-
-            //visualize:
-            cv::circle(outMAP,cv::Point(250-100*y,500-100*distance),15,255,1,8); //img, center, radius, color, thickness
-            std::stringstream coordinate_sstream;
-            coordinate_sstream<<distance<<"|"<<y;
-            cv::putText(outMAP,coordinate_sstream.str(), cv::Point(250-100*y,500-100*distance),cv::FONT_HERSHEY_SIMPLEX,0.5,255,1,8);
-        }
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -359,19 +290,12 @@ void estimateApexMono(const char camera, EdgeData& EDl,EdgeData& EDr){
     EDl.apex_v=v;
 
     if (camera=='L') {
-        out2.at<uchar>(vc,uc)=255;
-        out2.at<uchar>(vc-1,uc)=255;
-        out2.at<uchar>(vc+1,uc)=255;out2.at<uchar>(vc,uc-1)=255;
-        out2.at<uchar>(vc,uc+1)=255;                                                                                 //PLOT point in channel 2
+        out2.at<uchar>(vc,uc)=255; out2.at<uchar>(vc-1,uc)=255;out2.at<uchar>(vc+1,uc)=255;out2.at<uchar>(vc,uc-1)=255;out2.at<uchar>(vc,uc+1)=255;                                                                                 //PLOT point in channel 2
         cv::line(out2, cv::Point(-(v+1.3*height-cl)/m_cone,v+1.3*height),cv::Point(u,v),100); //PLOT line in channel 2
         cv::line(out2, cv::Point((-v+1.3*height+cl)/m_cone,v+1.3*height),cv::Point(u,v),100); //PLOT line in channel 2
     }
     else {
-        out2R.at<uchar>(vc,uc)=255;
-        out2R.at<uchar>(vc-1,uc)=255;
-        out2R.at<uchar>(vc+1,uc)=255;
-        out2R.at<uchar>(vc,uc-1)=255;
-        out2R.at<uchar>(vc,uc+1)=255;
+        out2R.at<uchar>(vc,uc)=255; out2R.at<uchar>(vc-1,uc)=255;out2R.at<uchar>(vc+1,uc)=255;out2R.at<uchar>(vc,uc-1)=255;out2R.at<uchar>(vc,uc+1)=255;
         cv::line(out2R, cv::Point(-(v+1.3*height-cl)/m_cone,v+1.3*height),cv::Point(u,v),100);
         cv::line(out2R, cv::Point((-v+1.3*height+cl)/m_cone,v+1.3*height),cv::Point(u,v),100);
     }
@@ -543,7 +467,6 @@ void detect () {
                                     if(std::abs( EDl.apex_v-EDlR.apex_v)<accepted_v_diff){
                                         cv::line(out2, cv::Point(EDl.apex_u,EDl.apex_v),cv::Point(EDlR.apex_u,EDlR.apex_v),100);
 
-                                        determinePosition(EDl);
                                     }
                                     // else{
                                     // 	std::cout<<"vertical distance of apex estimations: "<< std::abs( EDl.apex_v-EDlR.apex_v)<<" > accepted distance "<< accepted_v_diff <<std::endl;
@@ -865,13 +788,13 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
 
     // Parameter TODO: transfer to configfile
     int hue_low = 0;
-    int hue_high = 20;
-    int sat_low = 25;
+    int hue_high = 10;
+    int sat_low = 90;
     int sat_high = 255;
-    int val_low = 90;
+    int val_low = 30;
     int val_high = 255;
 
-    int opening_size = 3;
+    int opening_size = 5;
 
     /*
     // Region of Interest
@@ -896,9 +819,12 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
     Mat opening_kernel = getStructuringElement(MORPH_ELLIPSE,
                                                Size(opening_size, opening_size),
                                                Point(-1, -1));
-    morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
+morphologyEx(hue_range, hue_range, MORPH_CLOSE, opening_kernel);    
+morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
+
 
     output = hue_range;
+	
 }
 
 
@@ -970,18 +896,15 @@ int median( cv::Mat& channel )
 
 /////////////////////////////////////////////////////////////////////////
 
-    void execute () {
-        try{
-            while (true) {
-                BBOARD->waitForRectImages();
-                rect_images = BBOARD->getRectImages();
+    void execute (cv::Mat& inleft, cv::Mat& inright) {
 
-                left = rect_images.images.image;
-                right = rect_images.images.image_right;
-                state = rect_images.state;
+                left = inleft;
+                right = inright;
 
                 get_binary(left, left_binary);
                 get_binary(right, right_binary);
+
+imshow("Left Binary", left_binary);
 
                 get_edges(left, left_binary, left_edges);
                 get_edges(right, right_binary, right_edges);
@@ -1022,32 +945,49 @@ int median( cv::Mat& channel )
                 out1 =cv::Mat::zeros(img[0].size(),img[0].type());
                 out2 =cv::Mat::zeros(img[0].size(),img[0].type());
                 out0R =cv::Mat::zeros(img[0].size(),img[0].type());
-                out1R =cv::Mat::zeros(img[0].size(),img[0].type());
+                out1R =cv::Mat::zeros(img[0].size(),img[0].type()); 
                 out2R =cv::Mat::zeros(img[0].size(),img[0].type());
 
                 detect();
                 //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
-                //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
-                //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
+                show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
+                show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
                 show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
 
-                //cv::imshow("MAP", outMAP);
+		//wait until key press
+	        cv::waitKey(0);
 
-                frame_counter++;
 
-                boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-                boost::this_thread::interruption_point();
-            }
-        }catch(boost::thread_interrupted&){;}
     }
   };
 
 
-} // namespace DerWeg
 
-namespace {
 
-  // Plugin bei der Factory anmelden
-  static DerWeg::PluginBuilder<DerWeg::KogmoThread, DerWeg::ConeDetection> application_save_stereo_camera_image ("ConeDetection");
 
+int main(int argc, char** argv) {
+	ConeDetection cd;
+	cd.init();
+	
+	for (int i=1; i<argc; i++){
+
+	    std::cout<<"nr. "<<i<<" name " <<argv[i]<<std::endl;
+
+	    //read left image
+	    cv::Mat img0=cv::imread(argv[i],1);
+	    cv::imshow("window0",img0);
+
+	    //create corresponding right image filename with suffix _right
+	    std::string filename = argv[i];
+	    std::string filenameR = filename.substr(0, filename.length()-4);
+	    std::stringstream filenameR_stream;
+	    filenameR_stream<<filenameR<<"_right.png"; //add suffix to filename
+
+	    //read right image
+	    cv::Mat img0R=cv::imread(filenameR_stream.str(),1);
+	    cv::imshow("window0R",img0R);
+
+	    cd.execute(img0, img0R);
+	}
 }
+

@@ -898,8 +898,8 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
 void get_binary_edges(cv::Mat input, cv::Mat& output) {
     std::vector<std::vector<Point2i> > contours;
     cv::findContours(input, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    cv::drawContours(output, contours, -1, Scalar(255, 255, 255));
-    cv::imshow("Binary edges", output); // Only for testing
+    cv::drawContours(input, contours, -1, Scalar(255, 255, 255));
+    output = input;
 }
 
 
@@ -915,7 +915,6 @@ void get_grey_edges(cv::Mat& input, cv::Mat& output) {
     int upper = std::min(255.0, (1.0 + sigma) * med);
 
     cv::Canny(grey, output, lower, upper, 3, true);
-    cv::imshow("Grey edges", output); // Only for testing
 }
 
 
@@ -931,6 +930,7 @@ void get_edges(cv::Mat& input, cv::Mat& binary_input, cv::Mat& output) {
 
     cv::multiply(extra_dilated, grey_edges, grey_edges);
     cv::max(binary_edges, grey_edges, output);
+    cv::imshow("Edges", output); // Only for testing
 }
 
 
@@ -964,7 +964,6 @@ int median( cv::Mat& channel )
 /////////////////////////////////////////////////////////////////////////
 
     void execute () {
-        LOUT("Enter ConeDetection execute()\n");
         try{
             while (true) {
                 BBOARD->waitForRectImages();

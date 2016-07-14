@@ -56,7 +56,8 @@ namespace DerWeg {
     Angle angle_threshold;
 
     int precalculate_curvature_steps;
-    double precalculate_curvature_Ts;
+    double precalculate_curvature_distance;
+    double precalculate_curvature_delta_s;
     double precalculate_curvature_seeding;
 
     double newton_tolerance;
@@ -64,8 +65,10 @@ namespace DerWeg {
     double v_max;
     TrafficLightBehaviour tl_behaviour;
 
+    double last_projection_parameter;
+
   public:
-    TrajectoryGenerator () : seg_lookup(createMap()) {}
+    TrajectoryGenerator () : seg_lookup(createMap()), last_projection_parameter(0) {}
     ~TrajectoryGenerator () {;}
 
     std::map<int, std::map<DrivingCommand, int> > createMap() {
@@ -110,8 +113,9 @@ namespace DerWeg {
         cfg.get("TrajectoryGenerator::qf_N", qf_min_N);
 
         cfg.get("TrajectoryGenerator::precalculate_curvature_steps", precalculate_curvature_steps);
-        cfg.get("TrajectoryGenerator::precalculate_curvature_Ts", precalculate_curvature_Ts);
+        cfg.get("TrajectoryGenerator::precalculate_curvature_distance", precalculate_curvature_distance);
         cfg.get("TrajectoryGenerator::precalculate_curvature_seeding", precalculate_curvature_seeding);
+        precalculate_curvature_delta_s = precalculate_curvature_distance / precalculate_curvature_steps;
 
         double degree_angle;
         cfg.get("TrajectoryGenerator::max_diff_degree", degree_angle);
@@ -370,70 +374,73 @@ namespace DerWeg {
         return seg_lookup[starting_node][next_command];
     }
 
-    void set_reference_trajectory(double desired_velocity) {
+    void set_reference_trajectory(double tl_velocity, double curv_lookahead) {
         ReferenceTrajectory rt;
         rt.path = segments[segment_index].get(curve_index);
         rt.segment_id = segment_index;
-        rt.v_max = desired_velocity;
+        rt.v_max_tl = tl_velocity;
+        rt.curvature_lookahead = curv_lookahead;
         //LOUT("Set curve with behind intersec = " << rt.path.behind_intersec
         //    << " or " << segments[segment_index].get(curve_index).behind_intersec << "\n");
         BBOARD->setReferenceTrajectory(rt);
     }
 
-    void write_curvature(State state) {
-        Vec pos = state.control_position;
-
-        Segment& seg = segments[segment_index];
-        BezierCurve& bc = seg.get(curve_index);
-        double t = bc.project(pos, 0.5, newton_tolerance, newton_max_iter);
-
-        //evaluate bezier curve and derivatives at the projection parameter
-        Vec f = bc(t);
-        Vec df = bc.prime(t);
-
-        Vec diff = pos - f;
-        double distance = diff.length();
-        //If the point is right of df, let the distance have a negative sign
-        if (diff * df.rotate_quarter() < 0) {
-            distance *= -1;
-        }
-        Angle diff_angle = state.orientation - bc.orientation(df);
-
-        SegmentPosition seg_pos;
-        seg_pos.curve_id = curve_index;
-        seg_pos.curve_parameter = t;
-
-        float min_vel = 0.1;
-
-        double delta_s = max(state.velocity_tire, min_vel) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
-
-        vector<double> curvature = seg.precalculate_curvature(seg_pos, delta_s, precalculate_curvature_steps,
-                                                                precalculate_curvature_seeding, qf_min_N);
-
-        // Write calculations to txt file
-        ofstream datafile;
-        datafile.open("curvature.txt");
-
-        stringstream stream;
-
-        stream << precalculate_curvature_Ts << endl
-                 //<< state.velocity << endl
-                 << distance/1000 << endl
-                 << state.orientation.get_rad_pi() << endl
-                 << 0.5 * tan(state.steer.get_rad_pi()) << endl
-                 << (diff_angle + state.orientation).get_rad_pi() << endl;
-        for (int i = 0; i < curvature.size(); i++) {
-            stream << curvature[i] * 1000 << endl;
-        }
-
-        //LOUT(stream.str());
-
-        datafile << stream.str();
-
-        datafile.close();
-    }
+//    void write_curvature(State state) {
+//        Vec pos = state.control_position;
+//
+//        Segment& seg = segments[segment_index];
+//        BezierCurve& bc = seg.get(curve_index);
+//        double t = bc.project(pos, 0.5, newton_tolerance, newton_max_iter);
+//
+//        //evaluate bezier curve and derivatives at the projection parameter
+//        Vec f = bc(t);
+//        Vec df = bc.prime(t);
+//
+//        Vec diff = pos - f;
+//        double distance = diff.length();
+//        //If the point is right of df, let the distance have a negative sign
+//        if (diff * df.rotate_quarter() < 0) {
+//            distance *= -1;
+//        }
+//        Angle diff_angle = state.orientation - bc.orientation(df);
+//
+//        SegmentPosition seg_pos;
+//        seg_pos.curve_id = curve_index;
+//        seg_pos.curve_parameter = t;
+//
+//        float min_vel = 0.1;
+//
+//        double delta_s = max(state.velocity_tire, min_vel) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
+//
+//        vector<double> curvature = seg.precalculate_curvature(seg_pos, delta_s, precalculate_curvature_steps,
+//                                                                precalculate_curvature_seeding, qf_min_N);
+//
+//        // Write calculations to txt file
+//        ofstream datafile;
+//        datafile.open("curvature.txt");
+//
+//        stringstream stream;
+//
+//        stream << precalculate_curvature_Ts << endl
+//                 //<< state.velocity << endl
+//                 << distance/1000 << endl
+//                 << state.orientation.get_rad_pi() << endl
+//                 << 0.5 * tan(state.steer.get_rad_pi()) << endl
+//                 << (diff_angle + state.orientation).get_rad_pi() << endl;
+//        for (int i = 0; i < curvature.size(); i++) {
+//            stream << curvature[i] * 1000 << endl;
+//        }
+//
+//        //LOUT(stream.str());
+//
+//        datafile << stream.str();
+//
+//        datafile.close();
+//    }
 
     void execute() {
+
+        BBOARD->setOnTrack(true);
 
         // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
         boost::this_thread::sleep(boost::posix_time::milliseconds(300));
@@ -444,20 +451,28 @@ namespace DerWeg {
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 
-        set_reference_trajectory(0);
+        set_reference_trajectory(0,0);
 
         try{
             while (true) {
+              if (BBOARD->getOnTrack()) {
                 BBOARD->waitForState();
                 State state = BBOARD->getState();
 
                 if (segments[segment_index].get(curve_index).reached_end(state.control_position)) {
                     if (curve_index < segments[segment_index].size() - 1) {
                         curve_index++;
+                        last_projection_parameter = 0;
                     }
                     else {
                         curve_index = 0;
+                        last_projection_parameter = 0;
                         int end_node = segment_index % 10;
+                        if (end_node == 5) {
+                            // Reached end of parcour
+                            BBOARD->setOnTrack(false);
+                            continue;
+                        }
                         segment_index = get_next_segment(end_node);
 
                         // This takes into account, that the exit is right after the intersection
@@ -490,37 +505,53 @@ namespace DerWeg {
                 }
 
                 // Write precalculated curvature to txt file
-                write_curvature(state);
+                //write_curvature(state);
+
+                //Segment Position
+                Segment& seg = segments[segment_index];
+                BezierCurve& bc = seg.get(curve_index);
+
+                SegmentPosition seg_pos;
+                seg_pos.curve_id = curve_index;
+                seg_pos.segment_id = segment_index;
+                last_projection_parameter = bc.project(state.control_position, last_projection_parameter, newton_tolerance, newton_max_iter);
+                seg_pos.curve_parameter = last_projection_parameter;
+
+                // Precalculated curvature
+                vector<double> curvature = seg.precalculate_curvature(seg_pos, precalculate_curvature_delta_s, precalculate_curvature_steps,
+                                                                        precalculate_curvature_seeding, qf_min_N);
+                // Calculate mean curvature on next meter
+                double mean_curv = accumulate( curvature.begin(), curvature.end(), 0.0) / curvature.size();
+
 
                 // Check for traffic light and set behaviour accordingly
-                int tl_seg;
-                double v;
+                double v_tl;
                   if (segments[segment_index].get(curve_index).behind_intersec) {
-                    v = v_max;
+                    v_tl = v_max;
                   } else {
-                    tl_seg = segment_index;
-                    SegmentPosition seg_pos;
-                    seg_pos.curve_id = curve_index;
-                    seg_pos.segment_id = segment_index;
-                    seg_pos.curve_parameter = segments[segment_index].get(curve_index).project(
-                                                            state.control_position, 0.5, newton_tolerance, newton_max_iter);
+                    int tl_seg = segment_index;
+
                     //LOUT("CTRL: TRAJ_GEN: t = " << seg_pos.curve_parameter << endl);
                     seg_pos.min_distance = 0;
 
                     BBOARD->waitForTrafficLight();
                     TrafficLightData tl_data = BBOARD->getTrafficLight();
                     //LOUT("tl state = " << tl_data.state << std::endl);
-                    v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity_tire,
+                    v_tl = tl_behaviour.calculate_max_velocity(tl_data, state.velocity_tire,
                                                             segments[tl_seg], seg_pos);
                     //LOUT("Set v = " << v << "\n");
-                    if (v < 0) {
+                    if (v_tl < 0) {
                         //LOUT("TrajGen v = " << v <<"\n");
                     }
                   }
-                set_reference_trajectory(v);
+                set_reference_trajectory(v_tl, mean_curv);
 
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
                 boost::this_thread::interruption_point();
+              } else {
+                // Stop module
+                break;
+              }
             }
         }catch(boost::thread_interrupted&){;}
     }

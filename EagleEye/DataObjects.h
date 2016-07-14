@@ -40,7 +40,8 @@ namespace DerWeg {
   struct ReferenceTrajectory {
     BezierCurve path;  ///< reference path, a bezier curve
     int segment_id; ///< ID of the segment the current BezierCurve belongs to
-    double v_max; ///< maximal velocity the car shall drive (e.g. calculated by the traffic light behaviour)
+    double v_max_tl; ///< maximal velocity the car shall drive calculated by the traffic light behaviour
+    double curvature_lookahead; ///< mean of curvature on next metres
 
     bool operator== (const ReferenceTrajectory&) const throw ();
     bool operator!= (const ReferenceTrajectory&) const throw ();

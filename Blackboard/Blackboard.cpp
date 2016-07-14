@@ -265,3 +265,11 @@ void Blackboard::addPylonMeasurement(const PylonMeasurement& pm) {
     condPylonMeasurements.notify_all();
 }
 
+bool Blackboard::getOnTrack() {
+    return on_track;
+}
+
+void Blackboard::setOnTrack(bool is_on_track) {
+    on_track = is_on_track;
+}
+

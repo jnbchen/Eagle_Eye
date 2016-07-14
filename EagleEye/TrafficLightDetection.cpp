@@ -464,6 +464,7 @@ namespace DerWeg {
         BBOARD->waitForReferenceTrajectory();
       try{
         while (true) {
+        if (BBOARD->getOnTrack()){
           LOUT("TL DETECTION EXECUTE LOOP \n");
 
           BBOARD->waitForRectImages();
@@ -649,6 +650,10 @@ namespace DerWeg {
 
           boost::this_thread::sleep(boost::posix_time::milliseconds(200));
           boost::this_thread::interruption_point();
+        } else {
+          // Stop module
+          break;
+        }
         }
       }catch(boost::thread_interrupted&){;}
     }

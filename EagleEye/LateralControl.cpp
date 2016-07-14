@@ -37,7 +37,7 @@ namespace DerWeg {
         double stanley_k0, stanley_k1;
         double axis_distance;
         // Determines whether Stanley controller is used, or matlab QP
-        bool use_stanley;
+        //bool use_stanley;
 
         double v_max;
         double v_min;
@@ -61,7 +61,7 @@ namespace DerWeg {
         cfg.get("LateralControl::stanley_k0", stanley_k0);
         cfg.get("LateralControl::stanley_k1", stanley_k1);
         cfg.get("LateralControl::axis_distance", axis_distance);
-        cfg.get("LateralControl::use_stanley", use_stanley);
+        //cfg.get("LateralControl::use_stanley", use_stanley);
 
         cfg.get("LongitudinalControl::v_max", v_max);
         cfg.get("LongitudinalControl::v_min", v_min);
@@ -71,112 +71,75 @@ namespace DerWeg {
         virtual_min_kappa = a_lateral_max / pow(v_max, 2);
 	}
 
-	double convertToDouble(const std::string& s)
-    {
-        std::istringstream i(s);
-        double x;
-        if (!(i >> x))
-            LOUT("Error String Conversion\n");
-        return x;
-    }
-
-    int convertToInt(const std::string& s)
-    {
-        std::istringstream i(s);
-        int x;
-        if (!(i >> x))
-            LOUT("Error String Conversion\n");
-        return x;
-    }
-
-    // reads first line of "steering" file and assumes it to be a double
-	double read_steering(){
-        std::string line;
-        ifstream file ("steering.txt");
-        double delta = 0;
-        if (file.is_open()) {
-            getline (file,line);
-
-            LOUT(line << "\n");
-
-            //LOUT(stod(string(" -100.01   \t\n")) << "\n");
-
-            //delta = stod(line);
-
-            //line = std::string("25.01");
-            //LOUT(convertToDouble(line) << "\n");
-
-            delta = convertToDouble(line);
-            LOUT(delta << "\n");
-
-            file.close();
-        }
-        return delta;
-	}
 
     void execute () {
       try{
         while (true) {
+          if (BBOARD->getOnTrack()){
 
-          //If path changed set estimate for newton algo to zero, else use the previous result
-          if (bc != BBOARD->getReferenceTrajectory().path) {
+            //If path changed set estimate for newton algo to zero, else use the previous result
+            if (bc != BBOARD->getReferenceTrajectory().path) {
               //LOUT("New curve detected, by LateralControl" << endl);
             bc = BBOARD->getReferenceTrajectory().path;
             lastProjectionParameter = 0;
-          }
+            }
 
-          //get current steering angle and velocity
-          Velocity dv = BBOARD->getDesiredVelocity();
+            //get current steering angle and velocity
+            Velocity dv = BBOARD->getDesiredVelocity();
 
-          ControllerInput input = calculate_curve_data(BBOARD->getState());
-          // Lateral control ======================================================
-          double delta;
-          if (use_stanley) {
-              //Stanley-Controller here
-              double u = precontrol_k*input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
-              delta = atan(axis_distance * u);
-          } else {
-              // Assume delta to be a rad angle
-              delta = read_steering();
-          }
-          // set steering angle
-          dv.steer = Angle::rad_angle(delta);
+            // Lateral control ======================================================
+            ControllerInput input = calculate_curve_data(BBOARD->getState());
+            //Stanley-Controller here
+            double u = precontrol_k * input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
+            double delta = atan(axis_distance * u);
 
-          if (abs(dv.steer.get_deg_180()) > 28) {
-            LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
-          }
+            // set steering angle
+            dv.steer = Angle::rad_angle(delta);
 
-          //Velocity control
-          double max_velocity;
-          if (!manual_velocity) {
+            if (abs(dv.steer.get_deg_180()) > 28) {
+                LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
+            }
+
+            //Velocity control
+            double max_velocity;
+            if (!manual_velocity) {
               // calculate maximal velocity from curvature
-              double kappa = max(virtual_min_kappa, abs(input.curvature * 1000));
+              double kappa = max(virtual_min_kappa, abs(BBOARD->getReferenceTrajectory().curvature_lookahead * 1000));
               // multiply with 1000, because the curvature has units 1/mm
 
               // get maximal velocity for the current curvature to not exceed given lateral acceleration
               max_velocity = max(v_min, pow(a_lateral_max / kappa, 0.5));
-          } else {
+            } else {
               // if velocity is set manually, use last velocity from blackboard
               max_velocity = dv.velocity;
               //LOUT("max_v = "<<max_velocity<<std::endl);
+            }
+
+            double v_max_tl =  BBOARD->getReferenceTrajectory().v_max_tl;
+            // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
+            dv.velocity = max(0.0, min(max_velocity, v_max_tl));
+
+            //LOUT("max_velocity = " << max_velocity << endl);
+            //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
+            //LOUT("dv.velocity = " << dv.velocity<<endl);
+            if (v_max_tl < 0) {
+                LOUT("v_max_tl = " << v_max_tl << endl);
+            }
+
+            // set steering angle and velocity
+            BBOARD->setDesiredVelocity(dv);
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            boost::this_thread::interruption_point();
+          } else {
+            // OBSTACLE PATH PLANNING HERE
+
+            // Stop vehicle
+            Velocity dv;
+            dv.velocity = 0;
+            dv.steer = Angle::rad_angle(0);
+            BBOARD->setDesiredVelocity(dv);
           }
-
-          double v_max_ref =  BBOARD->getReferenceTrajectory().v_max;
-          // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-          dv.velocity = max(0.0, min(max_velocity, v_max_ref));
-
-          //LOUT("max_velocity = " << max_velocity << endl);
-          //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
-          //LOUT("dv.velocity = " << dv.velocity<<endl);
-          if (v_max_ref < 0) {
-            LOUT("v_max_ref = " << v_max_ref << endl);
-          }
-
-          // set steering angle and velocity
-          BBOARD->setDesiredVelocity(dv);
-
-          boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-          boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}
     }

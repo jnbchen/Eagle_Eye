@@ -60,6 +60,7 @@ class Blackboard {
     RectImages rect_images;                    ///< object containing rectified left/right images and the associated state and reference trajectory
     PylonMap pylon_map;
     PylonMeasurements pylon_measurements;
+    bool on_track;
 
     std::stringstream message;                 ///< messages from the applications, to be sent to GUI
     std::stringstream plotcmd;                 ///< plot commands from the applications, to be sent to GUI
@@ -132,6 +133,9 @@ class Blackboard {
     void setPylonMeasurements(const PylonMeasurements &);
     bool waitForPylonMeasurements(boost::posix_time::time_duration timeout = boost::posix_time::microseconds(1000000));
     void addPylonMeasurement(const PylonMeasurement&);
+
+    bool getOnTrack();
+    void setOnTrack(bool is_on_track);
 
   };
 

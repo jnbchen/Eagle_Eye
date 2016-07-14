@@ -205,7 +205,7 @@ void ::DerWeg::frameDoneCallback (tPvFrame* frame) {
         } else {
           // an error occurred during capturing. Ignore image
           that->buffers[j]->bufferRead=true;
-          EOUT("Dropped frame: "<<frame->Status << "\n");
+          //EOUT("Dropped frame: "<<frame->Status << "\n");
         }
         if (that->didStart) {
           that->putFrameOnBus();

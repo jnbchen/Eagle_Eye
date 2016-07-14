@@ -62,6 +62,8 @@ private:
     // How far before the traffic light should the car stop?
     // This distance is still in MILLIMETRES
     double stopping_distance;
+    // Distance from control point to traffic light from which on the car shall not brake but drive on
+    double distance_of_no_return;
 
     // Calculates the projection of the traffic light onto the current segment
     // and the point where the car has to stop on the reference curve.

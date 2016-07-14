@@ -403,7 +403,9 @@ namespace DerWeg {
         seg_pos.curve_id = curve_index;
         seg_pos.curve_parameter = t;
 
-        double delta_s = max(state.velocity,0.1) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
+        float min_vel = 0.1;
+
+        double delta_s = max(state.velocity_tire, min_vel) * precalculate_curvature_Ts * 1000; // times 1000 to convert to millimetres
 
         vector<double> curvature = seg.precalculate_curvature(seg_pos, delta_s, precalculate_curvature_steps,
                                                                 precalculate_curvature_seeding, qf_min_N);
@@ -446,6 +448,7 @@ namespace DerWeg {
 
         try{
             while (true) {
+                BBOARD->waitForState();
                 State state = BBOARD->getState();
 
                 if (segments[segment_index].get(curve_index).reached_end(state.control_position)) {
@@ -504,10 +507,12 @@ namespace DerWeg {
                     //LOUT("CTRL: TRAJ_GEN: t = " << seg_pos.curve_parameter << endl);
                     seg_pos.min_distance = 0;
 
+                    BBOARD->waitForTrafficLight();
                     TrafficLightData tl_data = BBOARD->getTrafficLight();
                     //LOUT("tl state = " << tl_data.state << std::endl);
                     v = tl_behaviour.calculate_max_velocity(tl_data, state.velocity_tire,
                                                             segments[tl_seg], seg_pos);
+                    //LOUT("Set v = " << v << "\n");
                     if (v < 0) {
                         //LOUT("TrajGen v = " << v <<"\n");
                     }

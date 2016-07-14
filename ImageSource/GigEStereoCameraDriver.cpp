@@ -294,9 +294,9 @@ void ::DerWeg::stereoFrameDoneCallback (tPvFrame* frame) {
           bufferstate+='W';
         }
       }
-    }    
+    }
     bufferstate+=' ';
-  }  
+  }
   EOUT("\nBufferstate=" << bufferstate << " ");*/
 
   bool buffer_found=false;
@@ -332,7 +332,7 @@ void ::DerWeg::stereoFrameDoneCallback (tPvFrame* frame) {
           that->numImages++;
         } else {
           // an error occurred during capturing. Ignore image
-          EOUT ("Dropped frame: " << that->buffers[j]->frameLeft.Status << ", " << that->buffers[j]->frameRight.Status << std::endl);
+          //EOUT ("Dropped frame: " << that->buffers[j]->frameLeft.Status << ", " << that->buffers[j]->frameRight.Status << std::endl);
           that->buffers[j]->capturetime.update();  // um zu verhindern, dass der selbe Puffer gleich wieder verwendet wird
           that->buffers[j]->bufferRead=true;
           that->buffers[j]->leftComplete = false;

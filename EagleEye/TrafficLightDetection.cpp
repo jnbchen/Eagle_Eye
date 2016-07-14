@@ -36,7 +36,7 @@ namespace DerWeg {
 
     class EllipseDetector {
         private:
-            std::string windowname;
+            //std::string windowname;
 
             Rect roi;
 
@@ -67,14 +67,15 @@ namespace DerWeg {
 
         public:
             void init(const ConfigReader& cfg) {
-                windowname = "Preprocessing";
-                cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+                //windowname = "Preprocessing";
+                //cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
 
-                int roi_border_top, roi_border_bot, roi_width;
+                int roi_border_top, roi_border_bot, roi_border_left, roi_border_right;
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
                 cfg.get("TrafficLightDetection::roi_border_bot", roi_border_bot);
-                cfg.get("TrafficLightDetection::roi_width", roi_width);
-                roi = Rect(0, roi_border_top, roi_width, roi_border_bot);
+                cfg.get("TrafficLightDetection::roi_border_left", roi_border_left);
+                cfg.get("TrafficLightDetection::roi_border_right", roi_border_right);
+                roi = Rect(roi_border_left, roi_border_top, roi_border_right - roi_border_left, roi_border_bot - roi_border_top);
 
                 cfg.get("TrafficLightDetection::median_filter_size", median_filter_size);
 
@@ -125,6 +126,7 @@ namespace DerWeg {
 
                     if (fitting_error < max_fitting_error) {
                         // shift back the cutoff from region of interest
+                        box.center.x += roi.x;
                         box.center.y += roi.y;
 
                         ellipse_vec.push_back(DetectedEllipse(box, c));
@@ -145,6 +147,8 @@ namespace DerWeg {
 
 
             EllipseVector detect(const cv::Mat& im_input) {
+                LOUT("im_input.cols = " << im_input.cols << "\n");
+                LOUT("im_input.rows = " << im_input.rows << "\n");
 
                 // Region of Interest
                 Mat im_roi = im_input(roi);
@@ -186,9 +190,9 @@ namespace DerWeg {
                 erode(green_hue_range, green_hue_range, element_erode);
 
 
-
                 // Show filter results
-                cv::imshow (windowname.c_str(), red_hue_range);
+                cv::imshow ("Red_thresholding", red_hue_range);
+                cv::imshow ("green_thresholding", green_hue_range);
 
 
 
@@ -215,7 +219,8 @@ namespace DerWeg {
                     double bbox_hw_ratio = (double)bbox.height / bbox.width;
 
                     if (max(el_width, el_height) / min(el_width, el_height) > max_size_ratio) {
-                        LOUT("Ellipse kicked because of maxsize/minsize ratio\n");
+                        LOUT("Ellipse kicked because of maxsize/minsize ratio" << endl
+                             << "ratio = " << max(el_width, el_height) / min(el_width, el_height) << endl);
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
@@ -281,7 +286,7 @@ namespace DerWeg {
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
         stereoGPU("/home/common/calib.txt"),  // needed to get the projection matrix
-        windowname("Processed Image"), windowname2("Right Image") {
+        windowname("Processed_Image"), windowname2("Right Image") {
             cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
             cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
@@ -389,16 +394,18 @@ namespace DerWeg {
         int arg_min = -1; // shape difference minimizing index in right_ellipses
         for (size_t i=0; i<potentialMatchesIndices.size(); i++) {
             DetectedEllipse& r_ellipse = right_ellipses[potentialMatchesIndices[i]];
-            double shape_diff = pow( (ellipse.box.center.y - r_ellipse.box.center.y), 2)
-                            + pow( (ellipse.box.boundingRect().height - r_ellipse.box.boundingRect().height), 2)
-                            + pow( (ellipse.box.boundingRect().width - r_ellipse.box.boundingRect().width), 2);
+            double scaling_factor = ellipse.box.boundingRect().height;
+            double shape_diff = pow( (ellipse.box.center.y - r_ellipse.box.center.y) / scaling_factor, 2)
+                            + pow( (ellipse.box.boundingRect().height - r_ellipse.box.boundingRect().height) / scaling_factor, 2)
+                            + pow( (ellipse.box.boundingRect().width - r_ellipse.box.boundingRect().width) / scaling_factor, 2);
+            shape_diff *= 1000; // better readability
             if (shape_diff < min_shape_difference || arg_min < 0) {
                 arg_min = potentialMatchesIndices[i];
                 min_shape_difference = shape_diff;
             }
         }
 
-        LOUT("Shape difference "<< min_shape_difference << "\n");
+        LOUT("Shape difference " << min_shape_difference << "\n");
 
         if (arg_min >= 0 && min_shape_difference < max_shape_diff) {
             float u = ellipse.box.center.x;
@@ -552,8 +559,8 @@ namespace DerWeg {
 
             //TODO: Diese Bedingung verbessern, Kovarianzmatrix nutzen!
             // Als parameter umschreiben
-            if( ( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 500 )
-               || ellipse_pos.x < 0 || ellipse_pos.y < 0 || ellipse_pos.x > 12000 || ellipse_pos.y > 6000 ) {
+            if( ( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 200 )
+               || ellipse_pos.x < 0 || ellipse_pos.y < 0 || ellipse_pos.x > 9500 || ellipse_pos.y > 3000 ) {
                 ellipses_left.erase(ellipses_left.begin() + i);
                LOUT("Ellipse kicked out because of wrong position\n");
                continue;
@@ -640,7 +647,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(200));
           boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

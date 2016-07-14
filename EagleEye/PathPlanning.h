@@ -27,6 +27,8 @@ private:
 
     // Big number to penalize collisions with
     double collision_penalty;
+    // penalty per steering degree
+    double steering_penalty;
 
     double axis_distance;
     // radius of the circles covering the car
@@ -55,7 +57,8 @@ public:
 private:
     double treeSearch(const State state, const int depth, Velocity& minimizing) ;
 
-    vector<Velocity> getVelocities(const State state, const int depth) const;
+    // changes in velocity
+    vector<double> getVelocities(const int depth) const;
 
     double simulatePath(State& state, const int depth) ;
 

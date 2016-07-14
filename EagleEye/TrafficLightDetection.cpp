@@ -636,7 +636,6 @@ namespace DerWeg {
           //LOUT("Write tl_data to blackboard, state = " << tl_data.state <<std::endl);
           BBOARD->setTrafficLight(tl_data);
 
-
           // Plot measured position as red dot in AnicarViewer
           std::stringstream pos;
           pos << "thick red dot "
@@ -648,7 +647,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
           boost::this_thread::interruption_point();
         } else {
           // Stop module

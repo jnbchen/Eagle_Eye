@@ -8,6 +8,7 @@ using namespace DerWeg;
 PathPlanning::PathPlanning(const ConfigReader& cfg){
     cfg.get("PathPlanning::time_step", dt);
     cfg.get("PathPlanning::collision_penalty", collision_penalty);
+    cfg.get("PathPlanning::steering_penalty", steering_penalty);
     cfg.get("PathPlanning::max_depth", max_depth);
     cfg.get("LateralControl::axis_distance", axis_distance);
     cfg.get("PathPlanning::car_circle_radius", car_circle_radius);
@@ -66,36 +67,41 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
     simulated_states[depth].push_back(pair< Vec, Angle>(state.sg_position, state.orientation) );
 
     //LOUT("Start tree search on level " << depth << std::endl);
-    vector<Velocity> velocities = getVelocities(state, depth);
+    vector<double> diff_angles = getVelocities(depth);
+    double delta = state.steer.get_deg_180();
+
+    // minimal distance to obstacles
     vector<double> values;
 
-    for (unsigned int i=0; i<velocities.size(); i++) {
-        //TODO:
-        // Hier erst lenkwinkel ausrechnen um Änderungen zu bestrafen!
-
+    for (unsigned int i=0; i<diff_angles.size(); i++) {
+        double new_delta = delta + diff_angles[i];
+        if (abs(new_delta) >= 30) {
+            // Dont simulate steering > 30 degree
+            values.push_back(- 2 * collision_penalty);
+            continue;
+        }
         // This copy of state will be modified within Path simulation to get the end state
         State state_copy = state;
-        state_copy.velocity = velocities[i].velocity;
-        state_copy.steer = velocities[i].steer;
+        state_copy.steer = Angle::deg_angle(new_delta);
+
         double distance = simulatePath(state_copy, depth);
         if (distance > 0 && depth < max_depth) {
-            values.push_back(distance + treeSearch(state_copy, depth + 1, velocities[i]));
+            values.push_back(distance - abs(new_delta) * steering_penalty + treeSearch(state_copy, depth + 1, maximizing));
         } else if (distance > 0) {
-            values.push_back(distance);
+            values.push_back(distance - abs(new_delta) * steering_penalty);
         } else {
             values.push_back(distance - collision_penalty); // large negative value in collision case
         }
     }
+
     int arg_max = std::distance(values.begin(), std::max_element(values.begin(), values.end()));
     if (depth == 0) {
-        maximizing = velocities[arg_max];
+        maximizing.steer = Angle::deg_angle(delta + diff_angles[arg_max]);
     }
     return values[arg_max];
 }
 
-vector<Velocity> PathPlanning::getVelocities(const State state, const int depth) const {
-    vector<Velocity> result;
-    double delta = state.steer.get_deg_180();
+vector<double> PathPlanning::getVelocities(const int depth) const {
     vector<double> diff_delta;
     for (int i = 0; i <= 2; i++) {
         diff_delta.push_back(5 * i);
@@ -107,16 +113,7 @@ vector<Velocity> PathPlanning::getVelocities(const State state, const int depth)
         diff_delta.push_back(2.5);
         diff_delta.push_back(-2.5);
     }
-    for (int i=0; i<diff_delta.size(); i++) {
-        double new_delta = delta + diff_delta[i];
-        if (abs(new_delta) < 30) {
-            Velocity v;
-            v.velocity = state.velocity;
-            v.steer = Angle::deg_angle(new_delta);
-            result.push_back(v);
-        }
-    }
-    return result;
+    return diff_delta;
 }
 
 double PathPlanning::simulatePath(State& state, const int depth)  {

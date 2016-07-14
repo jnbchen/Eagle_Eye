@@ -6,6 +6,7 @@
 #include "BezierCurve.h"
 #include "Segment.h"
 #include "TrafficLightBehaviour.h"
+#include "ConvexPolygon.h"
 
 #include <iostream>
 #include <fstream>

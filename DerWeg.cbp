@@ -55,6 +55,7 @@
 		<Unit filename="EagleEye/DataObjects.cpp" />
 		<Unit filename="EagleEye/DataObjects.h" />
 		<Unit filename="EagleEye/ImageProcessingFunctions.h" />
+		<Unit filename="EagleEye/IndicatorControll.h" />
 		<Unit filename="EagleEye/LateralControl.cpp" />
 		<Unit filename="EagleEye/PathPlanning.cpp" />
 		<Unit filename="EagleEye/PathPlanning.h" />

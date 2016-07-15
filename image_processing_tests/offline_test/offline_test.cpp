@@ -39,11 +39,11 @@ using namespace std;
         std::string windowname_l;
         std::string windowname_r;
         Mat left, right;
-        Mat left_binary, right_binary;
+        Mat left_peak_binary, right_peak_binary;
         Mat left_edges, right_edges;
 
         cv::Mat img[3], imgR[3];                       //arrays with H,S,V(maybe normalized V) channels of left and right stereo image
-        cv::Mat out0, out1, out2, out0R,out1R,out2R, outMAP;   //output channels
+        cv::Mat out0, out1, out2, out0R,out1R,out2R, outMAP, outEdges;   //output channels
 
         //current values, overwritten each loop
         int height;                                     // height of region of interest for edge search
@@ -348,7 +348,7 @@ void detect () {
     for (int i=v_search_beg; i<v_search_end;i++) {
 
         //set pointers to i-th row
-        const uchar* current = left_binary.ptr<uchar>(i); //pointer to i-th row of binary image
+        const uchar* current = left_peak_binary.ptr<uchar>(i); //pointer to i-th row of binary image
         /*
         currentH=img[0].ptr<uchar>(i); //pointer to i-th row of H-channel
         currentS=img[1].ptr<uchar>(i); //pointer to i-th row of S-channel
@@ -406,7 +406,7 @@ void detect () {
                 else{
                     end=j;
                 }
-
+		
                 //PLOT all orange Pixels in ROI in Channel 1
                 *output1=100;
             }
@@ -421,7 +421,7 @@ void detect () {
 
                     //::::::::::::: either suitable width of detected cone => VALID CONE DETECTED:::::::::::::::
                     if (end-beg >= width_min && end - beg <= width_max && beg != u_search_beg &&
-                        countNonZero(left_binary(roi)) >= 0.8 * roi.width * roi.height) {
+                        countNonZero(left_peak_binary(roi)) >= 0.8 * roi.width * roi.height) {
 
                         //plot line from cone begin to cone end
                         for (int z=beg; z<=end; z++) {
@@ -536,18 +536,21 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
     //declare pointers
     const uchar* Edge;
     uchar* EdgeOut;
+    uchar* EdgeOut2;
 
 
     //----------iterate through rows------------------------------------------
-    for (int iE=row; iE<std::min(img[0].rows, row+height);iE++) {
+    for (int iE=row + 10; iE<std::min(img[0].rows, row+(int)(height*0.8));iE++) {
 
         if(cam=='L'){
             Edge = left_edges.ptr<uchar>(iE); //pointer to i-th row
             EdgeOut=out0.ptr<uchar>(iE);
+            EdgeOut2=outEdges.ptr<uchar>(iE);
         }
         else{
             Edge = right_edges.ptr<uchar>(iE); //pointer to i-th row
             EdgeOut=out0R.ptr<uchar>(iE);   //define channel where to plot ROI and detected pixels is channel 0
+	    EdgeOut2=outEdges.ptr<uchar>(iE);
         }
 
         //ROI center: column number dependent on row number ( line starting in col (col=left or right cone top side vertex)).
@@ -557,6 +560,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
         int jE0 = std::max(1, jEdge - ROI_half_width);
         //move pointer from first column in the current row to ROI begin
         EdgeOut+=jE0;
+        EdgeOut2+=jE0;
 
         //--------------iterate through columns------------------------------------------
         for (int jE = jE0; jE < std::min(jEdge + ROI_half_width, img[0].cols - 20); jE++) { //consider filter mask width in what to choose as minimum column number
@@ -573,13 +577,21 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
                 EdgeData_res.c_list.push_back(iE+left_right*m_cone*jE); //y-offset of line with m_cone going through point u=jE, v=iE; add to list (only needed if median should be calculated)
 
                 *EdgeOut=255; //PLOT detected edge pixels
+		*EdgeOut2=255;
             }
+
+            if (Edge[jE] == 0) {
+*EdgeOut2=100;
+}
+
+
             // :::::::::::: or no edge point ::::::::::::::::::::::
             // nothing to do
 
 
             // move pointer to next column
             EdgeOut++;
+            EdgeOut2++;
         }
 
     }
@@ -621,7 +633,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
     int v_cur=i-2;
 
     while (done==0 && v_cur-i<tol_height) {
-        const uchar* current=right_binary.ptr<uchar>(v_cur); //pointer to i-th row of H-channel
+        const uchar* current=right_peak_binary.ptr<uchar>(v_cur); //pointer to i-th row of H-channel
         /*
         currentH=imgR[0].ptr<uchar>(v_cur); //pointer to i-th row of H-channel
         currentS=imgR[1].ptr<uchar>(v_cur); //pointer to i-th row of S-channel
@@ -784,27 +796,17 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
 
 /////////////////////////////////////////////////////////////////////////
 
-void get_binary(cv::Mat& input, cv::Mat& output) {
+void get_peak_binary(cv::Mat& input, cv::Mat& output) {
 
     // Parameter TODO: transfer to configfile
     int hue_low = 0;
-    int hue_high = 10;
-    int sat_low = 90;
+    int hue_high = 20;
+    int sat_low = 50;
     int sat_high = 255;
-    int val_low = 30;
+    int val_low = 80;
     int val_high = 255;
 
-    int opening_size = 5;
-
-    /*
-    // Region of Interest
-    int roi_x0 = 0;
-    int roi_y0 = 0;
-    int roi_width = input.cols;
-    int roi_height = input.rows;
-    cv::Rect roi(roi_x0, roi_y0, roi_width, roi_height);
-    cv::Mat im_roi = input(roi);
-    */
+    int opening_size = 3;
 
     // HSV
     cv::Mat im_hsv;
@@ -819,20 +821,49 @@ void get_binary(cv::Mat& input, cv::Mat& output) {
     Mat opening_kernel = getStructuringElement(MORPH_ELLIPSE,
                                                Size(opening_size, opening_size),
                                                Point(-1, -1));
-morphologyEx(hue_range, hue_range, MORPH_CLOSE, opening_kernel);    
-morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
-
+    morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
 
     output = hue_range;
-	
+}
+
+
+void get_edge_binary(cv::Mat& input, cv::Mat& output) {
+
+    // Parameter TODO: transfer to configfile
+    int hue_low = 0;
+    int hue_high = 13;
+    int sat_low = 70;
+    int sat_high = 255;
+    int val_low = 30;
+    int val_high = 255;
+
+    int opening_size = 3;
+
+    // HSV
+    cv::Mat im_hsv;
+    cv::cvtColor(input, im_hsv, COLOR_BGR2HSV);
+
+    // Color thresholding
+    cv::Mat hue_range;
+    cv::inRange(im_hsv, cv::Scalar(hue_low, sat_low, val_low),
+            cv::Scalar(hue_high, sat_high, val_high), hue_range);
+
+    // Opening
+    Mat opening_kernel = getStructuringElement(MORPH_ELLIPSE,
+                                               Size(opening_size, opening_size),
+                                               Point(-1, -1));
+    morphologyEx(hue_range, hue_range, MORPH_OPEN, opening_kernel);
+
+    output = hue_range;
 }
 
 
 void get_binary_edges(cv::Mat input, cv::Mat& output) {
     std::vector<std::vector<Point2i> > contours;
     cv::findContours(input, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-    cv::drawContours(input, contours, -1, Scalar(255, 255, 255));
-    output = input;
+    Mat dst = Mat::zeros(input.rows, input.cols, CV_8UC1);
+    cv::drawContours(dst, contours, -1, Scalar(255));
+    output = dst;
 }
 
 
@@ -851,19 +882,21 @@ void get_grey_edges(cv::Mat& input, cv::Mat& output) {
 }
 
 
-void get_edges(cv::Mat& input, cv::Mat& binary_input, cv::Mat& output) {
+void get_edges(cv::Mat& input, cv::Mat& output) {
+    Mat binary;
+    get_edge_binary(input, binary);
+
     cv::Mat binary_edges, grey_edges;
-    get_binary_edges(binary_input, binary_edges);
+    get_binary_edges(binary, binary_edges);
     get_grey_edges(input, grey_edges);
 
     // Extra dilated binary
     Mat extra_dilated;
     Mat dilate_kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
-    cv::morphologyEx(binary_input, extra_dilated, MORPH_DILATE, dilate_kernel);
+    cv::morphologyEx(binary, extra_dilated, MORPH_DILATE, dilate_kernel);
 
     cv::multiply(extra_dilated, grey_edges, grey_edges);
     cv::max(binary_edges, grey_edges, output);
-    cv::imshow("Edges", output); // Only for testing
 }
 
 
@@ -901,13 +934,16 @@ int median( cv::Mat& channel )
                 left = inleft;
                 right = inright;
 
-                get_binary(left, left_binary);
-                get_binary(right, right_binary);
+                get_peak_binary(left, left_peak_binary);
+                get_peak_binary(right, right_peak_binary);
 
-imshow("Left Binary", left_binary);
+imshow("Left Peak Binary", left_peak_binary);
 
-                get_edges(left, left_binary, left_edges);
-                get_edges(right, right_binary, right_edges);
+                get_edges(left, left_edges);
+                get_edges(right, right_edges);
+
+threshold(left_edges, left_edges, 0, 255, THRESH_BINARY);
+cv::imshow("Left Edges", left_edges); // Only for testing
 
                 /*
                 //initialize output channels (needed to define size equal to img size)
@@ -947,12 +983,15 @@ imshow("Left Binary", left_binary);
                 out0R =cv::Mat::zeros(img[0].size(),img[0].type());
                 out1R =cv::Mat::zeros(img[0].size(),img[0].type()); 
                 out2R =cv::Mat::zeros(img[0].size(),img[0].type());
+		outEdges=cv::Mat::zeros(img[0].size(),img[0].type());
 
                 detect();
                 //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
                 show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
                 show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
+
+		cv::imshow("window_outEdges",outEdges);
 
 		//wait until key press
 	        cv::waitKey(0);

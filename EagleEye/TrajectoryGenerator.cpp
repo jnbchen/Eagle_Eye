@@ -446,9 +446,9 @@ namespace DerWeg {
         // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
         boost::this_thread::sleep(boost::posix_time::milliseconds(300));
         BBOARD->waitForState();
-        SegmentPosition pos = find_start_position(BBOARD->getState());
-        segment_index = pos.segment_id;
-        curve_index = pos.curve_id;
+        //SegmentPosition pos = find_start_position(BBOARD->getState());
+        segment_index = 41;//pos.segment_id;
+        curve_index = 0;//pos.curve_id;
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 

@@ -22,3 +22,5 @@ Ui_*.h
 DerWeg.layout
 
 .metadata/*
+
+/data/*

@@ -129,7 +129,7 @@ namespace DerWeg {
             // set steering angle and velocity
             BBOARD->setDesiredVelocity(dv);
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             boost::this_thread::interruption_point();
           } else {
             // OBSTACLE PATH PLANNING HERE

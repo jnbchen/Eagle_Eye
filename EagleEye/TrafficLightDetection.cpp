@@ -405,9 +405,8 @@ namespace DerWeg {
             }
         }
 
-        LOUT("Shape difference " << min_shape_difference << "\n");
-
         if (arg_min >= 0 && min_shape_difference < max_shape_diff) {
+            LOUT("Shape difference " << min_shape_difference << "\n");
             float u = ellipse.box.center.x;
             double disparity = u - right_ellipses[arg_min].box.center.x;
             right_ellipses.erase(right_ellipses.begin() + arg_min);

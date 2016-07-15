@@ -441,10 +441,21 @@ namespace DerWeg {
             final_state = none;
             return -1;
         } else if (count_red_ellipses == 0) {
+        // if the light is too bright, red and yellow can be detected even they are off. I sugguest, count_green_ellipses == 1 because green has better performance in brightly light.
             final_state = green;
         } else {
             final_state = red;
         }
+        /*if (count_green_ellipses == 1 ){
+        //count_green >1 ?
+            final_state = green;
+        } else if (count_red_ellipses == 0){
+            final_state = none;
+            return -1;
+        } else{
+            final_state = red;
+        }
+        */
 
         for (unsigned int i=0; i<ellipses.size(); i++) {
             if (ellipses[i].color == final_state) {

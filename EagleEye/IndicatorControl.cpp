@@ -2,6 +2,8 @@
 #include "../Elementary/PluginFactory.h"
 #include "../Blackboard/Blackboard.h"
 
+#include "ConvexPolygon.h"
+
 using namespace std;
 
 namespace DerWeg {
@@ -33,6 +35,7 @@ namespace DerWeg {
         }
       }catch(boost::thread_interrupted&){;}
     }
+  };
 
 } // namespace DerWeg
 

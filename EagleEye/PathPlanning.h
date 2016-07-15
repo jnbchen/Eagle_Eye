@@ -22,6 +22,9 @@ private:
     // All seen obstacles modeled as circles
     vector<Circle> obstacles;
 
+    // Only obstacles within this distance and is front of car are considered
+    double relevant_distance;
+
     // How long a is Velocity applied in seconds for path segment simulation
     double dt;
 
@@ -29,10 +32,14 @@ private:
     double collision_penalty;
     // penalty per steering degree
     double steering_penalty;
+    // penalty per change in steering degree angle
+    double steering_diff_penalty;
 
     double axis_distance;
     // radius of the circles covering the car
     double car_circle_radius;
+    // up to this value, distance to obstacles is rewarded, after it, it doesn't matter
+    double passing_distance;
 
     // Object containing all states already simulated, so they dont have to be simulated again
     // First index for the depth
@@ -55,6 +62,8 @@ public:
     Velocity findPath(vector<Circle> obst);
 
 private:
+    vector<Circle>& filterObstacles(vector<Circle>& obstacles, const State& s);
+
     double treeSearch(const State state, const int depth, Velocity& minimizing) ;
 
     // changes in velocity

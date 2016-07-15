@@ -6,12 +6,15 @@
 using namespace DerWeg;
 
 PathPlanning::PathPlanning(const ConfigReader& cfg){
+    cfg.get("PathPlanning::relevant_distance", relevant_distance);
     cfg.get("PathPlanning::time_step", dt);
+    cfg.get("PathPlanning::max_depth", max_depth);
     cfg.get("PathPlanning::collision_penalty", collision_penalty);
     cfg.get("PathPlanning::steering_penalty", steering_penalty);
-    cfg.get("PathPlanning::max_depth", max_depth);
+    cfg.get("PathPlanning::steering_diff_penalty", steering_diff_penalty);
     cfg.get("LateralControl::axis_distance", axis_distance);
     cfg.get("PathPlanning::car_circle_radius", car_circle_radius);
+    cfg.get("PathPlanning::passing_distance", passing_distance);
     cfg.get("PathPlanning::cutoff_distance", cutoff_distance);
     cfg.get("PathPlanning::cutoff_angle", cutoff_angle);
     cfg.get("PathPlanning::min_sim_velocity", min_sim_velocity);
@@ -24,7 +27,9 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
         simulated_states.push_back(vector< pair< Vec, Angle> >()); // add empty vectors
     }
 
-    obstacles = obst;
+    State s = BBOARD->getState();
+    obstacles = filterObstacles(obst, s);
+
     for (unsigned int i=0; i<obstacles.size(); i++) {
         // Plot obstacles in AnicarViewer
         std::stringstream pos;
@@ -36,7 +41,6 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     LOUT("Start Path Planning \n");
 
     Velocity maximizing_velocity;
-    State s = BBOARD->getState();
     // Ausprobieren ob man dadurch Verbesserungen erzielen kann:
     //Velocity desired = BBOARD->getDesiredVelocity();
     //s.velocity = desired.velocity;
@@ -50,10 +54,21 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     return maximizing_velocity;
 }
 
+
+vector<Circle>& PathPlanning::filterObstacles(vector<Circle>& obst, const State& state) {
+    for (int i=obst.size() - 1; i>=0; i--) {
+        if ( (obst[i].center - state.sg_position).length() > relevant_distance
+            || (state.sg_position - state.rear_position) * (obst[i].center - state.rear_position) < 0) {
+            obst.erase(obst.begin() + i);
+        }
+    }
+    return obst;
+}
+
 double PathPlanning::treeSearch(const State state, const int depth, Velocity& maximizing)  {
     if (depth > 1) {
         // If a similar state has already been simulated, dont do it again!
-        for (int i=0; i < simulated_states[depth].size();  i++) {
+        for (unsigned int i=0; i < simulated_states[depth].size();  i++) {
             const Vec& pos = simulated_states[depth][i].first;
             const Angle& angle = simulated_states[depth][i].second;
             if (depth > 1 && (pos - state.sg_position).length() < cutoff_distance && abs( (angle - state.orientation).get_deg_180() ) < cutoff_angle ) {
@@ -84,13 +99,17 @@ double PathPlanning::treeSearch(const State state, const int depth, Velocity& ma
         State state_copy = state;
         state_copy.steer = Angle::deg_angle(new_delta);
 
+        double steer_penalty = abs(new_delta) * steering_penalty + steering_diff_penalty * abs(diff_angles[i]);
+
         double distance = simulatePath(state_copy, depth);
+        double rewarded_distance = min(distance, passing_distance);
+
         if (distance > 0 && depth < max_depth) {
-            values.push_back(distance - abs(new_delta) * steering_penalty + treeSearch(state_copy, depth + 1, maximizing));
+            values.push_back(rewarded_distance - steer_penalty + treeSearch(state_copy, depth + 1, maximizing));
         } else if (distance > 0) {
-            values.push_back(distance - abs(new_delta) * steering_penalty);
+            values.push_back(rewarded_distance - steer_penalty);
         } else {
-            values.push_back(distance - collision_penalty); // large negative value in collision case
+            values.push_back(rewarded_distance - collision_penalty); // large negative value in collision case
         }
     }
 

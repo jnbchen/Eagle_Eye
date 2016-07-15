@@ -17,15 +17,15 @@ using namespace std;
 namespace DerWeg {
 
   /** PathPlanningVirtualCone */
-  class PathPlanningVirtualCone : public KogmoThread {
+  class PathPlanningVirtualCones : public KogmoThread {
 
     private:
         PathPlanning planner;
         Vec intersection;
 
     public:
-        PathPlanningVirtualCone () {;}
-        ~PathPlanningVirtualCone () {;}
+        PathPlanningVirtualCones () {;}
+        ~PathPlanningVirtualCones () {;}
 
 
 	void init(const ConfigReader& cfg) {
@@ -102,7 +102,7 @@ namespace DerWeg {
 namespace {
 
   // Plugin bei der Factory anmelden
-  static DerWeg::PluginBuilder<DerWeg::KogmoThread, DerWeg::PathPlanningVirtualCone> application ("PathPlanningVirtualCone");
+  static DerWeg::PluginBuilder<DerWeg::KogmoThread, DerWeg::PathPlanningVirtualCones> application ("PathPlanningVirtualCones");
 
 }
 

@@ -16,7 +16,7 @@ public:
   void right_indicator_on();
   void indicator_off();
   void hazard_lights_on();
-  void brake_light_on();
+  void brake_light_on(int percentage);
   void brake_light_off();
 };
 

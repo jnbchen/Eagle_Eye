@@ -551,6 +551,7 @@ namespace DerWeg {
                 boost::this_thread::interruption_point();
               } else {
                 // Stop module
+                // Obstacle path planning located in lateral control
                 break;
               }
             }

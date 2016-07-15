@@ -52,14 +52,14 @@ void Lights::SerialWrite(char Msg){
   }
 
   void Lights::indicator_off(){
-	  SerialWrite('O');
+	  SerialWrite('o');
   }
 
   void Lights::hazard_lights_on(){
 	  SerialWrite('H');
   }
 
-  void Lights::brake_light_on(){
+  void Lights::brake_light_on(int percentage){
 	  SerialWrite('B');
   }
 

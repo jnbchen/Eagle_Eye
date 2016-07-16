@@ -42,8 +42,8 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
 
     Velocity maximizing_velocity;
     // Ausprobieren ob man dadurch Verbesserungen erzielen kann:
-    //Velocity desired = BBOARD->getDesiredVelocity();
-    //s.velocity = desired.velocity;
+    Velocity desired = BBOARD->getDesiredVelocity();
+    s.velocity = desired.velocity;
     //s.steer = desired.steer;
     treeSearch(s, 0, maximizing_velocity);
 

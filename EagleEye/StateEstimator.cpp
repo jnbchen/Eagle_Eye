@@ -41,10 +41,10 @@ namespace DerWeg {
             state.velocity_tire = odometry.velocity;
             state.steer = odometry.steer;
 
-            if (!(0 <= state.velocity <= 2)) {
+            if (!(0 <= state.velocity && state.velocity <= 2)) {
                 EOUT("Error in Velocity Estimation: state.velocity = " << state.velocity << " \n");
             }
-            if (!(0 <= state.velocity_tire <= 2)) {
+            if (!(0 <= state.velocity_tire && state.velocity_tire <= 2)) {
                 EOUT("Error in Velocity Estimation: state.velocity_tire = " << state.velocity_tire << " \n");
             }
 

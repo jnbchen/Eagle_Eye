@@ -61,6 +61,13 @@ namespace DerWeg {
         //logging file
         std::ostream *outputStream;
 
+        /*//MONITORING/////////////////////////////////////////////////////
+        std::string svg_end="</g> </svg>";
+        std::fstream outfile1;
+        std::stringstream sstream1;
+        long pos;
+        //END/////////////////////////////////////////////////*/
+
     public:
         LateralControl () : lastProjectionParameter(0) {
             this->outputStream = new std::ofstream("lateral_control_log.txt");
@@ -90,12 +97,32 @@ namespace DerWeg {
         cfg.get("BrakeLights::VEL_THRESH", VEL_THRESH);
         cfg.get("BrakeLights::v_diff_max", v_diff_max);
         cfg.get("BrakeLights::min_percentage", min_percentage);
+
+
+        /*//MONITORING//////////////////////////////////////////////////////
+        std::ifstream infile1;
+        infile1.open("../preprocessing/monitoring_prototype.svg");
+        std::string svg_beg;
+        while (std::getline(infile1,svg_beg,)){;}
+        infile1.close();
+
+        outfile1.open("../preprocessing/monitoring.svg", std::ios::in | std::ios::out | std::ios::trunc);
+        outfile1<<svg_beg<<"\n";
+        pos = outfile1.tellp();
+        outfile1<<svg_end;
+        outfile1.close();
+        //END/////////////////////////////////////////////////////////////////*/
 	}
 
 
     void execute () {
       try{
           Timestamp tinit;
+
+          /*//MONITORING///////////////////////////////////////////////////////
+          unsigned int c=0;
+          //END/////////////////////////////////////////////////////////////////*/
+
         while (true) {
           if (BBOARD->getOnTrack()){
 
@@ -209,6 +236,23 @@ namespace DerWeg {
             BBOARD->setDesiredVelocity(dv);
 
           }
+
+
+          /*//MONITORING//////////////////////////////////////////////////////////////
+          sstream1<<"use x=\""<<getVehiclePose().position.x<<"\" y=\" "<<getVehiclePose().position.y<<" \" xlink:href=\"#car\" transform=\"rotate("<< BBOARD->getVehiclePose().orientation.get_deg()  <<","<< BBOARD->getVehiclePose().position.x <<"," << BBOARD->getVehiclePose().position.y "\")\"/> \n";
+          sstream1<<"<polyline points=\""<<getVehiclePose().position.x<<","<<getVehiclePose().position.y<<" "<<getProjPos().x<<","<<getProjPos().y<<" \" style=\"fill:none;stroke:black;stroke-opacity:0.1;stroke-width:10\" marker-start=\"url(#M_dot)\" marker-end=\"url(#M_dot)\"/> \n";
+
+          if (c%1==0) {
+            outfile1.open("../preprocessing/monitoring.svg",std::ios::in | std::ios::out);
+            outfile1.seekp(pos,std::ios::beg);
+            outfile1<<sstream1.rdbuf();
+            pos=outfile1.tellp();
+            outfile1<<"<use x=\"0\" y=\"0\" xlink:href=\"seg.svg#segment"<<ID<<"\"/> \n";
+            outfile1<<svg_end;
+            outfile1.close();
+          }
+          c++;
+          //END///////////////////////////////////////////////////////////////////////*/
 
 
 

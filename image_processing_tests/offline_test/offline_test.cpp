@@ -126,7 +126,7 @@ using namespace std;
 
 
         u0=332; //???
-        v0=250;//260;          // image row of camera horizont (estimated from images)
+        v0=240;//260;          // image row of camera horizont (estimated from images)
         b=0.1427;//0.1473;     // distance between cameras
         h=0.0529;//0.056;      // distance cone top side to camera horizont
         w=0.032;//0.033;      // width of cone top side
@@ -274,18 +274,46 @@ double pixel2meter(int pixel, double ref_world, int ref_image) {
 void estimateApexMono(const char camera, EdgeData& EDl,EdgeData& EDr){
 
     // either least squares / arithmetic mean value
+
     double cl=(EDl.sum_v+m_cone*EDl.sum_u)/EDl.n;
     double cr=(EDr.sum_v-m_cone*EDr.sum_u)/EDr.n;
+cout << "  n mean l = " << EDl.n << "    n mean r = " << EDr.n << endl;
+
+double suml = 0;
+for(std::vector<double>::iterator it = EDl.c_list.begin(); it != EDl.c_list.end(); ++it)
+	suml += *it;
+
+double sumr = 0;
+for(std::vector<double>::iterator it = EDr.c_list.begin(); it != EDr.c_list.end(); ++it)
+	sumr += *it;
+
+cout << "n median l = " << EDl.c_list.size() << "  n median r = " << EDr.c_list.size() << endl;
+
 
     // or median
-    // int nl=EDl.c_list.size()/2;
-    // std::nth_element(EDl.c_list.begin(), EDl.c_list.begin()+nl, EDl.c_list.end());
-    // int nr=EDr.c_list.size()/2;
-    // std::nth_element(EDr.c_list.begin(), EDr.c_list.begin()+nr, EDr.c_list.end());
+/*
+    int nl=EDl.c_list.size()/2;
+    std::nth_element(EDl.c_list.begin(), EDl.c_list.begin()+nl, EDl.c_list.end());
+    int nr=EDr.c_list.size()/2;
+    std::nth_element(EDr.c_list.begin(), EDr.c_list.begin()+nr, EDr.c_list.end());
+    double ml = EDl.c_list[nl];
+    double mr = EDr.c_list[nr];
 
+cout << "EDl.c_list.size() = " << EDl.c_list.size() << "  EDr.c_list.size() = " << EDr.c_list.size() << endl;
+cout << "nl = " << nl << "  nr = " << nr << endl;
+cout << "ml = " << ml << "  mr = " << mr << endl;
+cout << "cl = " << cl << "  cr = " << cr << endl;
+*/
     u=(cl-cr)/(2*m_cone);
     v=(cl+cr)/2;
-    int uc= std::min(std::max(0,(int)u),img[0].cols); // pixel number
+
+    //double um=(ml-mr)/(2*m_cone);
+    //double vm=(ml+mr)/2;
+
+//cout << "u = " << u << "  v = " << v << endl;
+//cout << "um = " << um << "  vm = " << vm << endl;
+
+    int uc = std::min(std::max(0,(int)u),img[0].cols); // pixel number
     int vc=std::min(std::max(0,(int)v),img[0].rows);
 
     EDl.apex_u=u;
@@ -578,7 +606,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
                 EdgeData_res.sum_v+=iE;
                 EdgeData_res.n++;
 
-                EdgeData_res.c_list.push_back(iE+left_right*m_cone*jE); //y-offset of line with m_cone going through point u=jE, v=iE; add to list (only needed if median should be calculated)
+                EdgeData_res.c_list.push_back(iE-left_right*m_cone*jE); //y-offset of line with m_cone going through point u=jE, v=iE; add to list (only needed if median should be calculated)
 
                 *EdgeOut=255; //PLOT detected edge pixels
 		*EdgeOut2=255;
@@ -804,7 +832,7 @@ void get_peak_binary(cv::Mat& input, cv::Mat& output) {
 
     // Parameter TODO: transfer to configfile
     int hue_low = 0;
-    int hue_high = 20;
+    int hue_high = 9;
     int sat_low = 50;
     int sat_high = 255;
     int val_low = 80;
@@ -881,6 +909,9 @@ void get_grey_edges(cv::Mat& input, cv::Mat& output) {
     int med = median(grey);
     int lower = std::max(0.0, (1.0 - sigma) * med);
     int upper = std::min(255.0, (1.0 + sigma) * med);
+cout << "Med is " << med << endl;
+cout << "Low is " << lower << endl;
+cout << "Hig is " << upper << endl;
 
     cv::Canny(grey, output, lower, upper, 3, true);
 }
@@ -942,12 +973,14 @@ int median( cv::Mat& channel )
                 get_peak_binary(right, right_peak_binary);
 
 imshow("Left Peak Binary", left_peak_binary);
+imshow("Right Peak Binary", right_peak_binary);
 
                 get_edges(left, left_edges);
                 get_edges(right, right_edges);
 
 threshold(left_edges, left_edges, 0, 255, THRESH_BINARY);
 cv::imshow("Left Edges", left_edges); // Only for testing
+cv::imshow("Right Edges", right_edges); // Only for testing
 
                 /*
                 //initialize output channels (needed to define size equal to img size)

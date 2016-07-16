@@ -26,7 +26,7 @@ void Lights::SerialWrite(char Msg){
 		outfile1.close();
 	}
 	else {
-		LOUT("ERROR"<<std::endl);
+		//LOUT("Lights: could not open serial port"<<std::endl);
 	}
 
 	//or fprintf
@@ -52,14 +52,14 @@ void Lights::SerialWrite(char Msg){
   }
 
   void Lights::indicator_off(){
-	  SerialWrite('O');
+	  SerialWrite('o');
   }
 
   void Lights::hazard_lights_on(){
 	  SerialWrite('H');
   }
 
-  void Lights::brake_light_on(){
+  void Lights::brake_light_on(int percentage){
 	  SerialWrite('B');
   }
 

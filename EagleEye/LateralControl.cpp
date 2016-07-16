@@ -3,6 +3,7 @@
 #include "../Blackboard/Blackboard.h"
 #include "../Elementary/Angle.h"
 #include "BezierCurve.h"
+#include "Lights.h"
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -19,12 +20,14 @@ namespace DerWeg {
         double curvature;       ///< Curvature of reference curve
 
         ControllerInput(double dist, Angle angle, double curv) : distance(dist), diff_angle(angle), curvature(curv) {;} /// Constructor
+        std::ostream *outputStream;
     };
 
 
 
   /** LateralControl */
   class LateralControl : public KogmoThread {
+
 
     private:
         double lastProjectionParameter;
@@ -49,9 +52,23 @@ namespace DerWeg {
         //if set to one, set velocity manually, if set to zero, car automatically accelerates
         bool manual_velocity;
 
+        double VEL_THRESH;
+        double v_diff_max;
+        int min_percentage;
+
+        Lights brake_lights;
+
+        //logging file
+        std::ostream *outputStream;
+
     public:
-        LateralControl () : lastProjectionParameter(0) {;}
-        ~LateralControl () {;}
+        LateralControl () : lastProjectionParameter(0) {
+            this->outputStream = new std::ofstream("lateral_control_log.txt");
+      }
+        ~LateralControl () {
+            this->outputStream->flush();
+            delete this->outputStream;
+      }
 
 
 	void init(const ConfigReader& cfg) {
@@ -69,6 +86,10 @@ namespace DerWeg {
         cfg.get("LongitudinalControl::manual_velocity", manual_velocity);
 
         virtual_min_kappa = a_lateral_max / pow(v_max, 2);
+
+        cfg.get("BrakeLights::VEL_THRESH", VEL_THRESH);
+        cfg.get("BrakeLights::v_diff_max", v_diff_max);
+        cfg.get("BrakeLights::min_percentage", min_percentage);
 	}
 
 
@@ -79,9 +100,9 @@ namespace DerWeg {
 
             //If path changed set estimate for newton algo to zero, else use the previous result
             if (bc != BBOARD->getReferenceTrajectory().path) {
-              //LOUT("New curve detected, by LateralControl" << endl);
-            bc = BBOARD->getReferenceTrajectory().path;
-            lastProjectionParameter = 0;
+                //LOUT("New curve detected, by LateralControl" << endl);
+                bc = BBOARD->getReferenceTrajectory().path;
+                lastProjectionParameter = 0;
             }
 
             //get current steering angle and velocity
@@ -97,7 +118,7 @@ namespace DerWeg {
             dv.steer = Angle::rad_angle(delta);
 
             if (abs(dv.steer.get_deg_180()) > 28) {
-                LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
+                //LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
             }
 
             //Velocity control
@@ -117,7 +138,26 @@ namespace DerWeg {
 
             double v_max_tl =  BBOARD->getReferenceTrajectory().v_max_tl;
             // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-            dv.velocity = max(0.0, min(max_velocity, v_max_tl));
+            double set_velocity = max(0.0, min(max_velocity, v_max_tl));
+
+            //Brake lights:
+            double diff_velocity = set_velocity - dv.velocity;
+            if (abs(diff_velocity) > VEL_THRESH) {
+                // Only these are relevant velocity changes
+                if (diff_velocity > 0) {
+                    // Case set_velocity > old_velocity
+                    brake_lights.brake_light_off();
+                } else {
+                    // Case set_velocity < old_velocity
+                    const double percentage = - diff_velocity / v_diff_max;
+                    const double scaled_percentage = min_percentage + percentage * (100 - min_percentage);
+                    const int perc = min(floor(scaled_percentage + 0.5), 100.0);
+                    brake_lights.brake_light_on(perc);
+                    //LOUT("Percentage brake lights = " << perc << endl);
+                }
+            }
+
+            dv.velocity = set_velocity;
 
             //LOUT("max_velocity = " << max_velocity << endl);
             //LOUT("Ref-curve: v_max = " << BBOARD->getReferenceTrajectory().v_max << endl);
@@ -129,8 +169,34 @@ namespace DerWeg {
             // set steering angle and velocity
             BBOARD->setDesiredVelocity(dv);
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-            boost::this_thread::interruption_point();
+
+
+
+
+            State s = BBOARD->getState();
+            Vec currentPosition = s.control_position;
+            Angle currentOrientation = s.orientation;
+            double currentVelocity = s.velocity_tire;
+
+            Timestamp currentTimestamp = s.timestamp;
+            long int currentTime = currentTimestamp.get_msec();
+
+            *outputStream << currentTime <<" "
+                        << currentPosition.x <<" "
+                        << currentPosition.y <<" "
+                        << currentOrientation.get_deg()<<" "
+                        << currentVelocity << " "
+                        << s.steer.get_deg_180() << " "
+                        << input.distance <<  " "
+                        << input.diff_angle.get_deg_180()<<" "
+                        << input.curvature << " "
+                        << - stanley_k0 * input.distance <<  " "
+                        << - stanley_k1 * input.diff_angle.get_rad_pi() <<  " "
+                        <<  u  << " "
+                        << delta << " "
+                        << std::endl;
+
+
           } else {
             // OBSTACLE PATH PLANNING HERE
 
@@ -139,7 +205,13 @@ namespace DerWeg {
             dv.velocity = 0;
             dv.steer = Angle::rad_angle(0);
             BBOARD->setDesiredVelocity(dv);
+
           }
+
+
+
+          boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+          boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}
     }

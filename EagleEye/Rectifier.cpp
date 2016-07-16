@@ -29,7 +29,6 @@ namespace DerWeg {
                     while (true) {
 
                         if (!stereoGPU.isRunning()) {
-                            BBOARD->waitForImage();
 
                             ib = BBOARD->getImage();
                             state = BBOARD->getState();

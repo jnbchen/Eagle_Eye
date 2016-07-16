@@ -227,7 +227,7 @@ namespace DerWeg {
 
         lastProjectionParameter = bc.project(pos, lastProjectionParameter,
                                              newton_tolerance, newton_max_iter);
-        //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
+        LOUT("Projected Parameter: " << lastProjectionParameter << endl);
 
         //evaluate bezier curve and derivatives at the projection parameter
         Vec f = bc(lastProjectionParameter);

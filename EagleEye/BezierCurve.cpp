@@ -107,7 +107,7 @@ double BezierCurve::arc_length(const double a, const double b, const int N) {
     //Divide [a,b] into N subintervals of length h
     double h = (b - a)/N;
     if (h < 0) {
-        //LOUT("Error in quadrature: h = " << h << std::endl);
+        LOUT("Error in quadrature: h = " << h << std::endl);
     }
     double length = 0; //sum up length
 

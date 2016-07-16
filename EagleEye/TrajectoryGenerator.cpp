@@ -463,7 +463,7 @@ namespace DerWeg {
         try{
             while (true) {
               if (BBOARD->getOnTrack()) {
-                BBOARD->waitForState();
+                //BBOARD->waitForState();
                 State state = BBOARD->getState();
 
                 if (segments[segment_index].get(curve_index).reached_end(state.control_position)) {
@@ -541,7 +541,7 @@ namespace DerWeg {
                     //LOUT("CTRL: TRAJ_GEN: t = " << seg_pos.curve_parameter << endl);
                     seg_pos.min_distance = 0;
 
-                    BBOARD->waitForTrafficLight();
+                    //BBOARD->waitForTrafficLight();
                     TrafficLightData tl_data = BBOARD->getTrafficLight();
                     //LOUT("tl state = " << tl_data.state << std::endl);
                     v_tl = tl_behaviour.calculate_max_velocity(tl_data, state.velocity_tire,

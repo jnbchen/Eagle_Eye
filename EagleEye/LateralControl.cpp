@@ -20,12 +20,14 @@ namespace DerWeg {
         double curvature;       ///< Curvature of reference curve
 
         ControllerInput(double dist, Angle angle, double curv) : distance(dist), diff_angle(angle), curvature(curv) {;} /// Constructor
+        std::ostream *outputStream;
     };
 
 
 
   /** LateralControl */
   class LateralControl : public KogmoThread {
+
 
     private:
         double lastProjectionParameter;
@@ -56,9 +58,17 @@ namespace DerWeg {
 
         Lights brake_lights;
 
+        //logging file
+        std::ostream *outputStream;
+
     public:
-        LateralControl () : lastProjectionParameter(0) {;}
-        ~LateralControl () {;}
+        LateralControl () : lastProjectionParameter(0) {
+            this->outputStream = new std::ofstream("lateral_control_log.txt");
+      }
+        ~LateralControl () {
+            this->outputStream->flush();
+            delete this->outputStream;
+      }
 
 
 	void init(const ConfigReader& cfg) {
@@ -159,6 +169,34 @@ namespace DerWeg {
             // set steering angle and velocity
             BBOARD->setDesiredVelocity(dv);
 
+
+
+
+
+            State s = BBOARD->getState();
+            Vec currentPosition = s.control_position;
+            Angle currentOrientation = s.orientation;
+            double currentVelocity = s.velocity_tire;
+
+            Timestamp currentTimestamp = s.timestamp;
+            long int currentTime = currentTimestamp.get_msec();
+
+            *outputStream << currentTime <<" "
+                        << currentPosition.x <<" "
+                        << currentPosition.y <<" "
+                        << currentOrientation.get_deg()<<" "
+                        << currentVelocity << " "
+                        << s.steer.get_deg_180() << " "
+                        << input.distance <<  " "
+                        << input.diff_angle.get_deg_180()<<" "
+                        << input.curvature << " "
+                        << - stanley_k0 * input.distance <<  " "
+                        << - stanley_k1 * input.diff_angle.get_rad_pi() <<  " "
+                        <<  u  << " "
+                        << delta << " "
+                        << std::endl;
+
+
           } else {
             // OBSTACLE PATH PLANNING HERE
 
@@ -167,7 +205,11 @@ namespace DerWeg {
             dv.velocity = 0;
             dv.steer = Angle::rad_angle(0);
             BBOARD->setDesiredVelocity(dv);
+
           }
+
+
+
           boost::this_thread::sleep(boost::posix_time::milliseconds(10));
           boost::this_thread::interruption_point();
         }

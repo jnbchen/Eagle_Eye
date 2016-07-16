@@ -38,7 +38,8 @@ namespace DerWeg {
       try{
         unsigned int c=0;
         while (true) {
-            sstream1<<BBOARD->getVehiclePose().position.x << ",\t"<< BBOARD->getVehiclePose().position.y << "\n";
+            State s = BBOARD->getState();
+            sstream1<<s.control_position.x << ",\t"<< s.control_position.y << "\n";
           if (c%5==0) {
             outfile1.open("../data/PositionSVG/Position.svg",std::ios::in | std::ios::out);
             outfile1.seekp(pos,std::ios::beg);

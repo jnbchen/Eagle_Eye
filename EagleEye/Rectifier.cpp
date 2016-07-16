@@ -26,6 +26,7 @@ namespace DerWeg {
 
             void execute () {
                 try{
+                    BBOARD->waitForImage();
                     while (true) {
 
                         if (!stereoGPU.isRunning()) {

@@ -95,6 +95,7 @@ namespace DerWeg {
 
     void execute () {
       try{
+          Timestamp tinit;
         while (true) {
           if (BBOARD->getOnTrack()){
 
@@ -182,6 +183,7 @@ namespace DerWeg {
             long int currentTime = currentTimestamp.get_msec();
 
             *outputStream << currentTime <<" "
+                        << static_cast<double>(tinit.elapsed_msec()) << " "
                         << currentPosition.x <<" "
                         << currentPosition.y <<" "
                         << currentOrientation.get_deg()<<" "
@@ -189,10 +191,10 @@ namespace DerWeg {
                         << s.steer.get_deg_180() << " "
                         << input.distance <<  " "
                         << input.diff_angle.get_deg_180()<<" "
-                        << input.curvature << " "
-                        << - stanley_k0 * input.distance <<  " "
-                        << - stanley_k1 * input.diff_angle.get_rad_pi() <<  " "
-                        <<  u  << " "
+                        << input.curvature*1000 << " "
+                        << - stanley_k0 * input.distance*1000 <<  " "
+                        << - stanley_k1 * input.diff_angle.get_rad_pi()*1000 <<  " "
+                        <<  u*1000  << " "
                         << delta << " "
                         << std::endl;
 

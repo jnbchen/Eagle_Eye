@@ -42,15 +42,15 @@ namespace DerWeg {
             state.steer = odometry.steer;
 
             if (!(0 <= state.velocity && state.velocity <= 2)) {
-                EOUT("Error in Velocity Estimation: state.velocity = " << state.velocity << " \n");
+                //EOUT("Error in Velocity Estimation: state.velocity = " << state.velocity << " \n");
             }
             if (!(0 <= state.velocity_tire && state.velocity_tire <= 2)) {
-                EOUT("Error in Velocity Estimation: state.velocity_tire = " << state.velocity_tire << " \n");
+                //EOUT("Error in Velocity Estimation: state.velocity_tire = " << state.velocity_tire << " \n");
             }
 
             BBOARD->setState(state);
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

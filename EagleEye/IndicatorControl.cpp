@@ -83,6 +83,11 @@ namespace DerWeg {
         }
       }catch(boost::thread_interrupted&){;}
     }
+
+    void deinit () {
+        lights.indicator_off();
+    }
+
   };
 
 } // namespace DerWeg

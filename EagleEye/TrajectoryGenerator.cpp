@@ -446,9 +446,15 @@ namespace DerWeg {
         // Find starting position; has to be done here because while in init(), there will be no state written to the blackboard
         boost::this_thread::sleep(boost::posix_time::milliseconds(300));
         BBOARD->waitForState();
-        //SegmentPosition pos = find_start_position(BBOARD->getState());
-        segment_index = 41;//pos.segment_id;
-        curve_index = 0;//pos.curve_id;
+
+        // Selbstlokalisierung
+        SegmentPosition pos = find_start_position(BBOARD->getState());
+        segment_index = pos.segment_id;
+        curve_index = pos.curve_id;
+
+        // Für Wettbewerb
+        //segment_index = 41;
+        //curve_index = 0;
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 
@@ -546,14 +552,9 @@ namespace DerWeg {
                     }
                   }
                 set_reference_trajectory(v_tl, mean_curv);
-
-                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-                boost::this_thread::interruption_point();
-              } else {
-                // Stop module
-                // Obstacle path planning located in lateral control
-                break;
               }
+              boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+              boost::this_thread::interruption_point();
             }
         }catch(boost::thread_interrupted&){;}
     }

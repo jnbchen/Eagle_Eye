@@ -26,7 +26,7 @@ void Lights::SerialWrite(char Msg){
 		outfile1.close();
 	}
 	else {
-		LOUT("ERROR"<<std::endl);
+		//LOUT("Lights: could not open serial port"<<std::endl);
 	}
 
 	//or fprintf

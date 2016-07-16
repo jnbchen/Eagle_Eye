@@ -126,8 +126,8 @@ double BezierCurve::arc_length(const double a, const double b, const int N) {
         // Simpson rule
         length += h * (left + 4*middle + right) / 6;
     }
-    if(length < -30) {
-        // only if more than 3 cm
+    if(length < -100) {
+        // only if more than 10 cm
         LOUT("Error in quadrature formula, l = "<<length<<std::endl);
     }
     return length;

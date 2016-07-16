@@ -18,6 +18,7 @@ Ui_*.h
 
 /image_processing_tests/im_test
 /image_precessing_tests/*.png
+/image_processing_tests/offline_test/offline_test
 
 DerWeg.layout
 

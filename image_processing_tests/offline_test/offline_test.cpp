@@ -102,7 +102,8 @@ using namespace std;
         int ac_v_diff_const;
 
         //half width of region of interest for edge detection
-        int ROI_half_width;
+	double ROI_half_width_prop_to_width;
+	int ROI_half_width_const;  //(int)(5+0.5*width);
 
 
 
@@ -177,10 +178,11 @@ using namespace std;
         //accepted difference between v-coordinates of apex estimation in left and right image:
         //int accepted_v_diff = ac_v_diff_prop_to_height * height+ ac_v_diff_const;
         ac_v_diff_prop_to_height=0.05;
-        ac_v_diff_const=1;
+        ac_v_diff_const=10;
 
         //half width of region of interest for edge detection
-        ROI_half_width=7;  //(int)(5+0.5*width);
+        ROI_half_width_prop_to_width=0.05;
+	ROI_half_width_const=7;  //(int)(5+0.5*width);
 
     }
 
@@ -538,9 +540,11 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
     uchar* EdgeOut;
     uchar* EdgeOut2;
 
+    int ROI_half_width=ROI_half_width_prop_to_width*width+ROI_half_width_const;  //(int)(5+0.5*width);
+
 
     //----------iterate through rows------------------------------------------
-    for (int iE=row + 10; iE<std::min(img[0].rows, row+(int)(height*0.8));iE++) {
+    for (int iE=row + 5; iE<std::min(img[0].rows, row+(int)(height*0.8));iE++) {
 
         if(cam=='L'){
             Edge = left_edges.ptr<uchar>(iE); //pointer to i-th row
@@ -892,7 +896,7 @@ void get_edges(cv::Mat& input, cv::Mat& output) {
 
     // Extra dilated binary
     Mat extra_dilated;
-    Mat dilate_kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+    Mat dilate_kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
     cv::morphologyEx(binary, extra_dilated, MORPH_DILATE, dilate_kernel);
 
     cv::multiply(extra_dilated, grey_edges, grey_edges);
@@ -966,7 +970,7 @@ cv::imshow("Left Edges", left_edges); // Only for testing
                 test_diff_to_Orange(imgDiff,img);
                 test_diff_to_Orange(imgDiffR,imgR);
 
-                //imgZero=cv::Mat::zeros(img[0].size(),img[0].type());
+                imgZero=cv::Mat::zeros(img[0].size(),img[0].type());
                 //show_res(imgZero,imgDiff,imgDiffR,imgZero, "window_diff");
 
 
@@ -990,6 +994,9 @@ cv::imshow("Left Edges", left_edges); // Only for testing
                 show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
                 show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
+
+                show_res(imgZero,imgDiffR,imgZero,out0R,"window_resultStereoR_diff_2");
+                show_res(imgZero,imgDiff,imgZero,out0,"window_resultStereoL_diff_2");
 
 		cv::imshow("window_outEdges",outEdges);
 

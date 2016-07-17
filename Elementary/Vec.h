@@ -42,6 +42,8 @@ namespace DerWeg {
     const Vec& operator/= (double) throw ();       ///< Division durch Null wird nicht abgefangen, ergibt nan
     /** Skalarprodukt */
     double operator* (const Vec) const throw ();
+    /** Komponentenweise Multiplikation*/
+    Vec componentwise_mult (const Vec) const throw ();
 
     /** Rotation um Winkel arg1, identisch mit Methode rotate (.) */
     Vec operator* (const Angle) const throw ();

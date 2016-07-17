@@ -82,6 +82,7 @@ Vec DerWeg::operator* (double s, Vec v) throw () {
   return res;
 }
 
+
 Vec DerWeg::operator/ (Vec v, double s) throw () {
   Vec res(v);
   res/=s;
@@ -90,6 +91,12 @@ Vec DerWeg::operator/ (Vec v, double s) throw () {
 
 double Vec::operator* (const Vec v) const throw () {
   return x*v.x+y*v.y;
+}
+Vec Vec::componentwise_mult (const Vec v) const throw () {
+  Vec res(v);
+  res.x *= (*this).x;
+  res.y *= (*this).y;
+  return res;
 }
 
 Vec Vec::operator* (const Angle a) const throw () {

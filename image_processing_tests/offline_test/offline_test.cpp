@@ -96,6 +96,8 @@ using namespace std;
         double width_max_prop_to_widthR;
         int width_max_constR;
 
+	int delta_v_right_search; //in which row to begin with search relative to cone top side row in left image
+
         //accepted difference between v-coordinate of apex estimation in left and right image:
         //int accepted_v_diff = ac_v_diff_prop_to_height * height+ ac_v_diff_const;
         double ac_v_diff_prop_to_height;
@@ -172,7 +174,7 @@ using namespace std;
         width_max_prop_to_widthR=1.3;
         width_max_constR=2;
 
-
+ 	delta_v_right_search=5; //-2 //in which row to begin with search relative to cone top side row in
 
 
         //accepted difference between v-coordinates of apex estimation in left and right image:
@@ -662,7 +664,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
     //j0>0
 
     bool done=0;
-    int v_cur=i-2;
+    int v_cur=i+delta_v_right_search;//i-2; //row to begin with search
 
     while (done==0 && v_cur-i<tol_height) {
         const uchar* current=right_peak_binary.ptr<uchar>(v_cur); //pointer to i-th row of H-channel

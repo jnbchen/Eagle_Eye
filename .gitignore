@@ -25,3 +25,4 @@ DerWeg.layout
 .metadata/*
 
 /data/*
+!data/PylonLogs

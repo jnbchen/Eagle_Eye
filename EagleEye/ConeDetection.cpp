@@ -656,7 +656,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
                 EdgeData_res.sum_v+=iE;
                 EdgeData_res.n++;
 
-                EdgeData_res.c_list.push_back(iE+left_right*m_cone*jE); //y-offset of line with m_cone going through point u=jE, v=iE; add to list (only needed if median should be calculated)
+                EdgeData_res.c_list.push_back(iE-left_right*m_cone*jE); //y-offset of line with m_cone going through point u=jE, v=iE; add to list (only needed if median should be calculated)
 
                 *EdgeOut=255; //PLOT detected edge pixels
             }

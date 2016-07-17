@@ -126,7 +126,7 @@ using namespace std;
 
 
         u0=332; //???
-        v0=240;//260;          // image row of camera horizont (estimated from images)
+        v0=250;//260;          // image row of camera horizont (estimated from images)
         b=0.1427;//0.1473;     // distance between cameras
         h=0.0529;//0.056;      // distance cone top side to camera horizont
         w=0.032;//0.033;      // width of cone top side
@@ -136,7 +136,7 @@ using namespace std;
         b=0.1473;     // distance between cameras
         h=0.056;      // distance cone top side to camera horizont
         w=0.033;      // width of cone top side
-        H=0.35;//0.3;        // distance cone top side to ground*/
+        H=0.35;//0.3;      f  // distance cone top side to ground*/
 
         m_cone=5.35;   //slope of cone flanks
 
@@ -296,8 +296,8 @@ cout << "n median l = " << EDl.c_list.size() << "  n median r = " << EDr.c_list.
     std::nth_element(EDl.c_list.begin(), EDl.c_list.begin()+nl, EDl.c_list.end());
     int nr=EDr.c_list.size()/2;
     std::nth_element(EDr.c_list.begin(), EDr.c_list.begin()+nr, EDr.c_list.end());
-    double ml = EDl.c_list[nl];
-    double mr = EDr.c_list[nr];
+    double cl = EDl.c_list[nl];
+    double cr = EDr.c_list[nr];
 
 cout << "EDl.c_list.size() = " << EDl.c_list.size() << "  EDr.c_list.size() = " << EDr.c_list.size() << endl;
 cout << "nl = " << nl << "  nr = " << nr << endl;

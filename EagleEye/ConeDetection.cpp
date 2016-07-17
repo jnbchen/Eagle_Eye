@@ -105,6 +105,8 @@ namespace DerWeg {
         double width_max_prop_to_widthR;
         int width_max_constR;
 
+        int delta_v_right_search; //in which row to begin with search relative to cone top side row in left image
+
         //accepted difference between v-coordinate of apex estimation in left and right image:
         //int accepted_v_diff = ac_v_diff_prop_to_height * height+ ac_v_diff_const;
         double ac_v_diff_prop_to_height;
@@ -182,6 +184,8 @@ namespace DerWeg {
         width_min_constR=0;
         width_max_prop_to_widthR=1.3;
         width_max_constR=2;
+
+        delta_v_right_search=5; //-2 //in which row to begin with search relative to cone top side row in left image
 
 
 
@@ -341,14 +345,18 @@ void determinePosition(const EdgeData & EDl){
 void estimateApexMono(const char camera, EdgeData& EDl,EdgeData& EDr){
 
     // either least squares / arithmetic mean value
+    /*
     double cl=(EDl.sum_v+m_cone*EDl.sum_u)/EDl.n;
     double cr=(EDr.sum_v-m_cone*EDr.sum_u)/EDr.n;
+    */
 
     // or median
-    // int nl=EDl.c_list.size()/2;
-    // std::nth_element(EDl.c_list.begin(), EDl.c_list.begin()+nl, EDl.c_list.end());
-    // int nr=EDr.c_list.size()/2;
-    // std::nth_element(EDr.c_list.begin(), EDr.c_list.begin()+nr, EDr.c_list.end());
+    int nl=EDl.c_list.size()/2;
+    std::nth_element(EDl.c_list.begin(), EDl.c_list.begin()+nl, EDl.c_list.end());
+    double cl = EDl.c_list[nl];
+    int nr=EDr.c_list.size()/2;
+    std::nth_element(EDr.c_list.begin(), EDr.c_list.begin()+nr, EDr.c_list.end());
+    double cr = EDr.c_list[nr];
 
     u=(cl-cr)/(2*m_cone);
     v=(cl+cr)/2;
@@ -609,6 +617,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
     EdgeData_res.sum_u=0;
     EdgeData_res.sum_v=0;
     EdgeData_res.n=0;
+    EdgeData_res.c_list.clear();
 
     //declare pointers
     const uchar* Edge;
@@ -695,7 +704,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
     //j0>0
 
     bool done=0;
-    int v_cur=i-2;
+    int v_cur=i+delta_v_right_search;//i-2; //row to begin with search
 
     while (done==0 && v_cur-i<tol_height) {
         const uchar* current=right_peak_binary.ptr<uchar>(v_cur); //pointer to i-th row of H-channel
@@ -865,10 +874,10 @@ void get_peak_binary(cv::Mat& input, cv::Mat& output) {
 
     // Parameter TODO: transfer to configfile
     int hue_low = 0;
-    int hue_high = 20;
+    int hue_high = 9;
     int sat_low = 50;
     int sat_high = 255;
-    int val_low = 80;
+    int val_low = 70;
     int val_high = 255;
 
     int opening_size = 3;
@@ -1008,12 +1017,12 @@ int median( cv::Mat& channel )
                 get_peak_binary(left, left_peak_binary);
                 get_peak_binary(right, right_peak_binary);
 
-                imshow("Left Peak Binary", left_peak_binary);
+//                imshow("Left Peak Binary", left_peak_binary);
 
                 get_edges(left, left_edges);
                 get_edges(right, right_edges);
 
-                imshow("Left Edges", left_edges); // Only for testing
+//                imshow("Left Edges", left_edges); // Only for testing
 
                 /*
                 //initialize output channels (needed to define size equal to img size)

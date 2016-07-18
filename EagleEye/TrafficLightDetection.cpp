@@ -141,6 +141,9 @@ namespace DerWeg {
             }
 
             double ellipseFittingError(RotatedRect box, const vector<Point>& contour) {
+                if ( min(box.size.width, box.size.height) == 0 ){
+                    return 1000000000;
+                }
                 double err = 0;
                 for (size_t i=0; i < contour.size(); i++) {
                     Point p = contour[i];
@@ -159,7 +162,15 @@ namespace DerWeg {
                 }
 
                 // Region of Interest
-                Mat im_roi = im_input(roi);
+                Mat im_roi;
+                try {
+                    im_roi = im_input(roi);
+                } catch (...) {
+                    EOUT("roi could not be assigned\n");
+                    LOUT("im_input.cols = " << im_input.cols << "\n");
+                    LOUT("im_input.rows = " << im_input.rows << "\n");
+                    im_roi = im_input;
+                }
 
 
                 // Blur and HSV
@@ -213,7 +224,7 @@ namespace DerWeg {
                 cv::imshow ("green_thresholding", green_hue_range);
                 }
 
-                //=====================================================================================================
+//=====================================================================================================
 
         time_t systemzeit;
         systemzeit = time(0);
@@ -248,6 +259,7 @@ namespace DerWeg {
 //          strcpy(rightFileName, "../data/TL_IMAGES/Stereo_");
 //          strcat(rightFileName, timeString.c_str());
 //          cv::imwrite(string(rightFileName) + "_right.png", right);
+
 //======================================================================================================
 
 
@@ -284,14 +296,14 @@ namespace DerWeg {
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
                               bbox_hw_ratio > max_bbox_hw_ratio) {
                         if (printmsgs) {
-                        LOUT("Ellipse kicked because of height/width ratio of bounding box\n");
+                            LOUT("Ellipse kicked because of height/width ratio of bounding box\n");
                         }
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox.height > max_ellipse_size ||
                               bbox.width > max_ellipse_size) {
                         if (printmsgs) {
-                        LOUT("Ellipse kicked because the overall size is too large\n"
+                            LOUT("Ellipse kicked because the overall size is too large\n"
                              <<"bbox height = " << bbox.height << "\n"
                              <<"bbox width = " << bbox.width << "\n");
                         }
@@ -304,7 +316,7 @@ namespace DerWeg {
                 }
 
                 if (printmsgs) {
-                LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
+                    LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
                 }
 
                 return detected_ellipses;
@@ -382,8 +394,10 @@ namespace DerWeg {
 
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
-        v0 = projection_matrix.at<double>(1,2);
-        LOUT("v0 = " << v0 << endl);
+
+        cfg.get("TrafficLightDetection::v_0", v0);
+        //v0 = projection_matrix.at<double>(1,2);
+        //LOUT("v0 = " << v0 << endl);
         focus_length = projection_matrix.at<double>(0,0);
 
         transformer = CoordinateTransform(cfg, projection_matrix);
@@ -548,7 +562,7 @@ namespace DerWeg {
             if (ellipses[i].color == final_state) {
                 double u = ellipses[i].box.center.x;
                 if (printmsgs) {
-                LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
+                    LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
                 }
                 return i;
             }
@@ -600,9 +614,20 @@ namespace DerWeg {
           //==================================================================
           // DETECTION
 
-          EllipseVector ellipses_left = ellipse_detector.detect(left);
-          EllipseVector ellipses_right = ellipse_detector.detect(right);
+          EllipseVector ellipses_left;
+          EllipseVector ellipses_right;
           EllipseVector unmatched_left;
+
+          try {
+            ellipses_left = ellipse_detector.detect(left);
+            ellipses_right = ellipse_detector.detect(right);
+          } catch (...) {
+            EOUT("Exception in detect ellipse\n");
+            LOUT("left.cols = " << left.cols << "\n");
+            LOUT("left.rows = " << left.rows << "\n");
+            LOUT("right.cols = " << right.cols << "\n");
+            LOUT("right.rows = " << right.rows << "\n");
+          }
 
 
           //==================================================================
@@ -616,7 +641,7 @@ namespace DerWeg {
 
             double disparity = matchEllipse(ellipse, ellipses_right);
 
-            if (disparity == 0) {
+            if (disparity <= 0) {
                 ellipses_left.erase(ellipses_left.begin() + i);
                 unmatched_left.push_back(ellipse);
                 continue;

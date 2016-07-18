@@ -356,6 +356,8 @@ namespace DerWeg {
 
     map<int, TrafficLight> traffic_lights;
 
+    double tol;
+
 
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
@@ -382,6 +384,7 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::height_tol", height_tol);
         cfg.get("TrafficLightDetection::light_diameter", light_diameter);
         cfg.get("TrafficLightDetection::matching_tolerance_u_factor", matching_tolerance_u_factor);
+        cfg.get("TrafficLightDetection::last_tol", tol);
 
         cfg.get("TrafficLightDetection::printmsgs", printmsgs);
         cfg.get("TrafficLightDetection::show_images", show_images);
@@ -650,6 +653,15 @@ namespace DerWeg {
             //ellipse center
             float u = ellipse.box.center.x;
             float v = ellipse.box.center.y;
+
+            double expected_disparity_r = base_length*(v0-v)/(red_height-camera_height);
+            double expected_disparity_y = base_length*(v0-v)/(yellow_height-camera_height);
+
+            if (ellipse.color == red && tl_number == 2 &&
+                !(abs(expected_disparity_r - disparity) < tol || abs(expected_disparity_y - disparity) < tol)) {
+                ellipses_left.erase(ellipses_left.begin() + i);
+                LOUT("RED Ellipse kicked out because of unexpected disparity\n");
+            }
 
             // Distance in Millimetres
             double distance = focus_length * base_length / disparity;

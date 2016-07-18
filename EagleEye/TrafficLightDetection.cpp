@@ -36,7 +36,7 @@ namespace DerWeg {
 
     class EllipseDetector {
         private:
-            //std::string windowname;
+            bool printmsgs;
 
             Rect roi;
 
@@ -69,6 +69,7 @@ namespace DerWeg {
             void init(const ConfigReader& cfg) {
                 //windowname = "Preprocessing";
                 //cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+                cfg.get("TrafficLightDetection::printmsgs", printmsgs);
 
                 int roi_border_top, roi_border_bot, roi_border_left, roi_border_right;
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
@@ -271,6 +272,8 @@ namespace DerWeg {
     std::string windowname2;
     Mat left, right, vis_left, vis_right;
 
+    bool printmsgs;
+
     EllipseDetector ellipse_detector;
     CoordinateTransform transformer;
 
@@ -306,6 +309,7 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::green_height", green_height);
         cfg.get("TrafficLightDetection::height_tol", height_tol);
         cfg.get("TrafficLightDetection::light_diameter", light_diameter);
+        cfg.get("TrafficLightDetection::printmsgs", printmsgs);
 
         cfg.get("TrafficLightDetection::base_length", base_length);
 

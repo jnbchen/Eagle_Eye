@@ -64,7 +64,7 @@ namespace DerWeg {
                             BBOARD->addPlotCommand(anicar_viewer.str());
                         }
 
-                        boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+                        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
                         boost::this_thread::interruption_point();
                     }
                 }

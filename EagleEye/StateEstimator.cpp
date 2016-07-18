@@ -50,7 +50,7 @@ namespace DerWeg {
 
             BBOARD->setState(state);
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
             boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

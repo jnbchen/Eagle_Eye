@@ -47,7 +47,9 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     Velocity desired = BBOARD->getDesiredVelocity();
     s.velocity = velocity;
     //s.steer = desired.steer;
+    maximizing_velocity.velocity = velocity;
     treeSearch(s, 0, maximizing_velocity);
+    maximizing_velocity.velocity = velocity;
 
     LOUT("Simulated states: " << counter << "\n");
     for(unsigned int i=0; i< simulated_states.size(); i++){
@@ -58,6 +60,9 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
 
 
 vector<Circle>& PathPlanning::filterObstacles(vector<Circle>& obst, const State& state) {
+    if (obst.size() == 0) {
+        return obst;
+    }
     for (int i=obst.size() - 1; i>=0; i--) {
         if ( (obst[i].center - state.sg_position).length() > relevant_distance
             || (state.sg_position - state.rear_position) * (obst[i].center - state.rear_position) < 0) {

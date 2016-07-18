@@ -18,6 +18,8 @@ PathPlanning::PathPlanning(const ConfigReader& cfg){
     cfg.get("PathPlanning::cutoff_distance", cutoff_distance);
     cfg.get("PathPlanning::cutoff_angle", cutoff_angle);
     cfg.get("PathPlanning::min_sim_velocity", min_sim_velocity);
+    cfg.get("PathPlanning::velocity", velocity);
+
 }
 
 Velocity PathPlanning::findPath(vector<Circle> obst) {
@@ -43,7 +45,7 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     Velocity maximizing_velocity;
     // Ausprobieren ob man dadurch Verbesserungen erzielen kann:
     Velocity desired = BBOARD->getDesiredVelocity();
-    s.velocity = desired.velocity;
+    s.velocity = velocity;
     //s.steer = desired.steer;
     treeSearch(s, 0, maximizing_velocity);
 

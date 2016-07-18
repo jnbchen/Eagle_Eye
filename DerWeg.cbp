@@ -60,6 +60,8 @@
 		<Unit filename="EagleEye/LateralControl.cpp" />
 		<Unit filename="EagleEye/Lights.cpp" />
 		<Unit filename="EagleEye/Lights.h" />
+		<Unit filename="EagleEye/Mapping.cpp" />
+		<Unit filename="EagleEye/Mapping.h" />
 		<Unit filename="EagleEye/PathPlanning.cpp" />
 		<Unit filename="EagleEye/PathPlanning.h" />
 		<Unit filename="EagleEye/PathPlanningTestingModule.cpp" />

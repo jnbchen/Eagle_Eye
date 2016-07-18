@@ -106,6 +106,8 @@ namespace DerWeg {
         int width_max_constR;
 
         int delta_v_right_search; //in which row to begin with search relative to cone top side row in left image
+        int left_black_region_right_image;
+        int right_black_region_right_image;
 
         //accepted difference between v-coordinate of apex estimation in left and right image:
         //int accepted_v_diff = ac_v_diff_prop_to_height * height+ ac_v_diff_const;
@@ -186,6 +188,9 @@ namespace DerWeg {
         width_max_constR=2;
 
         delta_v_right_search=5; //-2 //in which row to begin with search relative to cone top side row in left image
+
+        left_black_region_right_image=17;
+        right_black_region_right_image=634;
 
 
 
@@ -806,7 +811,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
             }
 
             //left
-            if (j_l>j0-j_rel) {
+            if (j_l>j0-j_rel && j0-j_rel>left_black_region_right_image) { //if (j_l>j0-j_rel) {
                 j_l=j0-j_rel;
                 *(output1R+j_l)+=100;  //PLOT
 

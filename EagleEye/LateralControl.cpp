@@ -2,8 +2,11 @@
 #include "../Elementary/PluginFactory.h"
 #include "../Blackboard/Blackboard.h"
 #include "../Elementary/Angle.h"
+
 #include "BezierCurve.h"
+#include "PathPlanning.h"
 #include "Lights.h"
+
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -58,6 +61,8 @@ namespace DerWeg {
 
         Lights brake_lights;
 
+        PathPlanning pylon_planner;
+
         //logging file
         std::ostream *outputStream;
 
@@ -97,6 +102,8 @@ namespace DerWeg {
         cfg.get("BrakeLights::VEL_THRESH", VEL_THRESH);
         cfg.get("BrakeLights::v_diff_max", v_diff_max);
         cfg.get("BrakeLights::min_percentage", min_percentage);
+
+        pylon_planner = PathPlanning(cfg);
 
 
         /*//MONITORING//////////////////////////////////////////////////////
@@ -231,10 +238,12 @@ namespace DerWeg {
 
             // Stop vehicle
             Velocity dv;
-            dv.velocity = 0;
-            dv.steer = Angle::rad_angle(0);
-            BBOARD->setDesiredVelocity(dv);
+            //dv.velocity = 0;
+            //dv.steer = Angle::rad_angle(0);
 
+            dv = pylon_planner.findPath(BBOARD->getPylonMap().circles);
+
+            BBOARD->setDesiredVelocity(dv);
           }
 
 

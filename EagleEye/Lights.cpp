@@ -22,7 +22,7 @@ void Lights::SerialWrite(char Msg){
 		outfile1.close();
 	}
 	else {
-		LOUT("Lights: could not open serial port"<<std::endl);
+		//LOUT("Lights: could not open serial port"<<std::endl);
 	}
 
 

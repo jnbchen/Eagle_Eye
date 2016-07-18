@@ -98,6 +98,7 @@ namespace DerWeg {
         //half width of region where to search corresponnding cone top side in right image
         double tol_prop_to_width;
         int tol_const;
+        int tol_prop_to_row_downwards;
         int tol_height;
 
         //accepted width of cone top side in right image
@@ -107,8 +108,11 @@ namespace DerWeg {
         int width_max_constR;
 
         int delta_v_right_search; //in which row to begin with search relative to cone top side row in left image
+
         int left_black_region_right_image;
         int right_black_region_right_image;
+        int left_black_region_left_image;
+        int right_black_region_left_image;
 
         //accepted difference between v-coordinate of apex estimation in left and right image:
         //int accepted_v_diff = ac_v_diff_prop_to_height * height+ ac_v_diff_const;
@@ -162,8 +166,8 @@ namespace DerWeg {
 
         //minimum number of pixels to accept cone top side / // width minus tolerance
         //width_min= width_min_prop_to_width*width+width_min_const;
-        width_min_prop_to_width=0.7;
-        width_min_const=0;
+        width_min_prop_to_width=0.6; //0.7;
+        width_min_const=1;//0;
 
         //width plus tolerance
         //width_max=width_max_prop_to_width*width+width_max_const;
@@ -180,20 +184,24 @@ namespace DerWeg {
 
 
         //half width of region where to search corresponnding cone top side in right image
-        tol_prop_to_width=2;
-        tol_const=30;
+        tol_prop_to_width=5; //2;
+        tol_const=0; //10;//30;
+        tol_prop_to_row_downwards=3;//0
         tol_height=25;
 
         //accepted width of cone top side in right image
-        width_min_prop_to_widthR=1;
-        width_min_constR=0;
+        width_min_prop_to_widthR=0.6; //1;
+        width_min_constR=1; //0;
         width_max_prop_to_widthR=1.3;
         width_max_constR=2;
 
         delta_v_right_search=5; //-2 //in which row to begin with search relative to cone top side row in left image
 
+
         left_black_region_right_image=17;
         right_black_region_right_image=634;
+        left_black_region_left_image=5;
+        right_black_region_left_image=624;
 
 
 
@@ -736,6 +744,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
         output0R=out0R.ptr<uchar>(v_cur);            //pointer to i-th row of third out-channel
 
         v_cur++;
+        tol+=tol_prop_to_row_downwards;
 
         int beg_r=-3; // -3 means, that the current pixel could be a inner pixel of the cone
         int beg_l=-2;

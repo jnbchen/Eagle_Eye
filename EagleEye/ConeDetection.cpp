@@ -13,6 +13,7 @@
 #include "../Elementary/Angle.h"
 #include "../Elementary/Vec.h"
 #include "ImageProcessingFunctions.h"
+#include "Mapping.h"
 
 
 
@@ -126,6 +127,8 @@ namespace DerWeg {
         double min_x_value, max_x_value;
         double min_y_value, max_y_value;
 
+        Mapping mapping;
+
 
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
@@ -217,6 +220,10 @@ namespace DerWeg {
         cfg.get("ConeDetection::max_x_value", max_x_value);
         cfg.get("ConeDetection::min_y_value", min_y_value);
         cfg.get("ConeDetection::max_y_value", max_y_value);
+
+
+        Mapping mapping(cfg);
+
     }
 
 //======function to show results=========================================================
@@ -324,11 +331,17 @@ void determinePosition(const EdgeData & EDl){
             EOUT("Drop cone measurement: position not within area\n");
         }
         else {
+
+            Vec position(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
+            Vec diff = position - state.sg_position;
+            double viewing_angle = std::atan2(diff.y, diff.x);
+
+            mapping.add_measurement(position, viewing_angle, distance);
+
             PylonMeasurement pm;
-            pm.position = Vec(world_coords.at<double>(0,0), world_coords.at<double>(1,0));
+            pm.position = position;
             pm.distance = distance;
-            Vec diff = pm.position - state.sg_position;
-            pm.view_angle = std::atan2(diff.y, diff.x);
+            pm.view_angle = viewing_angle;
             pm.frame_number = frame_counter;
 
             BBOARD->addPylonMeasurement(pm);
@@ -731,7 +744,7 @@ void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, b
         int j_r=j0;
         int j_l=j0;
 
-        for (int j_rel=0;j_rel<tol;j_rel++) {
+        for (int j_rel=0;j_rel<tol && j0+j_rel>left_black_region_right_image && j0+j_rel<right_black_region_right_image;j_rel++) { //for (int j_rel=0;j_rel<tol;j_rel++) {
             j_r=j0+j_rel;
 
             *(output0R+j_r)+=100;  //PLOT
@@ -1072,9 +1085,12 @@ int median( cv::Mat& channel )
                 //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
                 //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
-                show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
+                //show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
+
 
                 //cv::imshow("MAP", outMAP);
+
+                mapping.write_obstacles();
 
                 frame_counter++;
 

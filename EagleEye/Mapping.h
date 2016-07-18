@@ -56,6 +56,7 @@ private:
     void add_cluster();
 
 public:
+    Mapping(){}
     Mapping(const ConfigReader& cfg);
 
     void add_measurement(Vec measurement, double rad_viewing_angle, double distance);

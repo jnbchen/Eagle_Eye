@@ -222,7 +222,7 @@ namespace DerWeg {
         cfg.get("ConeDetection::max_y_value", max_y_value);
 
 
-        Mapping mapping(cfg);
+        mapping = Mapping(cfg);
 
     }
 
@@ -361,6 +361,7 @@ void determinePosition(const EdgeData & EDl){
 //=========function to  estimate cone apex ================================================
 
 void estimateApexMono(const char camera, EdgeData& EDl,EdgeData& EDr){
+    LOUT("estimateApexMono()\n");
 
     // either least squares / arithmetic mean value
     /*
@@ -420,6 +421,7 @@ void estimateApexStereo(EdgeData& EDl, EdgeData& EDr, EdgeData& EDlR, EdgeData& 
 //=====core function =======================================================================
 
 void detect () {
+    LOUT("detect()\n");
 
     //------local variables---------------------------------------------------------------
     int beg, end;                                 // begin and end of current truncated cone top side
@@ -627,6 +629,7 @@ void detect () {
 //======== function to detect edge in region of interest defined by corner coordinates (row,col) of the cone =====================
 
 void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
+    LOUT("detectEdge()\n");
     //left edge (col=beg) => left_right=-1 <->  right edge (col=end) => left_right=1
 
     int col = EdgeData_res.start; //set column number: start point of edge (=begin or end point of cone top side)
@@ -694,6 +697,7 @@ void detectEdge(int row, int left_right, char cam, EdgeData& EdgeData_res) {
 
 //========== search in right stereo image for corresponding cone
 void searchRightImage(int beg, int end, int i, EdgeData &EDlR, EdgeData& EDrR, bool & valid_right_cone) {
+    LOUT("searchRightImage()\n");
     //search only in current row; begin in beg-disp-tolerance (see visualizeDispExpectation() ), search for orange region with suitable with (see detect() )
     /*
     const uchar* currentH; //pointer to i-th row of H-channel
@@ -1025,6 +1029,7 @@ int median( cv::Mat& channel )
     void execute () {
         try{
             while (true) {
+                LOUT("Start cd loop\n");
                 BBOARD->waitForRectImages();
                 rect_images = BBOARD->getRectImages();
 
@@ -1082,6 +1087,7 @@ int median( cv::Mat& channel )
                 out2R =cv::Mat::zeros(img[0].size(),img[0].type());
 
                 detect();
+                LOUT("detect succes\n");
                 //show_res(imgIsOrangeR,out0R,out1R,out2R,"window_resultRS");
                 //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
@@ -1091,6 +1097,7 @@ int median( cv::Mat& channel )
                 //cv::imshow("MAP", outMAP);
 
                 mapping.write_obstacles();
+                LOUT("mapping write succes()\n");
 
                 frame_counter++;
 

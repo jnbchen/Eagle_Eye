@@ -36,6 +36,8 @@ namespace DerWeg {
     void execute () {
       try{
         LOUT("Modul Indicator\n");
+        lights.indicator_off();
+        boost::this_thread::sleep(boost::posix_time::milliseconds(300));
         while (true) {
             bool indicator_on = false;
 
@@ -81,7 +83,7 @@ namespace DerWeg {
             boost::this_thread::sleep(boost::posix_time::milliseconds(200));
             boost::this_thread::interruption_point();
         }
-      }catch(boost::thread_interrupted&){;}
+      }catch(boost::thread_interrupted&){lights.indicator_off();}
     }
 
     void deinit () {

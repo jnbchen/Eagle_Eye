@@ -144,7 +144,8 @@ namespace DerWeg {
             Velocity dv = BBOARD->getDesiredVelocity();
 
             // Lateral control ======================================================
-            ControllerInput input = calculate_curve_data(BBOARD->getState());
+            State s = BBOARD->getState();
+            ControllerInput input = calculate_curve_data(s);
             //Stanley-Controller here
             double u = precontrol_k * input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
             double delta = atan(axis_distance * u);
@@ -173,7 +174,8 @@ namespace DerWeg {
 
             double v_max_tl =  BBOARD->getReferenceTrajectory().v_max_tl;
             // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-            double set_velocity = max(0.0, min(max_velocity, v_max_tl));
+            double set_velocity = min(max(0.0, min(max_velocity, v_max_tl)), s.velocity_tire + 0.3);
+            //LOUT("set_velocity" << set_velocity<<"\n");
 
             //Brake lights:
             double diff_velocity = set_velocity - dv.velocity;
@@ -208,7 +210,7 @@ namespace DerWeg {
 
 
 
-            State s = BBOARD->getState();
+            //State s = BBOARD->getState();
             Vec currentPosition = s.control_position;
             Angle currentOrientation = s.orientation;
             double currentVelocity = s.velocity_tire;
@@ -282,7 +284,7 @@ namespace DerWeg {
 
         lastProjectionParameter = bc.project(pos, lastProjectionParameter,
                                              newton_tolerance, newton_max_iter);
-        LOUT("Projected Parameter: " << lastProjectionParameter << endl);
+        //LOUT("Projected Parameter: " << lastProjectionParameter << endl);
 
         //evaluate bezier curve and derivatives at the projection parameter
         Vec f = bc(lastProjectionParameter);

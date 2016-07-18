@@ -16,7 +16,7 @@ void Lights::SerialWrite(char Msg){
 
 	//either stream
 	std::fstream outfile1;
-	outfile1.open("/dev/ttyACM4",std::ios::out | std::ios::trunc );
+	outfile1.open("/dev/ttyACM3",std::ios::out | std::ios::trunc );
 	if (outfile1.is_open()){
 		outfile1<<Msg;
 		outfile1.close();

@@ -2,13 +2,13 @@
 #include <iostream>
 
 //stream
-#include <fstream>
+//#include <fstream>
 
-/*
+
 //or fprintf
 #include <stdio.h>
 #include <stdlib.h> 
-*/
+
 
 
 
@@ -18,26 +18,27 @@
 void Lights::SerialWrite(char Msg){
 	  
 	//either stream
-	std::fstream outfile1;
-	outfile1.open("/dev/ttyACM4",std::ios::out | std::ios::trunc );
+	/*std::fstream outfile1;
+	outfile1.open("/dev/ttyACM3",std::ios::out | std::ios::trunc );
 	if (outfile1.is_open()){
 		outfile1<<Msg;
 		outfile1.close();
 	}
 	else {
 		std::cout<<"ERROR"<<std::endl;   //LOUT
-	}
+	}*/
 	
 	//or fprintf
-	/* arduino=fopen("/dev/ttyACM4","w");
+	FILE* arduino;
+	arduino=fopen("/dev/ttyACM3","w");
 	if(arduino!=NULL){
 		fprintf(arduino,"%c", Msg);
     }
 	else {
 		std::cout<<"ERROR"<<std::endl;   //LOUT
 	}
-	fclose(arduino); 
-	*/
+	fclose(arduino);
+	
 
   }
   

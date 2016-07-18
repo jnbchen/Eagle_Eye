@@ -4,8 +4,9 @@
 
 #include<math.h> //round
 
-#include <fstream>
-
+//#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -15,7 +16,7 @@ namespace DerWeg{
 void Lights::SerialWrite(char Msg){
 
 	//either stream
-	std::fstream outfile1;
+	/*std::fstream outfile1;
 	outfile1.open("/dev/ttyACM3",std::ios::out | std::ios::trunc );
 	if (outfile1.is_open()){
 		outfile1<<Msg;
@@ -23,7 +24,16 @@ void Lights::SerialWrite(char Msg){
 	}
 	else {
 		//LOUT("Lights: could not open serial port"<<std::endl);
+	}*/
+    FILE* arduino;
+	arduino=fopen("/dev/ttyACM3","w");
+	if(arduino!=NULL){
+		fprintf(arduino,"%c", Msg);
+    }
+	else {
+		LOUT("Could not open serial port for light control"<<std::endl);   //LOUT
 	}
+	fclose(arduino);
 
 
   }

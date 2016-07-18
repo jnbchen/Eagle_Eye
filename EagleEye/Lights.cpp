@@ -2,14 +2,10 @@
 
 #include "../Elementary/ThreadSafeLogging.h" //LOUT
 
-//stream
+#include<math.h> //round
+
 #include <fstream>
 
-/*
-//or fprintf
-#include <stdio.h>
-#include <stdlib.h>
-*/
 
 
 
@@ -29,16 +25,6 @@ void Lights::SerialWrite(char Msg){
 		//LOUT("Lights: could not open serial port"<<std::endl);
 	}
 
-	//or fprintf
-	/* arduino=fopen("/dev/ttyACM4","w");
-	if(arduino!=NULL){
-		fprintf(arduino,"%c", Msg);
-    }
-	else {
-		LOUT("ERROR"<<std::endl);     //LOUT
-	}
-	fclose(arduino);
-	*/
 
   }
 
@@ -60,7 +46,17 @@ void Lights::SerialWrite(char Msg){
   }
 
   void Lights::brake_light_on(int percentage){
-	  SerialWrite('B');
+      char c;
+      if(percentage>0 && percentage <95){
+        c=round(percentage*0.1)+48; // char '0'=48 ,  '1'=49 , ...
+        SerialWrite(c);
+      }
+      else if(percentage>=95){
+        SerialWrite('0');
+      }
+      else{
+        SerialWrite('b');
+      }
   }
 
   void Lights::brake_light_off(){

@@ -11,7 +11,7 @@ namespace DerWeg {
     double distance_front_axle;
     double distance_rear_axle;
   public:
-    /** constructor takes distance between vehicle reference point and front axle (in mm) 
+    /** constructor takes distance between vehicle reference point and front axle (in mm)
       and distance between vehicle reference point and rear axle (in mm) */
     VehicleKinematics (double f, double r);
     /** explicit Euler step for dead reckoning:
@@ -29,7 +29,7 @@ namespace DerWeg {
       \arg steering_angle1: steering angle at the begining of the time interval, positive angles means turning left
       \arg steering_angle2: steering angle at the end of the time interval, positive angles means turning left
       \arg time_interval: time interval in ms for integration */
-    void heun_step (Vec& position, Angle& heading, double velocity1, double velocity2, Angle steering_angle1, Angle steering_angle2, double time_interval);
+    void heun_step (Vec& position, Angle heading, double velocity1, double velocity2, Angle steering_angle1, Angle steering_angle2, double time_interval);
   };
 
 }

@@ -24,7 +24,7 @@ void VehicleKinematics::euler_step (Vec& position, Angle& heading, double veloci
   }
 }
 
-void VehicleKinematics::heun_step (Vec& position, Angle& heading, double velocity1, double velocity2, Angle steering_angle1, Angle steering_angle2, double time_interval) {
+void VehicleKinematics::heun_step (Vec& position, Angle heading, double velocity1, double velocity2, Angle steering_angle1, Angle steering_angle2, double time_interval) {
   Vec p1=position;
   Vec p2=position;
   Angle h1=heading;

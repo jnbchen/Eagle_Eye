@@ -35,16 +35,16 @@ namespace DerWeg {
       BBOARD->waitForVehiclePose();
       try{
         while (true) {
-            Pose pose;
-
+            Pose pose = BBOARD->getVehiclePose();
             Odometry odo = BBOARD->getOdometry();
 
+            state.orientation = pose.orientation;
             Timestamp now;
 
             if (BBOARD->getOnTrack()) {
-                pose = BBOARD->getVehiclePose();
+
                 state.sg_position = pose.position;
-                state.orientation = pose.orientation;
+
             } else {
 
                 Angle old_heading = heading;

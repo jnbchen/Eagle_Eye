@@ -170,9 +170,9 @@ using namespace std;
 
 
         //half width of region where to search corresponnding cone top side in right image
-        tol_prop_to_width=5;//2;
-        tol_const=0;//10; //30
-	tol_prop_to_row_downwards=3;//0
+        tol_prop_to_width=2;//3;//5;//2;
+        tol_const=25;//0;//10; //30
+	tol_prop_to_row_downwards=1;//2;//0
         tol_height=25;
 
         //accepted width of cone top side in right image

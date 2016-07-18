@@ -1,6 +1,7 @@
 #include "../Elementary/KogmoThread.h"
 #include "../Elementary/PluginFactory.h"
 #include "../Blackboard/Blackboard.h"
+#include "../Vehicle/VehicleKinematics.h"
 #include "../Elementary/Vec.h"
 
 namespace DerWeg {
@@ -10,8 +11,19 @@ namespace DerWeg {
   private:
     //difference between front and rear axis
     double rear_offset;
+
+    State state;
+
+    VehicleKinematics kin;
+    Vec position;
+    Angle heading;
+    double velocity;
+    Angle steering_angle;
+    Timestamp timestamp;
+
+
   public:
-    StateEstimator () {;}
+    StateEstimator () : kin(0, 527) {;}
     ~StateEstimator () {;}
 
     void init(const ConfigReader& cfg) {
@@ -23,23 +35,51 @@ namespace DerWeg {
       BBOARD->waitForVehiclePose();
       try{
         while (true) {
+            Pose pose;
 
-            State state;
-            Pose pose = BBOARD->getVehiclePose();
-            Odometry odometry = BBOARD->getOdometry();
+            Odometry odo = BBOARD->getOdometry();
 
-            state.sg_position = pose.position;
+            Timestamp now;
+
+            if (BBOARD->getOnTrack()) {
+                pose = BBOARD->getVehiclePose();
+                state.sg_position = pose.position;
+                state.orientation = pose.orientation;
+            } else {
+
+                Angle old_heading = heading;
+                double difftime = 1e-3*now.diff_usec(timestamp);
+
+                kin.heun_step(state.sg_position, state.orientation, velocity, odo.velocity, steering_angle, odo.steer, difftime);
+                velocity=odo.velocity;
+                double diffangle = heading.get_rad()-old_heading.get_rad();
+                if (diffangle>=2*M_PI)
+                diffangle-=2*M_PI;
+                else if (diffangle<=-2*M_PI)
+                diffangle+=2*M_PI;
+                steering_angle=odo.steer;
+
+                //pose.position=position;
+                //pose.orientation=heading;
+                pose.velocity=velocity;
+                pose.yawrate=diffangle/difftime*1e3;
+                pose.timestamp=now;
+                pose.stddev = 0;
+            }
+
+            timestamp=now;
+
             //Calculate position of rear axis center
-            state.rear_position = pose.position - rear_offset * Vec(1,0).rotate(pose.orientation);
+            state.rear_position = state.sg_position - rear_offset * Vec(1,0).rotate(state.orientation);
             state.control_position = state.rear_position;
             state.stddev = pose.stddev;
-            state.orientation = pose.orientation;
+
             state.velocity = pose.velocity;
             state.yawrate = pose.yawrate;
             state.timestamp = pose.timestamp;
 
-            state.velocity_tire = odometry.velocity;
-            state.steer = odometry.steer;
+            state.velocity_tire = odo.velocity;
+            state.steer = odo.steer;
 
             if (!(0 <= state.velocity && state.velocity <= 2)) {
                 //EOUT("Error in Velocity Estimation: state.velocity = " << state.velocity << " \n");
@@ -50,7 +90,7 @@ namespace DerWeg {
 
             BBOARD->setState(state);
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
             boost::this_thread::interruption_point();
         }
       }catch(boost::thread_interrupted&){;}

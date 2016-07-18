@@ -35,6 +35,9 @@ namespace DerWeg {
                             state = BBOARD->getState();
                             rt = BBOARD->getReferenceTrajectory();
 
+                            LOUT("State time: " << state.timestamp << "\n");
+                            LOUT("Image time: " << ib.capturetime << "\n");
+
                             stereoGPU.runStereoMatching(ib.image, ib.image_right);
                             stereoGPU.getRectifiedLeftImage(rect_left);
                             stereoGPU.getRectifiedRightImage(rect_right);

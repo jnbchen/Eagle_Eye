@@ -37,6 +37,7 @@ namespace DerWeg {
     class EllipseDetector {
         private:
             bool printmsgs;
+            bool show_images;
 
             Rect roi;
 
@@ -67,9 +68,8 @@ namespace DerWeg {
 
         public:
             void init(const ConfigReader& cfg) {
-                //windowname = "Preprocessing";
-                //cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
                 cfg.get("TrafficLightDetection::printmsgs", printmsgs);
+                cfg.get("TrafficLightDetection::show_images", show_images);
 
                 int roi_border_top, roi_border_bot, roi_border_left, roi_border_right;
                 cfg.get("TrafficLightDetection::roi_border_top", roi_border_top);
@@ -115,8 +115,13 @@ namespace DerWeg {
             void extractEllipsesFromContour(EllipseVector& ellipse_vec, const vector<vector<Point> > & contours, const TrafficLightState c) {
                 for(size_t i = 0; i < contours.size(); i++){
                     int count = contours[i].size();
-                    if( count < min_contour_count || count > max_contour_count)
-                    continue;
+                    if( count < min_contour_count || count > max_contour_count) {
+                        if (printmsgs) {
+                            LOUT("Ellipse kicked out because contour pixels = "<< count<<endl);
+                        }
+                        continue;
+
+                    }
 
                     Mat pointsf;
                     Mat(contours[i]).convertTo(pointsf, CV_32F);
@@ -148,8 +153,10 @@ namespace DerWeg {
 
 
             EllipseVector detect(const cv::Mat& im_input) {
-                LOUT("im_input.cols = " << im_input.cols << "\n");
-                LOUT("im_input.rows = " << im_input.rows << "\n");
+                if (printmsgs) {
+                    LOUT("im_input.cols = " << im_input.cols << "\n");
+                    LOUT("im_input.rows = " << im_input.rows << "\n");
+                }
 
                 // Region of Interest
                 Mat im_roi = im_input(roi);
@@ -189,11 +196,59 @@ namespace DerWeg {
                 dilate(red_hue_range, red_hue_range, element_dilate);
                 // für green nur erode, ansonsten werden die Blätter von Baum vergrößt
                 erode(green_hue_range, green_hue_range, element_erode);
+                dilate(green_hue_range, green_hue_range, element_dilate);
 
 
                 // Show filter results
+                if (printmsgs) {
+                    //LOUT("red_hue_range.cols = " << red_hue_range.cols << "\n");
+                    //LOUT("red_hue_range.rows = " << red_hue_range.rows << "\n");
+                }
+                if (printmsgs) {
+                    //LOUT("green_hue_range.cols = " << green_hue_range.cols << "\n");
+                    //LOUT("green_hue_range.rows = " << green_hue_range.rows << "\n");
+                }
+                if (show_images) {
                 cv::imshow ("Red_thresholding", red_hue_range);
                 cv::imshow ("green_thresholding", green_hue_range);
+                }
+
+                //=====================================================================================================
+
+        time_t systemzeit;
+        systemzeit = time(0);
+        //char *asctime(const struct tm *t);
+        string timeString;
+        //timeString = ctime(&systemzeit);
+        tm * localt = localtime(&systemzeit);
+
+        ostringstream oss;
+        oss << setfill('0') << setw(4) << localt->tm_year + 1900 << '-' << setw(2) <<  localt->tm_mon +1 << '-' << setw(2) << localt->tm_mday << '_'
+            << setw(2) <<  localt->tm_hour << '-' << setw(2) << localt->tm_min << '-' << setw(2) << localt->tm_sec;
+        timeString = oss.str();
+
+
+          char processedFileName[100];
+          strcpy(processedFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(processedFileName, timeString.c_str());
+          cv::imwrite(string(processedFileName) + "_thr_red.png", red_hue_range);
+
+          char rightprocessedFileName[100];
+          strcpy(rightprocessedFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(rightprocessedFileName, timeString.c_str());
+          cv::imwrite(string(rightprocessedFileName) + "_thr_green.png", green_hue_range);
+
+//
+//          char leftFileName[100];
+//          strcpy(leftFileName, "../data/TL_IMAGES/Stereo_");
+//          strcat(leftFileName, timeString.c_str());
+//          cv::imwrite(string(leftFileName) + "_left.png", left);
+//
+//          char rightFileName[100];
+//          strcpy(rightFileName, "../data/TL_IMAGES/Stereo_");
+//          strcat(rightFileName, timeString.c_str());
+//          cv::imwrite(string(rightFileName) + "_right.png", right);
+//======================================================================================================
 
 
 
@@ -220,20 +275,26 @@ namespace DerWeg {
                     double bbox_hw_ratio = (double)bbox.height / bbox.width;
 
                     if (max(el_width, el_height) / min(el_width, el_height) > max_size_ratio) {
-                        LOUT("Ellipse kicked because of maxsize/minsize ratio" << endl
-                             << "ratio = " << max(el_width, el_height) / min(el_width, el_height) << endl);
+                        if (printmsgs) {
+                            LOUT("Ellipse kicked because of maxsize/minsize ratio" << endl
+                                 << "ratio = " << max(el_width, el_height) / min(el_width, el_height) << endl);
+                        }
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox_hw_ratio < min_bbox_hw_ratio ||
                               bbox_hw_ratio > max_bbox_hw_ratio) {
+                        if (printmsgs) {
                         LOUT("Ellipse kicked because of height/width ratio of bounding box\n");
+                        }
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else if (bbox.height > max_ellipse_size ||
                               bbox.width > max_ellipse_size) {
+                        if (printmsgs) {
                         LOUT("Ellipse kicked because the overall size is too large\n"
                              <<"bbox height = " << bbox.height << "\n"
                              <<"bbox width = " << bbox.width << "\n");
+                        }
                         detected_ellipses.erase(detected_ellipses.begin() + i);
                     }
                     else {
@@ -242,9 +303,9 @@ namespace DerWeg {
                     }
                 }
 
-
+                if (printmsgs) {
                 LOUT("Detected ellipses count = " << detected_ellipses.size() << endl);
-
+                }
 
                 return detected_ellipses;
           }
@@ -268,11 +329,10 @@ namespace DerWeg {
     // needed to get the projection matrix
     DerWeg::StereoGPU stereoGPU;
 
-    std::string windowname;
-    std::string windowname2;
     Mat left, right, vis_left, vis_right;
 
     bool printmsgs;
+    bool show_images;
 
     EllipseDetector ellipse_detector;
     CoordinateTransform transformer;
@@ -280,7 +340,7 @@ namespace DerWeg {
     double max_shape_diff;
 
     double red_height, yellow_height, green_height, height_tol, light_diameter;
-    double camera_height, v0, focus_length, base_length;
+    double camera_height, v0, focus_length, base_length, matching_tolerance_u_factor;
 
     map<int, TrafficLight> traffic_lights;
 
@@ -288,10 +348,10 @@ namespace DerWeg {
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
     TrafficLightDetection () :
-        stereoGPU("/home/common/calib.txt"),  // needed to get the projection matrix
-        windowname("Processed_Image"), windowname2("Right Image") {
-            cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
-            cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
+        stereoGPU("/home/common/calib.txt")  // needed to get the projection matrix
+      {
+//            cvNamedWindow (windowname.c_str(), CV_WINDOW_AUTOSIZE);
+//            cvNamedWindow (windowname2.c_str(), CV_WINDOW_AUTOSIZE);
       }
 
     /** Destruktor */
@@ -309,7 +369,10 @@ namespace DerWeg {
         cfg.get("TrafficLightDetection::green_height", green_height);
         cfg.get("TrafficLightDetection::height_tol", height_tol);
         cfg.get("TrafficLightDetection::light_diameter", light_diameter);
+        cfg.get("TrafficLightDetection::matching_tolerance_u_factor", matching_tolerance_u_factor);
+
         cfg.get("TrafficLightDetection::printmsgs", printmsgs);
+        cfg.get("TrafficLightDetection::show_images", show_images);
 
         cfg.get("TrafficLightDetection::base_length", base_length);
 
@@ -320,6 +383,7 @@ namespace DerWeg {
         Mat projection_matrix;
         stereoGPU.getProjectionMatrix(projection_matrix);
         v0 = projection_matrix.at<double>(1,2);
+        LOUT("v0 = " << v0 << endl);
         focus_length = projection_matrix.at<double>(0,0);
 
         transformer = CoordinateTransform(cfg, projection_matrix);
@@ -353,21 +417,35 @@ namespace DerWeg {
 
         double approx_distance = (expected_height - camera_height) * focus_length / (v0 - v);
         double approx_disparity = focus_length * base_length / approx_distance;
-        double tolerance = std::pow(focus_length * light_diameter/2 / approx_distance, 2);
+        double tolerance = focus_length * light_diameter / approx_distance;
 
         if (approx_distance < 0 ) {
             return;
         }
-
+        if (printmsgs) {
         LOUT("Approx distance = " << approx_distance << "\n");
         LOUT("Approx disparity = " << approx_disparity << "\n");
-        circle(vis_right, Point(u - approx_disparity, v), std::sqrt(tolerance), Scalar(255,0,0));
+        }
+
+        // DEBUGGING !
+//        circle(vis_right, Point(u - approx_disparity - matching_tolerance_u_factor * tolerance/2,
+//                                v- tolerance/2), (2), Scalar(255,0,0));
+//        circle(vis_right, Point(u - approx_disparity + matching_tolerance_u_factor * tolerance/2,
+//                                v- tolerance/2), (2), Scalar(255,0,0));
+//        circle(vis_right, Point(u - approx_disparity - matching_tolerance_u_factor * tolerance/2,
+//                                v+ tolerance/2), (2), Scalar(255,0,0));
+//        circle(vis_right, Point(u - approx_disparity + matching_tolerance_u_factor * tolerance/2,
+//                                v+ tolerance/2), (2), Scalar(255,0,0));
+//        circle(vis_right, Point(u - approx_disparity, v), (2), Scalar(255,0,0));
+        rectangle(vis_right, Point(u - approx_disparity - matching_tolerance_u_factor * tolerance/2, v- tolerance/2) ,
+                Point(u - approx_disparity + matching_tolerance_u_factor * tolerance/2, v + tolerance/2), Scalar(255,0,0));
 
 
         for (int j = ellipses_right.size() - 1; j >= 0; --j) {
             if (ellipses_right[j].color == ellipse.color &&
-                std::pow(u - approx_disparity - ellipses_right[j].box.center.x, 2) +
-                std::pow(v - ellipses_right[j].box.center.y, 2) <= tolerance) {
+                abs(u - approx_disparity - ellipses_right[j].box.center.x) <= matching_tolerance_u_factor * tolerance/2 &&
+                abs(v - ellipses_right[j].box.center.y) <= tolerance/2)
+            {
                 // Found matching ellipse in tolerance area
                 potentialMatchesIndices.push_back(j);
             }
@@ -410,13 +488,18 @@ namespace DerWeg {
         }
 
         if (arg_min >= 0 && min_shape_difference < max_shape_diff) {
-            LOUT("Shape difference " << min_shape_difference << "\n");
+            if (true) {
+                LOUT("Shape difference " << min_shape_difference << "\n");
+            }
             float u = ellipse.box.center.x;
             double disparity = u - right_ellipses[arg_min].box.center.x;
             right_ellipses.erase(right_ellipses.begin() + arg_min);
             return disparity;
         } else {
             // if no potential matches were found, return 0
+            if (printmsgs) {
+                LOUT("No Potential matches found in right image\n");
+            }
             return 0;
         }
     }
@@ -436,8 +519,9 @@ namespace DerWeg {
                 count_green_ellipses++;
             }
         }
+        if (printmsgs) {
         LOUT("Red ellipses : "<< count_red_ellipses << ", green ellipses: "<<count_green_ellipses<<"\n");
-
+        }
         // Interpret color frequencies for final state decision
         TrafficLightState final_state;
         if (count_red_ellipses == 0 && count_green_ellipses == 0) {
@@ -463,7 +547,9 @@ namespace DerWeg {
         for (unsigned int i=0; i<ellipses.size(); i++) {
             if (ellipses[i].color == final_state) {
                 double u = ellipses[i].box.center.x;
+                if (printmsgs) {
                 LOUT("Distance of TL to picture boundary: " << min (u, 659 - u) << " pixels \n");
+                }
                 return i;
             }
         }
@@ -550,7 +636,9 @@ namespace DerWeg {
             ellipse.world_coords = world_coords;
 
             // Debugging depth information
+            if (true) {
             LOUT("Distance = "<<distance<<endl);
+            }
             //LOUT("image_coords = " << std::endl << " " << image_coords << std::endl);
             //LOUT("camera_coords = " << std::endl << " " << camera_coords << std::endl);
 
@@ -560,13 +648,17 @@ namespace DerWeg {
                     !( abs(height - red_height) < height_tol || abs(height - yellow_height) < height_tol )
                 ) {
                    ellipses_left.erase(ellipses_left.begin() + i);
+                   if (printmsgs) {
                    LOUT("RED Ellipse kicked out because of height tolerance\n");
+                   }
                    continue;
             } else if (ellipse.color == green &&
                     !( abs(height - green_height) < height_tol)
                 ) {
                    ellipses_left.erase(ellipses_left.begin() + i);
+                   if (printmsgs) {
                    LOUT("GREEN Ellipse kicked out because of height tolerance\n");
+                   }
                    continue;
             }
 
@@ -575,17 +667,57 @@ namespace DerWeg {
             //TODO: Diese Bedingung verbessern, Kovarianzmatrix nutzen!
             // Als parameter umschreiben
             if( ( (tl_est_pos - ellipse_pos).length() > 1500 && stddev < 200 )
-               || ellipse_pos.x < 0 || ellipse_pos.y < 0 || ellipse_pos.x > 9500 || ellipse_pos.y > 3000 ) {
+               || ellipse_pos.x < 2000 || ellipse_pos.y < -500 || ellipse_pos.x > 10000 || ellipse_pos.y > 6500 ) {
                 ellipses_left.erase(ellipses_left.begin() + i);
+               if (printmsgs) {
                LOUT("Ellipse kicked out because of wrong position\n");
+               }
                continue;
             }
 
           } // End of validation loop
 
           // Show results of ellipse fitting
-          cv::imshow (windowname.c_str(), vis_left);
-          cv::imshow (windowname2.c_str(), vis_right);
+          if (show_images) {
+          cv::imshow ("processes_image", vis_left);
+          cv::imshow ("Right_image", vis_right);
+          }
+//=====================================================================================================
+
+        time_t systemzeit;
+        systemzeit = time(0);
+        //char *asctime(const struct tm *t);
+        string timeString;
+        //timeString = ctime(&systemzeit);
+        tm * localt = localtime(&systemzeit);
+
+        ostringstream oss;
+        oss << setfill('0') << setw(4) << localt->tm_year + 1900 << '-' << setw(2) <<  localt->tm_mon +1 << '-' << setw(2) << localt->tm_mday << '_'
+            << setw(2) <<  localt->tm_hour << '-' << setw(2) << localt->tm_min << '-' << setw(2) << localt->tm_sec;
+        timeString = oss.str();
+
+
+          char processedFileName[100];
+          strcpy(processedFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(processedFileName, timeString.c_str());
+          cv::imwrite(string(processedFileName) + "_processed.png", vis_left);
+
+          char rightprocessedFileName[100];
+          strcpy(rightprocessedFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(rightprocessedFileName, timeString.c_str());
+          cv::imwrite(string(rightprocessedFileName) + "_processed_right.png", vis_right);
+
+
+          char leftFileName[100];
+          strcpy(leftFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(leftFileName, timeString.c_str());
+          cv::imwrite(string(leftFileName) + "_left.png", left);
+
+          char rightFileName[100];
+          strcpy(rightFileName, "../data/TL_IMAGES/Stereo_");
+          strcat(rightFileName, timeString.c_str());
+          cv::imwrite(string(rightFileName) + "_right.png", right);
+//======================================================================================================
 
 
             // At this point there are three sets of ellipses:

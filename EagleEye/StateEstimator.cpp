@@ -65,6 +65,12 @@ namespace DerWeg {
                 pose.yawrate=diffangle/difftime*1e3;
                 pose.timestamp=now;
                 pose.stddev = 0;
+
+                // Plot in AnicarViewer
+                std::stringstream plt;
+                plt << "thick blue dot "
+                << state.sg_position.x << " " << state.sg_position.y << "\n";
+                BBOARD->addPlotCommand(plt.str());
             }
 
             timestamp=now;

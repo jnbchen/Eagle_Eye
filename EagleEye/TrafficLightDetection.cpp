@@ -670,7 +670,7 @@ namespace DerWeg {
                || ellipse_pos.x < 2000 || ellipse_pos.y < -500 || ellipse_pos.x > 10000 || ellipse_pos.y > 6500 ) {
                 ellipses_left.erase(ellipses_left.begin() + i);
                if (printmsgs) {
-               LOUT("Ellipse kicked out because of wrong position\n");
+               LOUT("Ellipse kicked out because of wrong position:\n" << ellipse_pos << "\n");
                }
                continue;
             }
@@ -793,7 +793,7 @@ namespace DerWeg {
               traffic_lights[i].plot_estimate();
           }
 
-          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+          boost::this_thread::sleep(boost::posix_time::milliseconds(40));
           boost::this_thread::interruption_point();
         } else {
           // Stop module

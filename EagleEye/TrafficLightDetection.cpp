@@ -145,10 +145,10 @@ namespace DerWeg {
                     return 1000000000;
                 }
                 double err = 0;
+                double a = box.boundingRect().width/2; //min(box.size.width, box.size.height)/2;
+                double b = box.boundingRect().height/2; //max(box.size.width, box.size.height)/2;
                 for (size_t i=0; i < contour.size(); i++) {
                     Point p = contour[i];
-                    double a = min(box.size.width, box.size.height)/2;
-                    double b = max(box.size.width, box.size.height)/2;
                     err += abs( pow( (p.x - box.center.x)/a , 2) + pow( (p.y - box.center.y)/b , 2) - 1);
                 }
                 return err/contour.size();

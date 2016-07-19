@@ -162,7 +162,7 @@ namespace DerWeg {
 
         m_cone=5.35;   //slope of cone flanks
 
-        v_search_beg=190;v_search_end=258;   //region of interest for search of cone top side
+        v_search_beg=135;v_search_end=248;   //region of interest for search of cone top side
 
         //minimum number of pixels to accept cone top side / // width minus tolerance
         //width_min= width_min_prop_to_width*width+width_min_const;

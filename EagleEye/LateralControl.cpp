@@ -141,15 +141,23 @@ namespace DerWeg {
             }
 
             int seg_id = BBOARD->getReferenceTrajectory().segment_id;
+            State s = BBOARD->getState();
+            double x = s.sg_position.x;
+            double y = s.sg_position.y;
+            double x_r = s.control_position.x;
+            double y_r = s.control_position.y;
 
             //get current steering angle and velocity
             Velocity dv = BBOARD->getDesiredVelocity();
 
             // Lateral control ======================================================
-            State s = BBOARD->getState();
+
             ControllerInput input = calculate_curve_data(s);
             //Stanley-Controller here
             double u = precontrol_k * input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
+            if (seg_id == 32 && x_r<9700 && y_r>4000) {
+                u = precontrol_k * input.curvature - stanley_k1 * input.diff_angle.get_rad_pi();
+            }
             double delta = atan(axis_distance * u);
 
             // set steering angle
@@ -196,12 +204,14 @@ namespace DerWeg {
                 }
             }
 
-            double x = s.sg_position.x;
             if ((seg_id == 41 && x >6000 && x<7000) ||
                 (seg_id == 13 && x >5000 && x<6000) ||
-                (seg_id == 32 && x >8000 && x<9000) ||
-                (seg_id == 25 && x >3000 && x<4000)) {
+                (seg_id == 32 && x >8000 && x<9000 && y<4000) ||
+                (seg_id == 25 && x >3000 && x<4000 && y>2700)) {
                     set_velocity *= 0.7;
+            }
+            else if (seg_id == 25 && x >10000) {
+                set_velocity = 0.2 + (11670-x) / 1670 * (set_velocity-0.2);
             }
 
             dv.velocity = set_velocity;

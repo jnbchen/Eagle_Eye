@@ -132,6 +132,9 @@ Mapping::Mapping(const ConfigReader& cfg) {
 }
 
 void Mapping::add_measurement(Vec measurement, double rad_viewing_angle, double distance) {
+    if (distance > 1800) {
+        return;
+    }
     double min_dist = 1000000000;
     int arg_min = -1;
     for (unsigned int i=0; i<clusters.size(); i++){

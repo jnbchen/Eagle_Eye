@@ -456,8 +456,8 @@ namespace DerWeg {
         segment_index = 41;
         curve_index = 0;
 
-        segment_index = 25;
-        curve_index = 5;
+        //segment_index = 25;
+        //curve_index = 5;
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 

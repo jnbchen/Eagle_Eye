@@ -39,7 +39,7 @@ namespace DerWeg {
             bool printmsgs;
             bool show_images;
 
-            Rect roi;
+            Rect _roi;
 
             int median_filter_size;
 
@@ -76,7 +76,7 @@ namespace DerWeg {
                 cfg.get("TrafficLightDetection::roi_border_bot", roi_border_bot);
                 cfg.get("TrafficLightDetection::roi_border_left", roi_border_left);
                 cfg.get("TrafficLightDetection::roi_border_right", roi_border_right);
-                roi = Rect(roi_border_left, roi_border_top, roi_border_right - roi_border_left, roi_border_bot - roi_border_top);
+                _roi = Rect(roi_border_left, roi_border_top, roi_border_right - roi_border_left, roi_border_bot - roi_border_top);
 
                 cfg.get("TrafficLightDetection::median_filter_size", median_filter_size);
 
@@ -132,8 +132,8 @@ namespace DerWeg {
 
                     if (fitting_error < max_fitting_error) {
                         // shift back the cutoff from region of interest
-                        box.center.x += roi.x;
-                        box.center.y += roi.y;
+                        box.center.x += _roi.x;
+                        box.center.y += _roi.y;
 
                         ellipse_vec.push_back(DetectedEllipse(box, c));
                     }
@@ -164,7 +164,7 @@ namespace DerWeg {
                 // Region of Interest
                 Mat im_roi;
                 try {
-                    im_roi = im_input(roi);
+                    im_roi = im_input(_roi);
                 } catch (...) {
                     EOUT("roi could not be assigned\n");
                     LOUT("im_input.cols = " << im_input.cols << "\n");
@@ -834,7 +834,8 @@ namespace DerWeg {
           boost::this_thread::interruption_point();
         } else {
           // Stop module
-          break;
+          boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
         }
         }
       }catch(boost::thread_interrupted&){;}

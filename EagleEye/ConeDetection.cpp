@@ -133,6 +133,8 @@ namespace DerWeg {
 
         Mapping mapping;
 
+        int filecounter;
+
 
   public:
     /** Konstruktor initialisiert den Tiefenschaetzer */
@@ -162,7 +164,7 @@ namespace DerWeg {
 
         m_cone=5.35;   //slope of cone flanks
 
-        v_search_beg=135;v_search_end=248;   //region of interest for search of cone top side
+        v_search_beg=190;v_search_end=248;   //region of interest for search of cone top side
 
         //minimum number of pixels to accept cone top side / // width minus tolerance
         //width_min= width_min_prop_to_width*width+width_min_const;
@@ -245,6 +247,20 @@ void show_res(const cv::Mat& ch012, const cv::Mat& ch0, const cv::Mat& ch1, cons
     cv::Mat img_to_show;
     cv::merge(to_show,3,img_to_show);
     cv::imshow(windowname, img_to_show);
+}
+
+void save_res(const cv::Mat& ch012, const cv::Mat& ch0, const cv::Mat& ch1, const cv::Mat& ch2){
+    cv::Mat to_show [3];
+    double b=0.5;
+    to_show[0]=ch0+b*ch012;
+    to_show[1]=ch1+b*ch012;
+    to_show[2]=ch2+b*ch012;
+    cv::Mat img_to_show;
+    cv::merge(to_show,3,img_to_show);
+    std::stringstream filenameS;
+    filenameS<<"../data/ConeImages"<<filecounter<<".png";
+    cv::imwrite(filenameS.str(), img_to_show);
+    filecounter++;
 }
 
 
@@ -531,11 +547,21 @@ void detect () {
                 if (j-end==delta) {
 
                     // Check if area under detected top consists at least of 80% orange pixels
-                    cv::Rect roi(beg, i, end - beg, height * 0.6);
+
+                    int heigh = height*0.6;
+                    int size_of_roi = min(left_peak_binary.rows, heigh);
+                    cv::Rect roi1(beg, i, end - beg, size_of_roi);
+
+                    int countNonZero_int =0;
+                    try {
+                     countNonZero_int= countNonZero(left_peak_binary(roi1)) ;
+                    } catch (...){
+                        EOUT("COUNT NON ZERO\n");
+                    }
 
                     //::::::::::::: either suitable width of detected cone => VALID CONE DETECTED:::::::::::::::
                     if (end-beg >= width_min && end - beg <= width_max && beg != u_search_beg &&
-                        countNonZero(left_peak_binary(roi)) >= 0.8 * roi.width * roi.height) {
+                        countNonZero_int >= 0.8 * roi1.width * roi1.height) {
 
                         //plot line from cone begin to cone end
                         for (int z=beg; z<=end; z++) {
@@ -1103,7 +1129,7 @@ int median( cv::Mat& channel )
                 //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
                 //show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
-
+save_res(imgDiff,imgDiffR,out2,out2R);
 
                 //cv::imshow("MAP", outMAP);
 

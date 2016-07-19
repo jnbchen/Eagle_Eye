@@ -188,11 +188,9 @@ namespace DerWeg {
             //LOUT("set_velocity" << set_velocity<<"\n");
 
 
-            if ((seg_id == 41 && x >6500 && x<7500) ||
-                (seg_id == 13 && x >5000 && x<6000) ||
-                (seg_id == 32 && x >8000 && x<9000 && y<4000) ||
+            if ((seg_id == 32 && x >8000 && x<9000 && y<4000) ||
                 (seg_id == 25 && x >3000 && x<4000 && y>2700)) {
-                    set_velocity *= 1;
+                    set_velocity *= 0.75;
             }
             else if (seg_id == 25 && x > 9900) {
                 //set_velocity = 0.2 + (11670-x) / 1670 * (set_velocity-0.2);
@@ -264,11 +262,11 @@ namespace DerWeg {
             // OBSTACLE PATH PLANNING HERE
 
             // Stop vehicle
-            Velocity dv;
+            Velocity dv = BBOARD->getDesiredVelocity();
             //dv.velocity = 0;
             //dv.steer = Angle::rad_angle(0);
 
-            dv = pylon_planner.findPath(BBOARD->getPylonMap().circles);
+            dv.steer = pylon_planner.findPath(BBOARD->getPylonMap().circles).steer;
 
             BBOARD->setDesiredVelocity(dv);
           }
@@ -303,9 +301,9 @@ namespace DerWeg {
     ControllerInput calculate_curve_data(const State& state)  {
         Vec pos = state.control_position;
 
-        stringstream pos_point;
-        pos_point << "thick black dot " << pos.x << " " << pos.y;
-        BBOARD->addPlotCommand(pos_point.str());
+        //stringstream pos_point;
+        //pos_point << "thick black dot " << pos.x << " " << pos.y;
+        //BBOARD->addPlotCommand(pos_point.str());
 
         lastProjectionParameter = bc.project(pos, lastProjectionParameter,
                                              newton_tolerance, newton_max_iter);

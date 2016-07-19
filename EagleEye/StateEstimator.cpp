@@ -41,8 +41,8 @@ namespace DerWeg {
             state.orientation = pose.orientation;
             Timestamp now;
 
-            if (BBOARD->getOnTrack()) {
-            //if (true) {
+            //if (BBOARD->getOnTrack()) {
+            if (true) {
 
                 state.sg_position = pose.position;
 

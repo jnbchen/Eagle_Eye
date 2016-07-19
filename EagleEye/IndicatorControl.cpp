@@ -28,7 +28,7 @@ namespace DerWeg {
         intersection_region = ConvexPolygon(tmp1);
 
         vector<double> tmp2;
-        cfg.get("IndicatorControl::intersection_region", tmp2);
+        cfg.get("IndicatorControl::turnout_region", tmp2);
         turnout_region = ConvexPolygon(tmp2);
 	}
 

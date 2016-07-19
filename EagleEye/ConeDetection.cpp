@@ -321,8 +321,8 @@ void determinePosition(const EdgeData & EDl){
     double distance = pixel2meter(f,b,EDl.apex_disp) * 1000;
     // u/y=disp/b
 
-    if (distance < 0) {
-        EOUT("Drop cone measurement: distance can not be negative\n");
+    if (distance <= 0) {
+        EOUT("Drop cone measurement: distance can not be negative or zero\n");
     }
     else {
         double y=pixel2meter(-(EDl.apex_u-u0),b,EDl.apex_disp);
@@ -419,7 +419,9 @@ void estimateApexMono(const char camera, EdgeData& EDl,EdgeData& EDr){
 void estimateApexStereo(EdgeData& EDl, EdgeData& EDr, EdgeData& EDlR, EdgeData& EDrR){
     estimateApexMono('L', EDl,EDr) ;
     estimateApexMono('R', EDlR,EDrR);
-    EDl.apex_disp=EDl.apex_u-EDlR.apex_u;
+    double disp = EDl.apex_u-EDlR.apex_u;
+    if (disp>0) EDl.apex_disp=disp;
+    else EDl.apex_disp=-1;
 }
 
 

@@ -42,6 +42,7 @@ namespace DerWeg {
             Timestamp now;
 
             if (BBOARD->getOnTrack()) {
+            //if (true) {
 
                 state.sg_position = pose.position;
 
@@ -68,7 +69,7 @@ namespace DerWeg {
 
                 // Plot in AnicarViewer
                 std::stringstream plt;
-                plt << "thick blue dot "
+                plt << "thick green dot "
                 << state.sg_position.x << " " << state.sg_position.y << "\n";
                 BBOARD->addPlotCommand(plt.str());
             }

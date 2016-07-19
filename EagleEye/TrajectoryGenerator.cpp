@@ -448,13 +448,16 @@ namespace DerWeg {
         BBOARD->waitForState();
 
         // Selbstlokalisierung
-        SegmentPosition pos = find_start_position(BBOARD->getState());
-        segment_index = pos.segment_id;
-        curve_index = pos.curve_id;
+        //SegmentPosition pos = find_start_position(BBOARD->getState());
+        //segment_index = pos.segment_id;
+        //curve_index = pos.curve_id;
 
         // Für Wettbewerb
-        //segment_index = 41;
-        //curve_index = 0;
+        segment_index = 41;
+        curve_index = 0;
+
+        segment_index = 25;
+        curve_index = 5;
 
         LOUT("Start execute with segment " << segment_index << std::endl);
 

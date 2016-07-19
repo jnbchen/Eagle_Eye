@@ -184,8 +184,22 @@ namespace DerWeg {
 
             double v_max_tl =  BBOARD->getReferenceTrajectory().v_max_tl;
             // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
-            double set_velocity = min(max(0.0, min(max_velocity, v_max_tl)), s.velocity_tire + 0.3);
+            double set_velocity = min(max(0.0, min(max_velocity, v_max_tl)), s.velocity_tire + 0.1);
             //LOUT("set_velocity" << set_velocity<<"\n");
+
+
+            if ((seg_id == 41 && x >6500 && x<7500) ||
+                (seg_id == 13 && x >5000 && x<6000) ||
+                (seg_id == 32 && x >8000 && x<9000 && y<4000) ||
+                (seg_id == 25 && x >3000 && x<4000 && y>2700)) {
+                    set_velocity *= 1;
+            }
+            else if (seg_id == 25 && x > 9900) {
+                //set_velocity = 0.2 + (11670-x) / 1670 * (set_velocity-0.2);
+                if(x<10600) set_velocity = 0.6;
+                else set_velocity = 0.3;
+            }
+
 
             //Brake lights:
             double diff_velocity = set_velocity - dv.velocity;
@@ -204,15 +218,6 @@ namespace DerWeg {
                 }
             }
 
-            if ((seg_id == 41 && x >6000 && x<7000) ||
-                (seg_id == 13 && x >5000 && x<6000) ||
-                (seg_id == 32 && x >8000 && x<9000 && y<4000) ||
-                (seg_id == 25 && x >3000 && x<4000 && y>2700)) {
-                    set_velocity *= 0.7;
-            }
-            else if (seg_id == 25 && x >10000) {
-                set_velocity = 0.2 + (11670-x) / 1670 * (set_velocity-0.2);
-            }
 
             dv.velocity = set_velocity;
 

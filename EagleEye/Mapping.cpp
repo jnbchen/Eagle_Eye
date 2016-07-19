@@ -19,7 +19,7 @@ Cluster::Cluster(double covar_ratio, double eff_scaling_factor) {
     cov_non_oriented(0,1) = 0;
     //LOUT("cov_non_oriented1\n" <<cov_non_oriented<<"\n");
 
-    //LOUT("eff_scaling"<<eff_scaling_factor<<"\n");
+    LOUT("eff_scaling"<<eff_scaling_factor<<"\n");
 
     cov_non_oriented = eff_scaling_factor * cov_non_oriented; // scaling to have correct size
     cov_non_oriented = cov_non_oriented * cov_non_oriented;
@@ -144,8 +144,8 @@ void Mapping::add_measurement(Vec measurement, double rad_viewing_angle, double 
     if (min_dist > new_cluster_distance || arg_min < 0) {
         LOUT("New cluster\n");
         // generate new cluster
-        //LOUT("cone_distance = "<<cone_distance);
-        //LOUT("TEST "<<cone_distance/2 * scaling_factor<<"\n");
+        LOUT("cone_distance = "<<cone_distance<<"\n");
+        LOUT("TEST "<<cone_distance/2 * scaling_factor<<"\n");
         Cluster c(covar_ratio, cone_distance/2 * scaling_factor);
         c.update(measurement, rad_viewing_angle, 1/distance);
         clusters.push_back(c);

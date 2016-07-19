@@ -816,6 +816,10 @@ namespace DerWeg {
           //LOUT("Final state copied = " << tl_data.state << std::endl);
           tl_data.position = traffic_lights[tl_number].get_position();
 
+          if (BBOARD->getReferenceTrajectory().segment_id == 25) {
+            tl_data.state = none;
+          }
+
           //LOUT("Write tl_data to blackboard, state = " << tl_data.state <<std::endl);
           BBOARD->setTrafficLight(tl_data);
 

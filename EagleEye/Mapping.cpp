@@ -165,7 +165,7 @@ void Mapping::write_obstacles() {
     map.circles.push_back(Circle(Vec(11630,1600), cone_radius));
     map.circles.push_back(Circle(Vec(11900,1740), cone_radius));
     map.circles.push_back(Circle(Vec(12250,1840), cone_radius));
-    map.circles.push_back(Circle(Vec(12000,880), cone_radius));
-    map.circles.push_back(Circle(Vec(12300,1010), cone_radius));
+    map.circles.push_back(Circle(Vec(11866,756), cone_radius));
+    map.circles.push_back(Circle(Vec(12380,830), cone_radius));
     BBOARD->setPylonMap(map);
 }

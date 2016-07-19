@@ -197,10 +197,10 @@ namespace DerWeg {
             }
 
             double x = s.sg_position.x;
-            if (seg_id == 41 && x >6000 && x<7000 ||
-                seg_id == 13 && x >5000 && x<6000 ||
-                seg_id == 32 && x >8000 && x<9000 ||
-                seg_id == 25 && x >3000 && x<4000) {
+            if ((seg_id == 41 && x >6000 && x<7000) ||
+                (seg_id == 13 && x >5000 && x<6000) ||
+                (seg_id == 32 && x >8000 && x<9000) ||
+                (seg_id == 25 && x >3000 && x<4000)) {
                     set_velocity *= 0.7;
             }
 

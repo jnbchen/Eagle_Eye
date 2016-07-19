@@ -1129,7 +1129,7 @@ int median( cv::Mat& channel )
                 //show_res(imgDiffR,out0R,out1R,out2R,"window_resultStereoR_diff");
                 //show_res(imgDiff,out0,out1,out2,"window_resultStereoL_diff");
                 //show_res(imgDiff,imgDiffR,out2,out2R,"window_resultStereoLR_diff");
-save_res(imgDiff,imgDiffR,out2,out2R);
+//save_res(imgDiff,imgDiffR,out2,out2R);
 
                 //cv::imshow("MAP", outMAP);
 

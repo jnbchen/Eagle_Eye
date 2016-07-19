@@ -719,42 +719,7 @@ namespace DerWeg {
           cv::imshow ("processes_image", vis_left);
           cv::imshow ("Right_image", vis_right);
           }
-//=====================================================================================================
 
-        time_t systemzeit;
-        systemzeit = time(0);
-        //char *asctime(const struct tm *t);
-        string timeString;
-        //timeString = ctime(&systemzeit);
-        tm * localt = localtime(&systemzeit);
-
-        ostringstream oss;
-        oss << setfill('0') << setw(4) << localt->tm_year + 1900 << '-' << setw(2) <<  localt->tm_mon +1 << '-' << setw(2) << localt->tm_mday << '_'
-            << setw(2) <<  localt->tm_hour << '-' << setw(2) << localt->tm_min << '-' << setw(2) << localt->tm_sec;
-        timeString = oss.str();
-
-
-          char processedFileName[100];
-          strcpy(processedFileName, "../data/TL_IMAGES/Stereo_");
-          strcat(processedFileName, timeString.c_str());
-          cv::imwrite(string(processedFileName) + "_processed.png", vis_left);
-
-          char rightprocessedFileName[100];
-          strcpy(rightprocessedFileName, "../data/TL_IMAGES/Stereo_");
-          strcat(rightprocessedFileName, timeString.c_str());
-          cv::imwrite(string(rightprocessedFileName) + "_processed_right.png", vis_right);
-
-
-          char leftFileName[100];
-          strcpy(leftFileName, "../data/TL_IMAGES/Stereo_");
-          strcat(leftFileName, timeString.c_str());
-          cv::imwrite(string(leftFileName) + "_left.png", left);
-
-          char rightFileName[100];
-          strcpy(rightFileName, "../data/TL_IMAGES/Stereo_");
-          strcat(rightFileName, timeString.c_str());
-          cv::imwrite(string(rightFileName) + "_right.png", right);
-//======================================================================================================
 
 
             // At this point there are three sets of ellipses:

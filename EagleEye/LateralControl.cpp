@@ -47,13 +47,10 @@ namespace DerWeg {
 
         double v_max;
         double v_min;
-        double a_lateral_max;
         // curvature, we always assume to have -> prevents the car to drive move than a certain velocity and
         // and also prevents dividing by zero
-        double virtual_min_kappa;
 
         //if set to one, set velocity manually, if set to zero, car automatically accelerates
-        bool manual_velocity;
 
         double VEL_THRESH;
         double v_diff_max;
@@ -94,10 +91,6 @@ namespace DerWeg {
 
         cfg.get("LongitudinalControl::v_max", v_max);
         cfg.get("LongitudinalControl::v_min", v_min);
-        cfg.get("LongitudinalControl::a_lateral_max", a_lateral_max);
-        cfg.get("LongitudinalControl::manual_velocity", manual_velocity);
-
-        virtual_min_kappa = a_lateral_max / pow(v_max, 2);
 
         cfg.get("BrakeLights::VEL_THRESH", VEL_THRESH);
         cfg.get("BrakeLights::v_diff_max", v_diff_max);
@@ -153,6 +146,7 @@ namespace DerWeg {
             // Lateral control ======================================================
 
             ControllerInput input = calculate_curve_data(s);
+
             //Stanley-Controller here
             double u = precontrol_k * input.curvature - stanley_k0 * input.distance - stanley_k1 * input.diff_angle.get_rad_pi();
             if (seg_id == 32 && x_r<9700 && y_r>4000) {
@@ -163,41 +157,20 @@ namespace DerWeg {
             // set steering angle
             dv.steer = Angle::rad_angle(delta);
 
-            if (abs(dv.steer.get_deg_180()) > 28) {
-                //LOUT("Steering angle = " << dv.steer.get_deg_180() << "\n");
-            }
-
             //Velocity control
-            double max_velocity;
-            if (!manual_velocity) {
-              // calculate maximal velocity from curvature
-              double kappa = max(virtual_min_kappa, abs(BBOARD->getReferenceTrajectory().curvature_lookahead * 1000));
-              // multiply with 1000, because the curvature has units 1/mm
-
-              // get maximal velocity for the current curvature to not exceed given lateral acceleration
-              max_velocity = max(v_min, pow(a_lateral_max / kappa, 0.5));
-            } else {
-              // if velocity is set manually, use last velocity from blackboard
-              max_velocity = dv.velocity;
-              //LOUT("max_v = "<<max_velocity<<std::endl);
-            }
+            double max_velocity = dv.velocity;
+            //LOUT("max_v = "<<max_velocity<<std::endl);
 
             double v_max_tl =  BBOARD->getReferenceTrajectory().v_max_tl;
             // Get v_max from TrajectoryGenerator (could be reduced because of a traffic light)
             double set_velocity = min(max(0.0, min(max_velocity, v_max_tl)), s.velocity_tire + 0.1);
             //LOUT("set_velocity" << set_velocity<<"\n");
 
-
+            //slow down at curve
             if ((seg_id == 32 && x >8000 && x<9000 && y<4000) ||
                 (seg_id == 25 && x >3000 && x<4000 && y>2700)) {
                     set_velocity *= 0.75;
             }
-            else if (seg_id == 25 && x > 9900) {
-                //set_velocity = 0.2 + (11670-x) / 1670 * (set_velocity-0.2);
-                if(x<10600) set_velocity = 0.6;
-                else set_velocity = 0.3;
-            }
-
 
             //Brake lights:
             double diff_velocity = set_velocity - dv.velocity;
@@ -332,20 +305,9 @@ namespace DerWeg {
         }
 
         //Calculate difference angle between vehicle and curve
-//            double phi;
-//            if (df.x != 0 && abs(df.y/df.x) < 1) {
-//                //atan2 takes the direction into account
-//                phi = atan2(df.y, df.x);
-//            } else {
-//                //avoid singularities by rotating coordinate system for 2nd and 4th quadrant
-//                phi = M_PI/2 + atan2(-df.x, df.y);
-//            }
         Angle diff_angle = state.orientation - bc.orientation(df);
 
         //Calculate the curvature of the bezier curve
-//            double curvature_numerator = ddf.y * df.x - ddf.x * df.y;
-//            double curvature_denominator = pow(df.squared_length(), 3.0/2);
-//            double curvature = curvature_numerator / curvature_denominator;
         double curvature = bc.curvature(lastProjectionParameter, df);
 
         /*

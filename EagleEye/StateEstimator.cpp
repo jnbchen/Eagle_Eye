@@ -3,6 +3,9 @@
 #include "../Blackboard/Blackboard.h"
 #include "../Vehicle/VehicleKinematics.h"
 #include "../Elementary/Vec.h"
+#include "../Elementary/Eigen/Dense"
+#include "UKF.h"
+#include <cmath>
 
 namespace DerWeg {
 
@@ -20,6 +23,8 @@ namespace DerWeg {
     double velocity;
     Angle steering_angle;
     Timestamp timestamp;
+    ukf UKF;
+    VectorXd raw_measurements_；
 
 
   public:
@@ -38,45 +43,32 @@ namespace DerWeg {
             Pose pose = BBOARD->getVehiclePose();
             Odometry odo = BBOARD->getOdometry();
 
-            state.orientation = pose.orientation;
+            // use Unscented Kalman Filter
+            raw_measurements_ = VectorXd(3)；
+            raw_measurements_(0) = pose.position.x;
+            raw_measurements_(1) = pose.position.y;
+            raw_measurements_(2) = pose.orientation;
+
+            UKF.ProcessMeasurement(raw_measurements_);
+
+            double p_x = UKF.x_(0);
+            double p_y = UKF.x_(1);
+            double v = UKF.x_(2);
+            double yaw = UKF.x_(3);
+            double yawrate = UKF.x_(4);
+
             Timestamp now;
 
-            //if (BBOARD->getOnTrack()) {
-            if (true) {
-
-                state.sg_position = pose.position;
-
-            } else {
-
-                Angle old_heading = heading;
-                double difftime = 1e-3*now.diff_usec(timestamp);
-
-                kin.heun_step(state.sg_position, state.orientation, velocity, odo.velocity, steering_angle, odo.steer, difftime);
-                velocity=odo.velocity;
-                double diffangle = heading.get_rad()-old_heading.get_rad();
-                if (diffangle>=2*M_PI)
-                diffangle-=2*M_PI;
-                else if (diffangle<=-2*M_PI)
-                diffangle+=2*M_PI;
-                steering_angle=odo.steer;
-
-                //pose.position=position;
-                //pose.orientation=heading;
-                pose.velocity=velocity;
-                pose.yawrate=diffangle/difftime*1e3;
-                pose.timestamp=now;
-                pose.stddev = 0;
-
-                // Plot in AnicarViewer
-                std::stringstream plt;
-                plt << "thick green dot "
-                << state.sg_position.x << " " << state.sg_position.y << "\n";
-                BBOARD->addPlotCommand(plt.str());
-            }
-
-            timestamp=now;
+            pose.position = Vec(p_x, p_y);
+            pose.orientation = yaw;
+            pose.velocity = v;
+            pose.yawrate=yawrate;
+            pose.timestamp=now;
+            pose.stddev = 0;
 
             //Calculate position of rear axis center
+            state.sg_position = pose.position;
+            state.orientation = pose.orientation;
             state.rear_position = state.sg_position - rear_offset * Vec(1,0).rotate(state.orientation);
             state.control_position = state.rear_position;
             state.stddev = pose.stddev;

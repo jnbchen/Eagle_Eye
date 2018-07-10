@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="DerWeg" />
+	<File name="Application/TrackLogger.cpp" open="0" top="0" tabpos="4">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Blackboard/Blackboard.h" open="0" top="0" tabpos="3">
+		<Cursor position="9291" topLine="104" />
+	</File>
+	<File name="EagleEye/BezierCurve.cpp" open="0" top="0" tabpos="5">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/BezierCurve.h" open="0" top="0" tabpos="6">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/ConeDetection.cpp" open="1" top="0" tabpos="1">
+		<Cursor position="21436" topLine="490" />
+	</File>
+	<File name="EagleEye/DataObjects.h" open="0" top="0" tabpos="7">
+		<Cursor position="2634" topLine="51" />
+	</File>
+	<File name="EagleEye/ImageProcessingFunctions.h" open="0" top="0" tabpos="3">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/IndicatorControl.cpp" open="1" top="0" tabpos="2">
+		<Cursor position="1435" topLine="11" />
+	</File>
+	<File name="EagleEye/LateralControl.cpp" open="1" top="0" tabpos="3">
+		<Cursor position="4244" topLine="108" />
+	</File>
+	<File name="EagleEye/Lights.cpp" open="0" top="0" tabpos="3">
+		<Cursor position="542" topLine="0" />
+	</File>
+	<File name="EagleEye/Lights.h" open="0" top="0" tabpos="4">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/Mapping.cpp" open="1" top="0" tabpos="8">
+		<Cursor position="3526" topLine="81" />
+	</File>
+	<File name="EagleEye/Mapping.h" open="0" top="0" tabpos="2">
+		<Cursor position="1142" topLine="27" />
+	</File>
+	<File name="EagleEye/PathPlanning.cpp" open="1" top="0" tabpos="10">
+		<Cursor position="1234" topLine="0" />
+	</File>
+	<File name="EagleEye/PathPlanning.h" open="1" top="0" tabpos="11">
+		<Cursor position="1568" topLine="16" />
+	</File>
+	<File name="EagleEye/PathPlanningTestingModule.cpp" open="0" top="0" tabpos="6">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/PathPlanningVirtualCones.cpp" open="0" top="0" tabpos="1">
+		<Cursor position="930" topLine="20" />
+	</File>
+	<File name="EagleEye/PylonLogging.cpp" open="1" top="0" tabpos="9">
+		<Cursor position="2211" topLine="28" />
+	</File>
+	<File name="EagleEye/Rectifier.cpp" open="0" top="0" tabpos="3">
+		<Cursor position="1825" topLine="22" />
+	</File>
+	<File name="EagleEye/SaveCoordinates.cpp" open="0" top="0" tabpos="3">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/StateEstimator.cpp" open="1" top="1" tabpos="4">
+		<Cursor position="1050" topLine="7" />
+	</File>
+	<File name="EagleEye/TrafficLight.cpp" open="0" top="0" tabpos="2">
+		<Cursor position="4739" topLine="109" />
+	</File>
+	<File name="EagleEye/TrafficLight.h" open="0" top="0" tabpos="5">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/TrafficLightBehaviour.cpp" open="0" top="0" tabpos="3">
+		<Cursor position="5833" topLine="106" />
+	</File>
+	<File name="EagleEye/TrafficLightDetection.cpp" open="1" top="0" tabpos="5">
+		<Cursor position="35288" topLine="795" />
+	</File>
+	<File name="EagleEye/TrafficLightDummy.cpp" open="0" top="0" tabpos="2">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="EagleEye/TrajectoryGenerator.cpp" open="0" top="0" tabpos="5">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Elementary/ImageBuffer.h" open="0" top="0" tabpos="0">
+		<Cursor position="114" topLine="0" />
+	</File>
+	<File name="Elementary/ImageReaderWriter.cpp" open="0" top="0" tabpos="2">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Elementary/ImageReaderWriter.h" open="0" top="0" tabpos="3">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Elementary/ThreadSafeLogging.h" open="0" top="0" tabpos="8">
+		<Cursor position="0" topLine="0" />
+	</File>
+	<File name="Elementary/Timestamp.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="15" topLine="0" />
+	</File>
+	<File name="Elementary/Timestamp.h" open="0" top="0" tabpos="0">
+		<Cursor position="894" topLine="3" />
+	</File>
+	<File name="ImageSource/GigE.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="0" topLine="73" />
+	</File>
+	<File name="ImageSource/StereoImageSourceGigE.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="4592" topLine="112" />
+	</File>
+	<File name="Localization/CameraLocalization.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="3837" topLine="87" />
+	</File>
+	<File name="Localization/DeadReckoningLocalization.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="625" topLine="6" />
+	</File>
+	<File name="Vehicle/VehicleKinematics.cpp" open="1" top="0" tabpos="7">
+		<Cursor position="1069" topLine="0" />
+	</File>
+	<File name="Vehicle/VehicleKinematics.h" open="1" top="0" tabpos="6">
+		<Cursor position="1817" topLine="0" />
+	</File>
+	<File name="Vehicle/vehicle.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="0" topLine="12" />
+	</File>
+	<File name="Vehicle/vehicle.h" open="0" top="0" tabpos="0">
+		<Cursor position="3001" topLine="57" />
+	</File>
+</CodeBlocks_layout_file>

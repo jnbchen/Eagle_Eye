@@ -1,1 +1,0 @@
-../../kogmolabor.h

@@ -88,7 +88,7 @@ namespace DerWeg {
 
         // critical pixel distance, when to assume that pixels ahead would no more belong to the current cone
         double delta_prop_to_width;
-
+  
         // min. number of edge pixels to accept as valid edge:
         // int n_min = n_min_prop_to_height *height + n_min_const ;
         double n_min_prop_to_height;

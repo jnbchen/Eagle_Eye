@@ -35,7 +35,7 @@ Velocity PathPlanning::findPath(vector<Circle> obst) {
     for (unsigned int i=0; i<obstacles.size(); i++) {
         // Plot obstacles in AnicarViewer
         std::stringstream pos;
-        pos << "think red dot "
+        pos << "thick red cross "
             << obstacles[i].center.x << " " << obstacles[i].center.y << std::endl;
         BBOARD->addPlotCommand(pos.str());
     }
@@ -167,6 +167,7 @@ double PathPlanning::simulatePath(State& state, const int depth)  {
 
     // driven distance within this motion step in millimetres
     double distance = max(state.velocity, min_sim_velocity) * dt * 1000;
+    LOUT(max(state.velocity, min_sim_velocity)<<"\n");
 
     // Get circles covering car
     vector<Circle> car_circles = getCarCircles(state);

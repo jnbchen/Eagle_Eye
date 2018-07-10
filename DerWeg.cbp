@@ -82,6 +82,8 @@
 		<Unit filename="EagleEye/TrafficLightDummy.cpp" />
 		<Unit filename="EagleEye/TrajectoryGenerator.cpp" />
 		<Unit filename="EagleEye/WriteSVG.cpp" />
+		<Unit filename="EagleEye/ukf.cpp" />
+		<Unit filename="EagleEye/ukf.h" />
 		<Unit filename="Elementary/Angle.cpp" />
 		<Unit filename="Elementary/Angle.h" />
 		<Unit filename="Elementary/ConfigReader.cpp" />

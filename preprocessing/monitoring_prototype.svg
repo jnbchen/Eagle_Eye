@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?> 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="650" > 	
+<defs>  
+	<marker id="M_dot" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="100" markerHeight="100"> 	
+		<circle cx="5" cy="5" r="1" fill="black" />	
+	</marker> 	
+	
+
+	
+	<g id="car"> <!-- x,y linke obere Ecke-->
+		<rect x="-400" y="-150" width="500" height="300" style="fill:black;stroke:black;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.5"/>
+		<circle cx="0" cy="0" r="20" fill="red" />
+	</g>
+	
+	
+</defs>	
+
+<g transform="translate(0,650) scale(0.1,-0.1)">  
+
+
+<!--		
+<polyline points="1000,1000 2000,2000" style="fill:none;stroke:black;stroke-opacity:0.1;stroke-width:10" marker-start="url(#M_dot)" marker-end="url(#M_dot)"/>	
+
+<use x="5000" y="2000" xlink:href="#car" />
+<use x="5000" y="2000" xlink:href="#car" transform="rotate(20,5000,2000)"/>
+<use x="2000" y="2000" xlink:href="#car" transform="rotate(20,5000,2000)"/>
+<use x="2000" y="4000" xlink:href="other.svg#car"/>
+<use x="0" y="0" xlink:href="seg.svg#segment13"/>
+
+
+</g> 
+</svg>
+-->
+
+

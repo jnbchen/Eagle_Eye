@@ -25,7 +25,9 @@ void Lights::SerialWrite(char Msg){
 	else {
 		//LOUT("Lights: could not open serial port"<<std::endl);
 	}*/
-    FILE* arduino;
+
+
+    /*FILE* arduino;
 	arduino=fopen("/dev/ttyACM3","w");
 	if(arduino!=NULL){
 		fprintf(arduino,"%c", Msg);
@@ -33,7 +35,7 @@ void Lights::SerialWrite(char Msg){
 	else {
 		LOUT("Could not open serial port for light control"<<std::endl);   //LOUT
 	}
-	fclose(arduino);
+	fclose(arduino);*/
 
 
   }
